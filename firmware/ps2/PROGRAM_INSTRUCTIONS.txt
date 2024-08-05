@@ -1,0 +1,42 @@
+1. Entering Program Mode for the OKHI Module: Before connecting the OKHI module to a USB port, 
+ensure you press and hold the programming button. Connect the module to your computer via USB 
+without any keyboard or other devices attached to the program/auxiliary board.
+
+2. Uploading the UART Bridge Firmware: Transfer the uart_bridge.uf2 file to the OKHI module, 
+which will appear as a MASS STORAGE DEVICE on your computer (e.g., drive E:). The device will 
+automatically eject once the file transfer completes.
+
+3. Switching to Normal Mode: To operate the OKHI module in normal mode, connect it to a USB 
+port without pressing any buttons.
+
+4. Programming the ESP Module: Run the upload_firmware.bat script to start programming the 
+ESP module. This script automates the firmware installation process.
+
+5. Selecting the COM Port: Input the COM port number where the OKHI module is connected 
+(e.g., COM3). If you are uncertain of the correct COM port, the batch file will display 
+a list of available COM ports. You may need to try each one sequentially to find the 
+correct connection.
+
+6. Completing the Programming Process: Wait for the script to finish running. 
+Once complete, the ESP module will be programmed and ready for use.
+
+7. Re-entering Program Mode: Disconnect the OKHI module from the USB, then 
+reconnect it in program mode by pressing the programming button before 
+plugging it back into the USB.
+
+8. Programming the RP2040 Chip: Copy the okhi.uf2 file to the OKHI module, now 
+recognized again as a MASS STORAGE DEVICE (e.g., drive E:). The device will 
+automatically eject after the file transfer.
+
+9. Finalizing Setup for RP2040: The RP2040 chip is now programmed and 
+ready for operational use.
+
+10. Reconnecting for Regular Use: Disconnect the OKHI module from USB and then 
+reconnect it without pressing the programming button for normal use.
+
+11. Connecting to the ESP WiFi Network: An ESP WiFi network will become 
+available with the password '0123456789'. Connect to this network and open a 
+web browser to access the web interface at: 
+http://192.168.4.1/ 
+
+echo "By Dreg"

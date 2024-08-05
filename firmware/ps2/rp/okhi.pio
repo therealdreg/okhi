@@ -1,0 +1,199 @@
+; MIT License - okhi - Open Keylogger Hardware Implant
+; ---------------------------------------------------------------------------
+; Copyright (c) [2024] by David Reguera Garcia aka Dreg
+; https://github.com/therealdreg/okhi
+; https://www.rootkit.es
+; X @therealdreg
+; dreg@rootkit.es
+; ---------------------------------------------------------------------------
+; Permission is hereby granted, free of charge, to any person obtaining a copy
+; of this software and associated documentation files (the "Software"), to deal
+; in the Software without restriction, including without limitation the rights
+; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+; copies of the Software, and to permit persons to whom the Software is
+; furnished to do so, subject to the following conditions:
+; 
+; The above copyright notice and this permission notice shall be included in all
+; copies or substantial portions of the Software.
+; 
+; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+; SOFTWARE.
+; ---------------------------------------------------------------------------
+; WARNING: BULLSHIT CODE X-)
+; ---------------------------------------------------------------------------
+
+; Ref: http://www.Computer-Engineering.org (Author: Adam Chapweske)
+; The Data and Clock lines are both open collector (pullup +5v).
+; Data sent from the device to the host is read on the falling edge of the clock signal;
+; data sent from the host to the device is read on the rising edge.
+; The clock frequency must be in the range 10 - 16.7 kHz.  This means clock must be
+; high for 30 - 50 microseconds and low for 30 - 50 microseconds
+; you should modify/sample the Data line in the middle of each cell.
+; I.e.  15 - 25 microseconds after the appropriate clock transition.
+; keyboard always generates the clock signal, but the host always has ultimate control over communication.
+; Data = high, Clock = high:  Idle state.
+; Data = high, Clock = low:  Communication Inhibited.
+; Data = low, Clock = high:  Host Request-to-Send
+; All data is transmitted one byte at a time and each byte is sent in a frame consisting of 11-12 bits.  These bits are:
+; 1 start bit.  This is always 0.
+; 8 data bits, least significant bit first.
+; 1 parity bit (odd parity).
+; 1 stop bit.  This is always 1.
+; 1 acknowledge bit (host-to-device communication only)
+; The clock frequency is 10-16.7 kHz.  The time from the rising edge of a clock pulse to a Data transition must be at
+; least 5 microseconds.  The time from a data transition to the falling edge of a clock pulse must be at least 5 microseconds
+; and no greater than 25 microseconds.
+; The host may inhibit communication at any time by pulling the Clock line low for at least 100 microseconds.
+; If a transmission is inhibited before the 11th clock pulse, the device must abort the current transmission and prepare
+; to retransmit the current "chunk" of data when host releases Clock.  A "chunk" of data could be a make code, break code,
+; device ID, mouse movement packet, etc.  For example, if a keyboard is interrupted while sending the second byte of a
+; two-byte break code, it will need to retransmit both bytes of that break code, not just the one that was interrupted.
+; If the host pulls clock low before the first high-to-low clock transition, or after the falling edge of the last clock pulse,
+; the keyboard/mouse does not need to retransmit any data.  However, if new data is created that needs to be transmitted,
+; it will have to be buffered until the host releases Clock.  Keyboards have a 16-byte buffer for this purpose.
+; If more than 16 bytes worth of keystrokes occur, further keystrokes will be ignored until there's room in the buffer.
+; PS/2 device always generates the clock signal.  If the host wants to send data, it must first put the Clock and Data
+; lines in a "Request-to-send" state as follows:
+; Inhibit communication by pulling Clock low for at least 100 microseconds.
+; Apply "Request-to-send" by pulling Data low, then release Clock.
+; The device should check for this state at intervals not to exceed 10 milliseconds.
+; host must follow to send data to a PS/2 device:
+; 1) Bring the Clock line low for at least 100 microseconds.
+; 2) Bring the Data line low.
+; 3) Release the Clock line.
+; 4) Wait for the device to bring the Clock line low.
+; 5) Set/reset the Data line to send the first data bit
+; 6) Wait for the device to bring Clock high.
+; 7) Wait for the device to bring Clock low.
+; 8) Repeat steps 5-7 for the other seven data bits and the parity bit
+; 9) Release the Data line.
+; 10) Wait for the device to bring Data low.
+; 11) Wait for the device to bring Clock  low.
+; 12) Wait for the device to release Data and Clock
+
+.program inhibited_signal
+; PIO0_1, Must run at 1 MHz (each cycle 1 microsecond)
+; Detect if CLOCK is LOW + DAT is HIGH for at least 100 microseconds
+; JMP PIN = CLOCK
+; INPUT PIN = DAT
+; 0: DAT
+; 1: CLOCK
+.wrap_target
+wait_inhibited:
+    wait 1 pin 0 ; Wait while DAT is LOW
+    jmp pin wait_inhibited ; Wait while CLOCK is HIGH
+    set x, 16 ; At 1 MHz, 6 instructions * 16 times = 96 cycles = 96 microseconds
+count_loop:
+    mov isr, null
+    in pins, 1
+    mov y, isr
+    jmp !y, wait_inhibited ; DAT == LOW? then restart
+    jmp pin, wait_inhibited ; CLOCK == HIGH? then restart
+    jmp x--, count_loop
+    irq set 0 ; Trigger Inhibited communication detected
+    wait 1 pin 1 ; Wait while CLOCK is LOW
+    mov isr, null
+    in pins, 1
+    mov y, isr
+    jmp !y, wait_inhibited ; DAT == LOW? then wait_inhibited
+    irq set 1 ; Trigger No Host Request-to-Send detected after inhibiting communication
+.wrap
+
+
+.program device_to_host
+; PIO0_2, Must run ~133.6 kHz, 7.5 microseconds per cycle
+; it is expected to have no fewer than 8 PIO state machine cycles for each keyboard clock cycle
+; the data transition occours when the Clock line is low
+; 0: DAT
+; 1: CLOCK
+; JMP PIN = EXTERNAL SIGNAL
+.wrap_target
+wait_start:
+    jmp pin wait_start
+    mov isr, null
+    wait 0 pin 1     ; skip start bit
+    wait 1 pin 1
+    set x, 7         ; 8 bit counter
+bitloop:
+    wait 0 pin 1 [1] ; wait negative clock edge
+    in pins, 1       ; sample data
+    wait 1 pin 1     ; wait for positive edge
+    jmp x-- bitloop
+    wait 0 pin 1     ; skip parity and stop bits
+    wait 1 pin 1
+    wait 0 pin 1
+    wait 1 pin 1
+    jmp pin wait_start
+    push 
+.wrap
+
+
+.program host_to_device
+; PIO1_1, Must run ~133.6 kHz, 7.5 microseconds per cycle
+; it is expected to have no fewer than 8 PIO state machine cycles for each keyboard clock cycle
+; the data transition occours when the Clock line is high
+; 0: DAT
+; 1: CLOCK
+; JMP PIN = EXTERNAL SIGNAL
+.wrap_target
+wait_start:
+    jmp pin wait_start
+    mov isr, null
+    wait 1 pin 1     ; skip start bit
+    wait 0 pin 1
+    set x, 7         ; 8 bit counter
+bitloop:
+    wait 1 pin 1 [1] ; wait positive clock edge
+    in pins, 1       ; sample data
+    wait 0 pin 1     ; wait for negative edge
+    jmp x-- bitloop
+    wait 1 pin 1     ; skip parity and stop bits
+    wait 0 pin 1
+    wait 1 pin 1
+    wait 0 pin 1 ; skip ACK bit
+    ; !!! Notice the change in timing for the "ack" bit (wait 0), the data transition occours when 
+    ; the Clock line is high (rather than when it is low as is the case for the other 11 bits.)
+    ; Example for sampling the ACK bit (replace the line above with this to effectively sample the ACK bit):
+    ;       wait 0 pin 1 [1]
+    ;       in pins, 1
+    jmp pin wait_start
+    push 
+.wrap
+
+.program idle_signal
+; PIO1_2, Must run at 1 MHz (each cycle 1 microsecond)
+; Detect idle_signal state:
+; irq0: CLOCK is HIGH + DAT is HIGH for at least 100 microseconds
+; irq1: not idle state
+; JMP PIN = CLOCK
+; INPUT PIN = DAT
+; 0: DAT
+; 1: CLOCK
+.wrap_target
+wait_idle:
+    wait 1 pin 0 ; Wait while DAT is LOW
+    jmp pin both_high_idle ; JMP IF DAT + CLOCK = HIGH
+    jmp wait_idle ; Wait while CLOCK or DAT is LOW
+both_high_idle:
+    set x, 15 ; At 1 MHz, 6 instructions * 15 times = 90 cycles = 90 microseconds
+loop_check_idle:
+    mov isr, null
+    in pins, 1
+    mov y, isr
+    jmp !y, not_idle ; DAT == LOW? then signal NOT IDLE
+    jmp pin, continue_loop_check_idle ; CLOCK == HIGH? then continue loop
+    jmp not_idle ; CLOCK == LOW? then signal NOT IDLE
+continue_loop_check_idle:
+    jmp x--, loop_check_idle
+    irq set 0 ; end loop, signal IDLE
+    jmp wait_idle ; restart
+not_idle:
+    irq set 1 ; signal NOT IDLE
+.wrap ; restart
+
+
