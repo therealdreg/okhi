@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/dreg/Documents/Pico-v1.5.1/pico-extras/src/rp2_common/pico_audio_spdif
+# Install script for directory: C:/Users/regue/Documents/Pico-v1.5.1/pico-extras/src/rp2_common/pico_audio_spdif
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

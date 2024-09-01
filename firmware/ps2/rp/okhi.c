@@ -52,7 +52,14 @@ There might still be some code/deadcode from this project
 #include "hardware/flash.h"
 #include "hardware/timer.h"
 #include "okhi.pio.h"
+#include "../../../../last_firmv.h"
 
+// uncomment to enable dev build
+#define DEV_BUILD 1
+
+// for UART debugging on devboard & HW version detection
+#define GPIO_A 4
+#define GPIO_B 5
 
 #define BP()   __asm("bkpt #1"); // breakpoint via software macro
 
@@ -132,6 +139,27 @@ to stop slave from missing the last bit when CS has less propagation delay than 
     asm volatile("nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop");
 
 
+typedef enum 
+{
+    VERSION_00 = 0,
+    VERSION_01,
+    VERSION_10,
+    VERSION_11,
+    VERSION_FF,
+    VERSION_0F,
+    VERSION_1F,
+    VERSION_F0,
+    VERSION_F1,
+    VERSION_UNKNOWN
+} hw_version_t;
+
+typedef enum 
+{
+    PIN_STATE_LOW = 0,
+    PIN_STATE_HIGH,
+    PIN_STATE_FLOATING
+} pin_state_t;
+
 
 extern char __flash_binary_end;
 
@@ -174,7 +202,115 @@ volatile static bool last_state_idle;
 volatile static int inidle;
 volatile static int inidletoggle;
 volatile static bool inh_fired;
+volatile char* hwver_name = "UNKNOWN";
+volatile static hw_version_t hwver = VERSION_UNKNOWN;
 
+
+pin_state_t get_pin_state(uint gpio)
+{
+    gpio_init(gpio);
+    gpio_pull_up(gpio);
+    sleep_ms(5);
+    bool pull_up_state = gpio_get(gpio);
+    
+    gpio_pull_down(gpio);
+    sleep_ms(5);
+    bool pull_down_state = gpio_get(gpio);
+
+    gpio_deinit(gpio);
+
+    if (pull_up_state && !pull_down_state)
+        return PIN_STATE_FLOATING;
+    
+    return pull_up_state ? PIN_STATE_HIGH : PIN_STATE_LOW;
+}
+
+hw_version_t detect_hw_version(void) 
+{
+    pin_state_t state_a = get_pin_state(GPIO_A);
+    pin_state_t state_b = get_pin_state(GPIO_B);
+
+    if (state_a == PIN_STATE_FLOATING && state_b == PIN_STATE_FLOATING)
+        return VERSION_FF;
+    else if (state_a == PIN_STATE_LOW && state_b == PIN_STATE_FLOATING)
+        return VERSION_0F;
+    else if (state_a == PIN_STATE_HIGH && state_b == PIN_STATE_FLOATING)
+        return VERSION_1F;
+    else if (state_a == PIN_STATE_FLOATING && state_b == PIN_STATE_LOW)
+        return VERSION_F0;
+    else if (state_a == PIN_STATE_FLOATING && state_b == PIN_STATE_HIGH)
+        return VERSION_F1;
+    else if (state_a == PIN_STATE_LOW && state_b == PIN_STATE_LOW)
+        return VERSION_00;
+    else if (state_a == PIN_STATE_LOW && state_b == PIN_STATE_HIGH)
+        return VERSION_01;
+    else if (state_a == PIN_STATE_HIGH && state_b == PIN_STATE_LOW)
+        return VERSION_10;
+    else if (state_a == PIN_STATE_HIGH && state_b == PIN_STATE_HIGH)
+        return VERSION_11;
+    else
+        return VERSION_UNKNOWN;
+}
+
+int init_ver(void) 
+{
+    hwver = detect_hw_version();
+
+    switch (hwver) 
+    {
+        case VERSION_00:
+            hwver_name = "00";
+            printf("Hardware version: 00\n");
+        break;
+    
+        case VERSION_01:
+            hwver_name = "01";
+            printf("Hardware version: 01\n");
+        break;
+    
+        case VERSION_10:
+            hwver_name = "10";
+            printf("Hardware version: 10\n");
+        break;
+    
+        case VERSION_11:
+            hwver_name = "11";
+            printf("Hardware version: 11\n");
+        break;
+    
+        case VERSION_FF:
+            hwver_name = "FF";
+            printf("Hardware version: FF (both floating)\n");
+        break;
+    
+        case VERSION_0F:
+            hwver_name = "0F";
+            printf("Hardware version: 0F (A low, B floating)\n");
+        break;
+    
+        case VERSION_1F:
+            hwver_name = "1F";
+            printf("Hardware version: 1F (A high, B floating)\n");
+        break;
+    
+        case VERSION_F0:
+            hwver_name = "F0";
+            printf("Hardware version: F0 (A floating, B low)\n");
+        break;
+    
+        case VERSION_F1:
+            hwver_name = "F1";
+            printf("Hardware version: F1 (A floating, B high)\n");
+        break;
+    
+        default:
+            hwver_name = "UK";
+            printf("Hardware version: Unknown\n");
+        break;
+    }
+
+    return 0;
+}
 
 int my_spi_write_blocking(const uint8_t *src, size_t len)
 {
@@ -683,12 +819,13 @@ void core1_main()
     gpio_put(EBOOT_MASTERDATAREADY_GPIO, false);
 
     unsigned int read_index = 0;
+    unsigned int total_packets_sended = 0;
     unsigned int g = 0;
+    unsigned int z = 90000000 + 1;
+    unsigned int last_sended = 0;
     while (1) 
     {
         static unsigned char line[32] = {0};
-        static unsigned int total_packets_sended = 0;
-        static unsigned int last_sended = 0;
         while (read_index != write_index) 
         {
             sprintf(line, "%s   \r\n", &(ringbuff[read_index++ % (RING_BUFF_MAX_ENTRIES - 1)][32]));
@@ -704,9 +841,18 @@ void core1_main()
         }
         if (last_sended != total_packets_sended && g++ > 20000000)
         {
+            z = 0;
             g = 0;
             last_sended = total_packets_sended;
-            sprintf(line, "packets sended to ESP: 0x%x", total_packets_sended);
+            sprintf(line, "HWv%s packets sended: 0x%x", hwver_name, total_packets_sended);
+            uart_write_blocking(uart0, line, strlen(line) + 1);
+            puts(line);
+        }
+        else if (z++ > 90000000)
+        {
+            z = 0;
+            g = 0;
+            sprintf(line, "HWv%s packets sended: 0x%x", hwver_name, total_packets_sended);
             uart_write_blocking(uart0, line, strlen(line) + 1);
             puts(line);
         }
@@ -771,21 +917,10 @@ void uart_pure_soft_puts(const char* str) {
 }
 
 int main(void) 
-{
-    stdio_init_all();
-
-    uart_init(UART_ID, UART_BAUD);
-    gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
-    gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
-    // UART 8N1: 1 start bit, 8 data bits, no parity bit, 1 stop bit
-    uart_set_hw_flow(UART_ID, false, false);
-    uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
-    uart_set_fifo_enabled(UART_ID, false);
-    uart_set_irq_enables(UART_ID, false, false);
-    uart_puts(UART_ID, "\r\nokhi started!\r\n");   
-
+{   
     if (wait_20 == 0x69699696)
     {
+        stdio_init_all();
         puts("\r\nwaiting 20 secs...\r\n");
         wait_20 = 0;
         sleep_ms(20000);
@@ -798,7 +933,27 @@ int main(void)
     gpio_init(EBOOT_MASTERDATAREADY_GPIO);
     gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_IN);
     gpio_init(ELOG_SLAVEREADY_GPIO);
-    gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);    
+    gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);   
+
+    init_ver(); 
+
+    // uart init must be called after init_ver(), because on devboard the same pins are used for UART
+    stdio_init_all();
+
+    /*
+    uart_init(UART_ID, UART_BAUD);
+    gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
+    gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
+    // UART 8N1: 1 start bit, 8 data bits, no parity bit, 1 stop bit
+    uart_set_hw_flow(UART_ID, false, false);
+    uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
+    uart_set_fifo_enabled(UART_ID, false);
+    uart_set_irq_enables(UART_ID, false, false);
+
+    uart_puts(UART_ID, "\r\nokhi started!\r\n"); 
+    */
+
+    printf("okhi started! Hardware v%s\r\n", hwver_name);
 
     uint32_t baud  __attribute__((unused)) = spi_init(SPI_ID, SPI_BAUD); 
     gpio_set_function(SPI_SCK_PIN, GPIO_FUNC_SPI);
@@ -810,6 +965,7 @@ int main(void)
     gpio_put(SPI_CS_PIN, true);
     // SPI mode 0: 8 data bits, MSB first, CPOL=0, CPHA=0
     spi_set_format(SPI_ID, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+    printf("Firmware version: v%s\r\n", FIRMV_STR);
     printf("SPI Mode 0: %.2f MHz (%d)\r\n", ((float)baud) / 1000000.0, baud);
 
     printf("flash free space addr: 0x%08x\r\n"

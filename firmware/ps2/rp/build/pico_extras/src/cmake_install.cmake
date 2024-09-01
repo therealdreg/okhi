@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/dreg/Documents/Pico-v1.5.1/pico-extras/src
+# Install script for directory: C:/Users/regue/Documents/Pico-v1.5.1/pico-extras/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,8 +39,8 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/Users/dreg/Desktop/tmp/okhi/github/okhi/firmware/ps2/rp/build/pico_extras/src/common/cmake_install.cmake")
-  include("C:/Users/dreg/Desktop/tmp/okhi/github/okhi/firmware/ps2/rp/build/pico_extras/src/rp2_common/cmake_install.cmake")
+  include("C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/ps2/rp/build/pico_extras/src/common/cmake_install.cmake")
+  include("C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/ps2/rp/build/pico_extras/src/rp2_common/cmake_install.cmake")
 
 endif()
 

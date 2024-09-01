@@ -9,8 +9,8 @@ project(pico_examples C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
-if (PICO_SDK_VERSION_STRING VERSION_LESS "1.3.0")
-    message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.3.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
+if (PICO_SDK_VERSION_STRING VERSION_LESS "1.5.1")
+    message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.5.1 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
 endif()
 
 set(PICO_EXAMPLES_PATH ${PROJECT_SOURCE_DIR})
@@ -35,7 +35,15 @@ add_executable(okhi
         )
 
 # pull in common dependencies
-target_link_libraries(okhi pico_stdlib pico_multicore hardware_uart hardware_pio hardware_spi hardware_flash hardware_sync)
+target_link_libraries(okhi 
+    pico_stdlib 
+    pico_multicore 
+    pico_stdio_uart
+    hardware_uart 
+    hardware_pio 
+    hardware_spi 
+    hardware_flash 
+    hardware_sync)
 
 pico_generate_pio_header(okhi ${CMAKE_CURRENT_LIST_DIR}/okhi.pio)
 
@@ -56,6 +64,7 @@ target_compile_definitions(okhi PRIVATE
     PICO_DEFAULT_UART=1
 	PICO_DEFAULT_UART_TX_PIN=4
 	PICO_DEFAULT_UART_RX_PIN=5
+    PICO_DEFAULT_UART_BAUD_RATE=921600
     PICO_FLASH_SIZE_BYTES=16777216
 	)
 
