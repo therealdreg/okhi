@@ -1,0 +1,82 @@
+Performing C SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: C:/Users/dreg/Desktop/okhi/stuff/espcode/.pio/build/esp32-c2-devkitm-1/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Users/dreg/.platformio/packages/tool-ninja/ninja.exe cmTC_4fcd4 && [1/2] Building C object CMakeFiles/cmTC_4fcd4.dir/src.c.obj
+[2/2] Linking C executable cmTC_4fcd4
+FAILED: cmTC_4fcd4 
+cmd.exe /C "cd . && C:\Users\dreg\.platformio\packages\toolchain-riscv32-esp\bin\riscv32-esp-elf-gcc.exe -march=rv32imc_zicsr_zifencei -nostartfiles -march=rv32imc_zicsr_zifencei --specs=nosys.specs CMakeFiles/cmTC_4fcd4.dir/src.c.obj -o cmTC_4fcd4   && cd ."
+c:/users/dreg/.platformio/packages/toolchain-riscv32-esp/bin/../lib/gcc/riscv32-esp-elf/12.2.0/../../../../riscv32-esp-elf/bin/ld.exe: CMakeFiles/cmTC_4fcd4.dir/src.c.obj: in function `main':
+src.c:(.text+0x4c): warning: pthread_cancel is not implemented and will always fail
+c:/users/dreg/.platformio/packages/toolchain-riscv32-esp/bin/../lib/gcc/riscv32-esp-elf/12.2.0/../../../../riscv32-esp-elf/bin/ld.exe: src.c:(.text+0x30): warning: pthread_create is not implemented and will always fail
+c:/users/dreg/.platformio/packages/toolchain-riscv32-esp/bin/../lib/gcc/riscv32-esp-elf/12.2.0/../../../../riscv32-esp-elf/bin/ld.exe: src.c:(.text+0x3e): warning: pthread_detach is not implemented and will always fail
+c:/users/dreg/.platformio/packages/toolchain-riscv32-esp/bin/../lib/gcc/riscv32-esp-elf/12.2.0/../../../../riscv32-esp-elf/bin/ld.exe: src.c:(.text+0x74): warning: pthread_exit is not implemented and will always fail
+c:/users/dreg/.platformio/packages/toolchain-riscv32-esp/bin/../lib/gcc/riscv32-esp-elf/12.2.0/../../../../riscv32-esp-elf/bin/ld.exe: src.c:(.text+0x5c): warning: pthread_join is not implemented and will always fail
+c:/users/dreg/.platformio/packages/toolchain-riscv32-esp/bin/../lib/gcc/riscv32-esp-elf/12.2.0/../../../../riscv32-esp-elf/bin/ld.exe: warning: cannot find entry symbol _start; defaulting to 0000000000010074
+c:/users/dreg/.platformio/packages/toolchain-riscv32-esp/bin/../lib/gcc/riscv32-esp-elf/12.2.0/../../../../riscv32-esp-elf/bin/ld.exe: src.c:(.text+0x50): undefined reference to `pthread_atfork'
+collect2.exe: error: ld returned 1 exit status
+ninja: build stopped: subcommand failed.
+
+
+Source file was:
+#include <pthread.h>
+
+static void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_cancel(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: C:/Users/dreg/Desktop/okhi/stuff/espcode/.pio/build/esp32-c2-devkitm-1/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Users/dreg/.platformio/packages/tool-ninja/ninja.exe cmTC_0b638 && [1/2] Building C object CMakeFiles/cmTC_0b638.dir/CheckFunctionExists.c.obj
+[2/2] Linking C executable cmTC_0b638
+FAILED: cmTC_0b638 
+cmd.exe /C "cd . && C:\Users\dreg\.platformio\packages\toolchain-riscv32-esp\bin\riscv32-esp-elf-gcc.exe -march=rv32imc_zicsr_zifencei  -DCHECK_FUNCTION_EXISTS=pthread_create -nostartfiles -march=rv32imc_zicsr_zifencei --specs=nosys.specs CMakeFiles/cmTC_0b638.dir/CheckFunctionExists.c.obj -o cmTC_0b638  -lpthreads && cd ."
+c:/users/dreg/.platformio/packages/toolchain-riscv32-esp/bin/../lib/gcc/riscv32-esp-elf/12.2.0/../../../../riscv32-esp-elf/bin/ld.exe: cannot find -lpthreads: No such file or directory
+c:/users/dreg/.platformio/packages/toolchain-riscv32-esp/bin/../lib/gcc/riscv32-esp-elf/12.2.0/../../../../riscv32-esp-elf/bin/ld.exe: CMakeFiles/cmTC_0b638.dir/CheckFunctionExists.c.obj: in function `main':
+CheckFunctionExists.c:(.text+0x10): warning: pthread_create is not implemented and will always fail
+collect2.exe: error: ld returned 1 exit status
+ninja: build stopped: subcommand failed.
+
+
+
+Determining if the function pthread_create exists in the pthread failed with the following output:
+Change Dir: C:/Users/dreg/Desktop/okhi/stuff/espcode/.pio/build/esp32-c2-devkitm-1/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Users/dreg/.platformio/packages/tool-ninja/ninja.exe cmTC_34513 && [1/2] Building C object CMakeFiles/cmTC_34513.dir/CheckFunctionExists.c.obj
+[2/2] Linking C executable cmTC_34513
+FAILED: cmTC_34513 
+cmd.exe /C "cd . && C:\Users\dreg\.platformio\packages\toolchain-riscv32-esp\bin\riscv32-esp-elf-gcc.exe -march=rv32imc_zicsr_zifencei  -DCHECK_FUNCTION_EXISTS=pthread_create -nostartfiles -march=rv32imc_zicsr_zifencei --specs=nosys.specs CMakeFiles/cmTC_34513.dir/CheckFunctionExists.c.obj -o cmTC_34513  -lpthread && cd ."
+c:/users/dreg/.platformio/packages/toolchain-riscv32-esp/bin/../lib/gcc/riscv32-esp-elf/12.2.0/../../../../riscv32-esp-elf/bin/ld.exe: cannot find -lpthread: No such file or directory
+c:/users/dreg/.platformio/packages/toolchain-riscv32-esp/bin/../lib/gcc/riscv32-esp-elf/12.2.0/../../../../riscv32-esp-elf/bin/ld.exe: CMakeFiles/cmTC_34513.dir/CheckFunctionExists.c.obj: in function `main':
+CheckFunctionExists.c:(.text+0x10): warning: pthread_create is not implemented and will always fail
+collect2.exe: error: ld returned 1 exit status
+ninja: build stopped: subcommand failed.
+
+
+
+Determining if compiler accepts -pthread failed with the following output:
+Change Dir: C:/Users/dreg/Desktop/okhi/stuff/espcode/.pio/build/esp32-c2-devkitm-1/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Users/dreg/.platformio/packages/tool-ninja/ninja.exe cmTC_baee3 && [1/2] Building C object CMakeFiles/cmTC_baee3.dir/CheckForPthreads.c.obj
+[2/2] Linking C executable cmTC_baee3
+FAILED: cmTC_baee3 
+cmd.exe /C "cd . && C:\Users\dreg\.platformio\packages\toolchain-riscv32-esp\bin\riscv32-esp-elf-gcc.exe -march=rv32imc_zicsr_zifencei -nostartfiles -march=rv32imc_zicsr_zifencei --specs=nosys.specs CMakeFiles/cmTC_baee3.dir/CheckForPthreads.c.obj -o cmTC_baee3  -pthread && cd ."
+riscv32-esp-elf-gcc.exe: error: unrecognized command-line option '-pthread'
+ninja: build stopped: subcommand failed.
+
+
+

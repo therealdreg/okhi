@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "pico_extras/src/rp2_common",
+		"source" : "C:/Users/dreg/Documents/Pico-v1.5.1/pico-extras/src/rp2_common"
+	}
+}

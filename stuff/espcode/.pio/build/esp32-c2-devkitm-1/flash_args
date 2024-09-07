@@ -1,0 +1,4 @@
+--flash_mode dio --flash_freq 60m --flash_size detect
+0x0 bootloader/bootloader.bin
+0x10000 espidf-arduino-blink.bin
+0x8000 partition_table/partition-table.bin

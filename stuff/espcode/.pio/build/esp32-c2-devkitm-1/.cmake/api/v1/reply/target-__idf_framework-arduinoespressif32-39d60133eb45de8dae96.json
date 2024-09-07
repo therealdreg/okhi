@@ -1,0 +1,2620 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "esp-idf/framework-arduinoespressif32/libframework-arduinoespressif32.a"
+		}
+	],
+	"backtrace" : 2,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"idf_component_register",
+			"set_property",
+			"__component_set_dependencies",
+			"__component_set_all_dependencies",
+			"add_compile_options",
+			"add_c_compile_options",
+			"target_compile_options",
+			"add_compile_definitions",
+			"include_directories",
+			"target_include_directories",
+			"__component_add_include_dirs",
+			"add_cxx_compile_options"
+		],
+		"files" : 
+		[
+			"C:/Users/dreg/.platformio/packages/framework-espidf/tools/cmake/component.cmake",
+			"C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/CMakeLists.txt",
+			"C:/Users/dreg/.platformio/packages/framework-espidf/tools/cmake/utilities.cmake"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 211,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 479,
+				"parent" : 1
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 513,
+				"parent" : 1
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 357,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 336,
+				"parent" : 4
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 336,
+				"parent" : 4
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 336,
+				"parent" : 4
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 336,
+				"parent" : 4
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 336,
+				"parent" : 4
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 464,
+				"parent" : 1
+			},
+			{
+				"command" : 6,
+				"file" : 0,
+				"line" : 466,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 2,
+				"line" : 281,
+				"parent" : 11
+			},
+			{
+				"command" : 7,
+				"file" : 1,
+				"line" : 221,
+				"parent" : 0
+			},
+			{
+				"command" : 8,
+				"file" : 0,
+				"line" : 465,
+				"parent" : 1
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 354,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 339,
+				"parent" : 15
+			},
+			{
+				"command" : 9,
+				"file" : 0,
+				"line" : 463,
+				"parent" : 1
+			},
+			{
+				"command" : 11,
+				"file" : 0,
+				"line" : 481,
+				"parent" : 1
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 18
+			},
+			{
+				"command" : 11,
+				"file" : 0,
+				"line" : 482,
+				"parent" : 1
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 315,
+				"parent" : 45
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 339,
+				"parent" : 15
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 339,
+				"parent" : 15
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 339,
+				"parent" : 15
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 339,
+				"parent" : 15
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 339,
+				"parent" : 15
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 339,
+				"parent" : 15
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 336,
+				"parent" : 4
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 336,
+				"parent" : 4
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 336,
+				"parent" : 4
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 336,
+				"parent" : 4
+			},
+			{
+				"command" : 12,
+				"file" : 0,
+				"line" : 467,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 2,
+				"line" : 270,
+				"parent" : 57
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-march=rv32imc_zicsr_zifencei "
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-ffunction-sections"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-fdata-sections"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wall"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Werror=all"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wno-error=unused-function"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wno-error=unused-variable"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wno-error=unused-but-set-variable"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wno-error=deprecated-declarations"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wextra"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wno-unused-parameter"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wno-sign-compare"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wno-enum-conversion"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-gdwarf-4"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-ggdb"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-nostartfiles"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Os"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-freorder-blocks"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-fmacro-prefix-map=C:/Users/dreg/Desktop/okhi/stuff/espcode=."
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-fmacro-prefix-map=C:/Users/dreg/.platformio/packages/framework-espidf=/IDF"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-fstrict-volatile-bitfields"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-fno-jump-tables"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-fno-tree-switch-conversion"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-DconfigENABLE_FREERTOS_DEBUG_OCDAWARE=1"
+				},
+				{
+					"backtrace" : 58,
+					"fragment" : "-std=gnu++2b"
+				},
+				{
+					"backtrace" : 58,
+					"fragment" : "-fno-exceptions"
+				},
+				{
+					"backtrace" : 58,
+					"fragment" : "-fno-rtti"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DARDUINO=10812"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DARDUINO_ESP32C2_DEV"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DARDUINO_ARCH_ESP32"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DARDUINO_BOARD=\\\"ESP32C2_DEV\\\""
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DARDUINO_VARIANT=\\\"esp32c2\\\""
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DESP32"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 14,
+					"define" : "ESP_PLATFORM"
+				},
+				{
+					"backtrace" : 14,
+					"define" : "IDF_VER=\"5.1.4.240529\""
+				},
+				{
+					"backtrace" : 16,
+					"define" : "MBEDTLS_CONFIG_FILE=\"mbedtls/esp_config.h\""
+				},
+				{
+					"backtrace" : 2,
+					"define" : "SOC_MMU_PAGE_SIZE=CONFIG_MMU_PAGE_SIZE"
+				},
+				{
+					"backtrace" : 14,
+					"define" : "_GNU_SOURCE"
+				},
+				{
+					"backtrace" : 14,
+					"define" : "_POSIX_READER_WRITER_LOCKS"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 17,
+					"path" : "C:/Users/dreg/Desktop/okhi/stuff/espcode/.pio/build/esp32-c2-devkitm-1/config"
+				},
+				{
+					"backtrace" : 19,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/variants/esp32c2"
+				},
+				{
+					"backtrace" : 20,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32"
+				},
+				{
+					"backtrace" : 21,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src"
+				},
+				{
+					"backtrace" : 22,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src"
+				},
+				{
+					"backtrace" : 23,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/DNSServer/src"
+				},
+				{
+					"backtrace" : 24,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/EEPROM/src"
+				},
+				{
+					"backtrace" : 25,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/ESPmDNS/src"
+				},
+				{
+					"backtrace" : 26,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Ethernet/src"
+				},
+				{
+					"backtrace" : 27,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/FFat/src"
+				},
+				{
+					"backtrace" : 28,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/FS/src"
+				},
+				{
+					"backtrace" : 29,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/HTTPClient/src"
+				},
+				{
+					"backtrace" : 30,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/HTTPUpdate/src"
+				},
+				{
+					"backtrace" : 31,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/LittleFS/src"
+				},
+				{
+					"backtrace" : 32,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/NetBIOS/src"
+				},
+				{
+					"backtrace" : 33,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Network/src"
+				},
+				{
+					"backtrace" : 34,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/PPP/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Preferences/src"
+				},
+				{
+					"backtrace" : 36,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/SD_MMC/src"
+				},
+				{
+					"backtrace" : 37,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/SD/src"
+				},
+				{
+					"backtrace" : 38,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src"
+				},
+				{
+					"backtrace" : 39,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Ticker/src"
+				},
+				{
+					"backtrace" : 40,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Update/src"
+				},
+				{
+					"backtrace" : 41,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/USB/src"
+				},
+				{
+					"backtrace" : 42,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src"
+				},
+				{
+					"backtrace" : 43,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src"
+				},
+				{
+					"backtrace" : 44,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src"
+				},
+				{
+					"backtrace" : 46,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/libb64"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/newlib/platform_include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/freertos/FreeRTOS-Kernel/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/freertos/FreeRTOS-Kernel/portable/riscv/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/freertos/esp_additions/include/freertos"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/freertos/esp_additions/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/freertos/esp_additions/arch/riscv/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_hw_support/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_hw_support/include/soc"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_hw_support/include/soc/esp32c2"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/heap/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/log/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/soc/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/soc/esp32c2"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/soc/esp32c2/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/hal/esp32c2/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/hal/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/hal/platform_port/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_rom/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_rom/include/esp32c2"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_rom/esp32c2"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_common/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_system/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_system/port/soc"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_system/port/include/riscv"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_system/port/include/private"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/riscv/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/include/apps"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/include/apps/sntp"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/lwip/src/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/port/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/port/freertos/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/port/esp32xx/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/port/esp32xx/include/arch"
+				},
+				{
+					"backtrace" : 47,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/spi_flash/include"
+				},
+				{
+					"backtrace" : 48,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_partition/include"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/port/include"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/include"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/library"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/esp_crt_bundle/include"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/3rdparty/everest/include"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/3rdparty/p256-m"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/3rdparty/p256-m/p256-m"
+				},
+				{
+					"backtrace" : 49,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/wpa_supplicant/include"
+				},
+				{
+					"backtrace" : 49,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/wpa_supplicant/port/include"
+				},
+				{
+					"backtrace" : 49,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/wpa_supplicant/esp_supplicant/include"
+				},
+				{
+					"backtrace" : 50,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_adc/include"
+				},
+				{
+					"backtrace" : 50,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_adc/interface"
+				},
+				{
+					"backtrace" : 50,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_adc/esp32c2/include"
+				},
+				{
+					"backtrace" : 50,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_adc/deprecated/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_eth/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_event/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/deprecated"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/analog_comparator/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/dac/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/gpio/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/gptimer/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/i2c/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/i2s/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/ledc/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/mcpwm/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/parlio/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/pcnt/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/rmt/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/sdio_slave/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/sdmmc/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/sigma_delta/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/spi/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/temperature_sensor/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/touch_sensor/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/twai/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/uart/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/usb_serial_jtag/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_pm/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_ringbuf/include"
+				},
+				{
+					"backtrace" : 52,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/http_parser"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/fatfs/diskio"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/fatfs/vfs"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/fatfs/src"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/wear_levelling/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/sdmmc/include"
+				},
+				{
+					"backtrace" : 53,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/nvs_flash/include"
+				},
+				{
+					"backtrace" : 54,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/app_update/include"
+				},
+				{
+					"backtrace" : 54,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/bootloader_support/include"
+				},
+				{
+					"backtrace" : 54,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/bootloader_support/bootloader_flash/include"
+				},
+				{
+					"backtrace" : 54,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_app_format/include"
+				},
+				{
+					"backtrace" : 55,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_timer/include"
+				},
+				{
+					"backtrace" : 55,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_wifi/include"
+				},
+				{
+					"backtrace" : 55,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_wifi/wifi_apps/include"
+				},
+				{
+					"backtrace" : 55,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_phy/include"
+				},
+				{
+					"backtrace" : 55,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_phy/esp32c2/include"
+				},
+				{
+					"backtrace" : 55,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_netif/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_hid/include"
+				},
+				{
+					"backtrace" : 56,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_https_ota/include"
+				},
+				{
+					"backtrace" : 56,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_http_client/include"
+				},
+				{
+					"backtrace" : 8,
+					"path" : "C:/Users/dreg/Desktop/okhi/stuff/espcode/managed_components/espressif__esp_modem/include"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "C:/Users/dreg/Desktop/okhi/stuff/espcode/managed_components/espressif__mdns/include"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/console"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/vfs/include"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/Desktop/okhi/stuff/espcode/managed_components/joltwallet__littlefs/include"
+				}
+			],
+			"language" : "CXX",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				23,
+				24,
+				25,
+				26,
+				27,
+				30,
+				31,
+				32,
+				33,
+				34,
+				36,
+				37,
+				38,
+				39,
+				40,
+				41,
+				42,
+				43,
+				47,
+				48,
+				49,
+				50,
+				51,
+				52,
+				53,
+				54,
+				55,
+				56,
+				57,
+				58,
+				59,
+				60,
+				61,
+				62,
+				63,
+				64,
+				65,
+				66,
+				67,
+				68,
+				70,
+				71,
+				72,
+				73,
+				75,
+				76,
+				77,
+				78,
+				79,
+				80,
+				81,
+				82,
+				83,
+				84,
+				85,
+				86,
+				87,
+				88,
+				89,
+				90,
+				91,
+				92,
+				93,
+				94,
+				95,
+				96,
+				97,
+				98,
+				99
+			]
+		},
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-march=rv32imc_zicsr_zifencei "
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-ffunction-sections"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-fdata-sections"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wall"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Werror=all"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wno-error=unused-function"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wno-error=unused-variable"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wno-error=unused-but-set-variable"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wno-error=deprecated-declarations"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wextra"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wno-unused-parameter"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wno-sign-compare"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Wno-enum-conversion"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-gdwarf-4"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-ggdb"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-nostartfiles"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-Os"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-freorder-blocks"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-fmacro-prefix-map=C:/Users/dreg/Desktop/okhi/stuff/espcode=."
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-fmacro-prefix-map=C:/Users/dreg/.platformio/packages/framework-espidf=/IDF"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-fstrict-volatile-bitfields"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-fno-jump-tables"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-fno-tree-switch-conversion"
+				},
+				{
+					"backtrace" : 10,
+					"fragment" : "-DconfigENABLE_FREERTOS_DEBUG_OCDAWARE=1"
+				},
+				{
+					"backtrace" : 12,
+					"fragment" : "-std=gnu17"
+				},
+				{
+					"backtrace" : 12,
+					"fragment" : "-Wno-old-style-declaration"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DARDUINO=10812"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DARDUINO_ESP32C2_DEV"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DARDUINO_ARCH_ESP32"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DARDUINO_BOARD=\\\"ESP32C2_DEV\\\""
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DARDUINO_VARIANT=\\\"esp32c2\\\""
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DESP32"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 14,
+					"define" : "ESP_PLATFORM"
+				},
+				{
+					"backtrace" : 14,
+					"define" : "IDF_VER=\"5.1.4.240529\""
+				},
+				{
+					"backtrace" : 16,
+					"define" : "MBEDTLS_CONFIG_FILE=\"mbedtls/esp_config.h\""
+				},
+				{
+					"backtrace" : 2,
+					"define" : "SOC_MMU_PAGE_SIZE=CONFIG_MMU_PAGE_SIZE"
+				},
+				{
+					"backtrace" : 14,
+					"define" : "_GNU_SOURCE"
+				},
+				{
+					"backtrace" : 14,
+					"define" : "_POSIX_READER_WRITER_LOCKS"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 17,
+					"path" : "C:/Users/dreg/Desktop/okhi/stuff/espcode/.pio/build/esp32-c2-devkitm-1/config"
+				},
+				{
+					"backtrace" : 19,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/variants/esp32c2"
+				},
+				{
+					"backtrace" : 20,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32"
+				},
+				{
+					"backtrace" : 21,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src"
+				},
+				{
+					"backtrace" : 22,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src"
+				},
+				{
+					"backtrace" : 23,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/DNSServer/src"
+				},
+				{
+					"backtrace" : 24,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/EEPROM/src"
+				},
+				{
+					"backtrace" : 25,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/ESPmDNS/src"
+				},
+				{
+					"backtrace" : 26,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Ethernet/src"
+				},
+				{
+					"backtrace" : 27,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/FFat/src"
+				},
+				{
+					"backtrace" : 28,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/FS/src"
+				},
+				{
+					"backtrace" : 29,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/HTTPClient/src"
+				},
+				{
+					"backtrace" : 30,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/HTTPUpdate/src"
+				},
+				{
+					"backtrace" : 31,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/LittleFS/src"
+				},
+				{
+					"backtrace" : 32,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/NetBIOS/src"
+				},
+				{
+					"backtrace" : 33,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Network/src"
+				},
+				{
+					"backtrace" : 34,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/PPP/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Preferences/src"
+				},
+				{
+					"backtrace" : 36,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/SD_MMC/src"
+				},
+				{
+					"backtrace" : 37,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/SD/src"
+				},
+				{
+					"backtrace" : 38,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src"
+				},
+				{
+					"backtrace" : 39,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Ticker/src"
+				},
+				{
+					"backtrace" : 40,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Update/src"
+				},
+				{
+					"backtrace" : 41,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/USB/src"
+				},
+				{
+					"backtrace" : 42,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src"
+				},
+				{
+					"backtrace" : 43,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src"
+				},
+				{
+					"backtrace" : 44,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src"
+				},
+				{
+					"backtrace" : 46,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/libb64"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/newlib/platform_include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/freertos/FreeRTOS-Kernel/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/freertos/FreeRTOS-Kernel/portable/riscv/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/freertos/esp_additions/include/freertos"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/freertos/esp_additions/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/freertos/esp_additions/arch/riscv/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_hw_support/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_hw_support/include/soc"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_hw_support/include/soc/esp32c2"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/heap/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/log/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/soc/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/soc/esp32c2"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/soc/esp32c2/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/hal/esp32c2/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/hal/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/hal/platform_port/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_rom/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_rom/include/esp32c2"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_rom/esp32c2"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_common/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_system/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_system/port/soc"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_system/port/include/riscv"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_system/port/include/private"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/riscv/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/include/apps"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/include/apps/sntp"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/lwip/src/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/port/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/port/freertos/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/port/esp32xx/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/lwip/port/esp32xx/include/arch"
+				},
+				{
+					"backtrace" : 47,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/spi_flash/include"
+				},
+				{
+					"backtrace" : 48,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_partition/include"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/port/include"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/include"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/library"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/esp_crt_bundle/include"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/3rdparty/everest/include"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/3rdparty/p256-m"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/3rdparty/p256-m/p256-m"
+				},
+				{
+					"backtrace" : 49,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/wpa_supplicant/include"
+				},
+				{
+					"backtrace" : 49,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/wpa_supplicant/port/include"
+				},
+				{
+					"backtrace" : 49,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/wpa_supplicant/esp_supplicant/include"
+				},
+				{
+					"backtrace" : 50,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_adc/include"
+				},
+				{
+					"backtrace" : 50,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_adc/interface"
+				},
+				{
+					"backtrace" : 50,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_adc/esp32c2/include"
+				},
+				{
+					"backtrace" : 50,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_adc/deprecated/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_eth/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_event/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/deprecated"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/analog_comparator/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/dac/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/gpio/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/gptimer/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/i2c/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/i2s/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/ledc/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/mcpwm/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/parlio/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/pcnt/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/rmt/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/sdio_slave/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/sdmmc/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/sigma_delta/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/spi/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/temperature_sensor/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/touch_sensor/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/twai/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/uart/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/driver/usb_serial_jtag/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_pm/include"
+				},
+				{
+					"backtrace" : 51,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_ringbuf/include"
+				},
+				{
+					"backtrace" : 52,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/http_parser"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/fatfs/diskio"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/fatfs/vfs"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/fatfs/src"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/wear_levelling/include"
+				},
+				{
+					"backtrace" : 7,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/sdmmc/include"
+				},
+				{
+					"backtrace" : 53,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/nvs_flash/include"
+				},
+				{
+					"backtrace" : 54,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/app_update/include"
+				},
+				{
+					"backtrace" : 54,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/bootloader_support/include"
+				},
+				{
+					"backtrace" : 54,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/bootloader_support/bootloader_flash/include"
+				},
+				{
+					"backtrace" : 54,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_app_format/include"
+				},
+				{
+					"backtrace" : 55,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_timer/include"
+				},
+				{
+					"backtrace" : 55,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_wifi/include"
+				},
+				{
+					"backtrace" : 55,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_wifi/wifi_apps/include"
+				},
+				{
+					"backtrace" : 55,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_phy/include"
+				},
+				{
+					"backtrace" : 55,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_phy/esp32c2/include"
+				},
+				{
+					"backtrace" : 55,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_netif/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_hid/include"
+				},
+				{
+					"backtrace" : 56,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_https_ota/include"
+				},
+				{
+					"backtrace" : 56,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_http_client/include"
+				},
+				{
+					"backtrace" : 8,
+					"path" : "C:/Users/dreg/Desktop/okhi/stuff/espcode/managed_components/espressif__esp_modem/include"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "C:/Users/dreg/Desktop/okhi/stuff/espcode/managed_components/espressif__mdns/include"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/console"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/vfs/include"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/Desktop/okhi/stuff/espcode/managed_components/joltwallet__littlefs/include"
+				}
+			],
+			"language" : "C",
+			"sourceIndexes" : 
+			[
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22,
+				28,
+				29,
+				35,
+				44,
+				45,
+				46,
+				69,
+				74
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "__idf_riscv::@5eeb1a2ca709d020776e"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "__idf_console::@4311ed8d271cc0ee1422"
+		},
+		{
+			"backtrace" : 6,
+			"id" : "__idf_esp_hid::@15df40e16a5d8775dd9b"
+		},
+		{
+			"backtrace" : 7,
+			"id" : "__idf_wear_levelling::@cb21b0d7c0815cff11c6"
+		},
+		{
+			"backtrace" : 7,
+			"id" : "__idf_sdmmc::@89ed5bca1750ffbc7db6"
+		},
+		{
+			"backtrace" : 7,
+			"id" : "__idf_fatfs::@75ac1d9b25dacc8cc9e7"
+		},
+		{
+			"backtrace" : 8,
+			"id" : "__idf_espressif__esp_modem::@e71879e93e1b868b600d"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "__idf_espressif__mdns::@d92204a997f34ad8e688"
+		},
+		{
+			"backtrace" : 9,
+			"id" : "__idf_joltwallet__littlefs::@76002c3da0fd4d8a082e"
+		}
+	],
+	"id" : "__idf_framework-arduinoespressif32::@bebaffb9e8b6c01100ee",
+	"name" : "__idf_framework-arduinoespressif32",
+	"nameOnDisk" : "libframework-arduinoespressif32.a",
+	"paths" : 
+	{
+		"build" : "esp-idf/framework-arduinoespressif32",
+		"source" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22,
+				23,
+				24,
+				25,
+				26,
+				27,
+				28,
+				29,
+				30,
+				31,
+				32,
+				33,
+				34,
+				35,
+				36,
+				37,
+				38,
+				39,
+				40,
+				41,
+				42,
+				43,
+				44,
+				45,
+				46,
+				47,
+				48,
+				49,
+				50,
+				51,
+				52,
+				53,
+				54,
+				55,
+				56,
+				57,
+				58,
+				59,
+				60,
+				61,
+				62,
+				63,
+				64,
+				65,
+				66,
+				67,
+				68,
+				69,
+				70,
+				71,
+				72,
+				73,
+				74,
+				75,
+				76,
+				77,
+				78,
+				79,
+				80,
+				81,
+				82,
+				83,
+				84,
+				85,
+				86,
+				87,
+				88,
+				89,
+				90,
+				91,
+				92,
+				93,
+				94,
+				95,
+				96,
+				97,
+				98,
+				99
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/base64.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/cbuf.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-adc.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-bt.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-cpu.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-dac.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-gpio.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-i2c.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-i2c-slave.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-ledc.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-matrix.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-misc.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-periman.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-psram.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-rgb-led.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-sigmadelta.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-spi.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-time.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-timer.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-tinyusb.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-touch.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-uart.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-rmt.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/Esp.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/FunctionalInterrupt.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/HardwareSerial.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/HEXBuilder.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/IPAddress.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/libb64/cdecode.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/libb64/cencode.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/MacAddress.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/main.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/MD5Builder.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/Print.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/SHA1Builder.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/stdlib_noniso.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/Stream.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/StreamString.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/Tone.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/HWCDC.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/USB.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/USBCDC.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/USBMSC.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/FirmwareMSC.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/firmware_msc_fat.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/wiring_pulse.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/wiring_shift.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/WMath.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/cores/esp32/WString.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src/ArduinoOTA.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src/AsyncUDP.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/DNSServer/src/DNSServer.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/EEPROM/src/EEPROM.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/ESPmDNS/src/ESPmDNS.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Ethernet/src/ETH.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/FFat/src/FFat.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/FS/src/FS.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/FS/src/vfs_api.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/HTTPClient/src/HTTPClient.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/HTTPUpdate/src/HTTPUpdate.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/LittleFS/src/LittleFS.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/NetBIOS/src/NetBIOS.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Network/src/NetworkInterface.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Network/src/NetworkEvents.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Network/src/NetworkManager.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Network/src/NetworkClient.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Network/src/NetworkServer.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Network/src/NetworkUdp.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/PPP/src/PPP.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/PPP/src/ppp.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Preferences/src/Preferences.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/SD_MMC/src/SD_MMC.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/SD/src/SD.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/SD/src/sd_diskio.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 1,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/SD/src/sd_diskio_crc.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src/SPI.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Ticker/src/Ticker.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Update/src/Updater.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Update/src/HttpsOTAUpdate.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/USB/src/USBHID.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/USB/src/USBMIDI.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/USB/src/USBHIDMouse.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/USB/src/USBHIDKeyboard.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/USB/src/USBHIDGamepad.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/USB/src/USBHIDConsumerControl.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/USB/src/USBHIDSystemControl.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/USB/src/USBHIDVendor.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/USB/src/USBVendor.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src/WebServer.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src/Parsing.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src/detail/mimetable.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src/WiFiAP.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src/WiFi.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src/WiFiGeneric.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src/WiFiMulti.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src/WiFiScan.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src/WiFiSTA.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src/STA.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src/AP.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src/Wire.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}

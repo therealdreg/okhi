@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/idf_test",
+		"source" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/idf_test"
+	}
+}

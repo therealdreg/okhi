@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulación de Parser de Eventos de Teclado</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Parser de Eventos de Teclado</h1>
+    <button onclick="simulateData()">Simular Recepción de Datos</button>
+    <script>
+        class KeyboardEventParser {
+            constructor() {
+                this.buffer = "";
+                this.releaseBuffer = ""; // Buffer especial para manejar liberaciones pendientes
+            }
+
+            processData(data) {
+                // Añade nuevos datos al buffer
+                this.buffer += data;
+
+                // Procesa cada mensaje completo
+                let pos;
+                while ((pos = this.buffer.indexOf(';')) !== -1) {
+                    const rawMessage = this.buffer.slice(0, pos).trim();
+                    this.buffer = this.buffer.slice(pos + 1); // actualiza el buffer eliminando el mensaje procesado
+                    if (rawMessage.startsWith('D:0xF0')) {
+                        // Si es un inicio de despulsación, guarda temporalmente y espera el próximo código
+                        this.releaseBuffer = rawMessage;
+                    } else if (this.releaseBuffer && rawMessage.length > 0) {
+                        // Procesa una liberación con el código de tecla que acaba de llegar
+                        this.parseReleaseMessage(this.releaseBuffer, rawMessage);
+                        this.releaseBuffer = ""; // Limpia el buffer de liberación
+                    } else if (rawMessage.length > 0) {
+                        this.parseMessage(rawMessage);
+                    }
+                }
+            }
+
+            parseMessage(rawMessage) {
+                const parts = rawMessage.split(' ');
+                if (parts.length === 2) {
+                    const keyCodeHex = parts[0].split(':')[1];
+                    const timestampHex = parts[1].split(':')[1];
+
+                    const keyCode = parseInt(keyCodeHex, 16);
+                    const timestamp = parseInt(timestampHex, 16);
+
+                    console.log(`Tecla pulsada: ${keyCode} (0x${keyCodeHex}), Timestamp: ${timestamp} (0x${timestampHex})`);
+                }
+            }
+
+            parseReleaseMessage(releaseMsg, keyCodeMsg) {
+                const releaseParts = releaseMsg.split(' ');
+                const keyCodeParts = keyCodeMsg.split(' ');
+                
+                const releaseTimeHex = releaseParts[1].split(':')[1];
+                const keyCodeHex = keyCodeParts[0].split(':')[1];
+                const releaseTime = parseInt(releaseTimeHex, 16);
+                const keyCode = parseInt(keyCodeHex, 16);
+
+                console.log(`Tecla liberada: ${keyCode} (0x${keyCodeHex}), Timestamp: ${releaseTime} (0x${releaseTimeHex})`);
+            }
+        }
+
+        const parser = new KeyboardEventParser();
+
+        function simulateData() {
+            // Simulación de datos que llegan en fragmentos
+            parser.processData("D:0x33 t:0x0000E5B8 ;");
+            setTimeout(() => {
+                parser.processData("D:0xF0 t:0x0000E5F0 ;");
+                setTimeout(() => {
+                    parser.processData("D:0x33 t:0x0000E5F4 ;");
+                }, 1000);
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

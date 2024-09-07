@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/spi_flash",
+		"source" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/spi_flash"
+	}
+}

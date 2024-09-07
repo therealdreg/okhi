@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/mbedtls/mbedtls/3rdparty",
+		"source" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/3rdparty"
+	}
+}

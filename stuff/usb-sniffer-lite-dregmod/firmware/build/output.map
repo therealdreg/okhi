@@ -1,0 +1,648 @@
+Archive member included to satisfy reference by file (symbol)
+
+c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memcpy-stub.o)
+                              build/usb_cdc.o (memcpy)
+c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memset.o)
+                              build/usb.o (memset)
+c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-strlen-stub.o)
+                              build/usb_std.o (strlen)
+
+Discarded input sections
+
+ .text          0x00000000        0x0 build/main.o
+ .data          0x00000000        0x0 build/main.o
+ .bss           0x00000000        0x0 build/main.o
+ .text          0x00000000        0x0 build/utils.o
+ .data          0x00000000        0x0 build/utils.o
+ .bss           0x00000000        0x0 build/utils.o
+ .text.hw_divmod_s32
+                0x00000000       0x1c build/utils.o
+ .text          0x00000000        0x0 build/capture.o
+ .data          0x00000000        0x0 build/capture.o
+ .bss           0x00000000        0x0 build/capture.o
+ .text          0x00000000        0x0 build/display.o
+ .data          0x00000000        0x0 build/display.o
+ .bss           0x00000000        0x0 build/display.o
+ .text          0x00000000        0x0 build/usb.o
+ .data          0x00000000        0x0 build/usb.o
+ .bss           0x00000000        0x0 build/usb.o
+ .text.usb_attach
+                0x00000000       0x10 build/usb.o
+ .text.usb_detach
+                0x00000000       0x10 build/usb.o
+ .text          0x00000000        0x0 build/usb_std.o
+ .data          0x00000000        0x0 build/usb_std.o
+ .bss           0x00000000        0x0 build/usb_std.o
+ .text.usb_class_handle_request
+                0x00000000        0x4 build/usb_std.o
+ .text          0x00000000        0x0 build/usb_cdc.o
+ .data          0x00000000        0x0 build/usb_cdc.o
+ .bss           0x00000000        0x0 build/usb_cdc.o
+ .text.usb_cdc_set_state
+                0x00000000       0x14 build/usb_cdc.o
+ .text.usb_cdc_clear_state
+                0x00000000       0x14 build/usb_cdc.o
+ .text.usb_cdc_get_line_coding
+                0x00000000        0x8 build/usb_cdc.o
+ .text.usb_cdc_control_line_state_update
+                0x00000000        0x2 build/usb_cdc.o
+ .text          0x00000000        0x0 build/usb_descriptors.o
+ .data          0x00000000        0x0 build/usb_descriptors.o
+ .bss           0x00000000        0x0 build/usb_descriptors.o
+ .text          0x00000000        0x0 build/startup_rp2040.o
+ .data          0x00000000        0x0 build/startup_rp2040.o
+ .bss           0x00000000        0x0 build/startup_rp2040.o
+ .text          0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memcpy-stub.o)
+ .data          0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memcpy-stub.o)
+ .bss           0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memcpy-stub.o)
+ .text          0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memset.o)
+ .data          0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memset.o)
+ .bss           0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memset.o)
+ .text          0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-strlen-stub.o)
+ .data          0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-strlen-stub.o)
+ .bss           0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-strlen-stub.o)
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+boot             0x10000000         0x00000100         xr
+flash            0x10000100         0x001fff00         xr
+ram              0x20000000         0x00042000         xrw
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.boot           0x10000000      0x100
+ *(.boot.entry)
+ .boot.entry    0x10000000       0xe0 build/startup_rp2040.o
+                0x10000000                boot_entry
+ *(.boot*)
+                0x000000fc                . = 0xfc
+ *fill*         0x100000e0       0x1c 
+                0x100000fc        0x4 LONG 0xcccccccc
+
+.text           0x20000000     0x2678 load address 0x10000100
+                0x20000000                _text = .
+ *(.vectors)
+ .vectors       0x20000000       0xa8 build/startup_rp2040.o
+                0x20000000                vectors
+ *(.text*)
+ .text.send_buffer
+                0x200000a8       0x34 build/main.o
+ .text.usb_cdc_send_callback
+                0x200000dc        0xc build/main.o
+                0x200000dc                usb_cdc_send_callback
+ .text.usb_cdc_line_coding_updated
+                0x200000e8        0x2 build/main.o
+                0x200000e8                usb_cdc_line_coding_updated
+ *fill*         0x200000ea        0x2 
+ .text.usb_cdc_control_line_state_update
+                0x200000ec       0x3c build/main.o
+                0x200000ec                usb_cdc_control_line_state_update
+ .text.usb_cdc_recv_callback
+                0x20000128       0x48 build/main.o
+                0x20000128                usb_cdc_recv_callback
+ .text.usb_class_handle_request
+                0x20000170        0x8 build/main.o
+                0x20000170                usb_class_handle_request
+ .text.usb_configuration_callback
+                0x20000178        0x2 build/main.o
+                0x20000178                usb_configuration_callback
+ .text.set_error
+                0x2000017a       0x14 build/main.o
+                0x2000017a                set_error
+ *fill*         0x2000018e        0x2 
+ .text.startup.main
+                0x20000190      0x224 build/main.o
+                0x20000190                main
+ .text.hw_divmod_u32
+                0x200003b4       0x1c build/utils.o
+                0x200003b4                hw_divmod_u32
+ .text.format_hex
+                0x200003d0       0x28 build/utils.o
+                0x200003d0                format_hex
+ .text.format_dec
+                0x200003f8       0x64 build/utils.o
+                0x200003f8                format_dec
+ .text.poll_cmd
+                0x2000045c       0x10 build/capture.o
+ .text.handle_folding
+                0x2000046c       0x7c build/capture.o
+ .text.change_setting
+                0x200004e8       0x38 build/capture.o
+ .text.core1_main
+                0x20000520      0x730 build/capture.o
+ .text.capture_init
+                0x20000c50       0x68 build/capture.o
+                0x20000c50                capture_init
+ .text.capture_command
+                0x20000cb8        0xe build/capture.o
+                0x20000cb8                capture_command
+ .text.display_putc
+                0x20000cc6       0x10 build/display.o
+                0x20000cc6                display_putc
+ .text.display_puts
+                0x20000cd6       0x14 build/display.o
+                0x20000cd6                display_puts
+ *fill*         0x20000cea        0x2 
+ .text.print_handshake
+                0x20000cec       0x14 build/display.o
+ .text.display_puthex
+                0x20000d00       0x16 build/display.o
+                0x20000d00                display_puthex
+ *fill*         0x20000d16        0x2 
+ .text.print_in_out_setup
+                0x20000d18       0x3c build/display.o
+ .text.display_putdec
+                0x20000d54       0x16 build/display.o
+                0x20000d54                display_putdec
+ *fill*         0x20000d6a        0x2 
+ .text.print_data
+                0x20000d6c       0x94 build/display.o
+ .text.print_g_fold_count
+                0x20000e00       0x38 build/display.o
+ .text.display_value
+                0x20000e38       0x24 build/display.o
+                0x20000e38                display_value
+ .text.display_buffer
+                0x20000e5c      0x4a4 build/display.o
+                0x20000e5c                display_buffer
+ .text.usb_start_in_transfer
+                0x20001300       0x44 build/usb.o
+ .text.usb_start_out_transfer
+                0x20001344       0x40 build/usb.o
+ .text.usb_reset_endpoints
+                0x20001384       0x38 build/usb.o
+ .text.usb_hw_init
+                0x200013bc       0x68 build/usb.o
+                0x200013bc                usb_hw_init
+ .text.usb_configure_endpoint
+                0x20001424       0x88 build/usb.o
+                0x20001424                usb_configure_endpoint
+ .text.usb_endpoint_configured
+                0x200014ac       0x18 build/usb.o
+                0x200014ac                usb_endpoint_configured
+ .text.usb_endpoint_get_status
+                0x200014c4       0x1c build/usb.o
+                0x200014c4                usb_endpoint_get_status
+ .text.usb_endpoint_set_feature
+                0x200014e0       0x1c build/usb.o
+                0x200014e0                usb_endpoint_set_feature
+ .text.usb_endpoint_clear_feature
+                0x200014fc       0x38 build/usb.o
+                0x200014fc                usb_endpoint_clear_feature
+ .text.usb_set_address
+                0x20001534        0xc build/usb.o
+                0x20001534                usb_set_address
+ .text.usb_send
+                0x20001540       0x2c build/usb.o
+                0x20001540                usb_send
+ .text.usb_recv
+                0x2000156c       0x18 build/usb.o
+                0x2000156c                usb_recv
+ .text.usb_control_send_zlp
+                0x20001584       0x1c build/usb.o
+                0x20001584                usb_control_send_zlp
+ .text.usb_control_stall
+                0x200015a0       0x18 build/usb.o
+                0x200015a0                usb_control_stall
+ .text.usb_control_send
+                0x200015b8       0x58 build/usb.o
+                0x200015b8                usb_control_send
+ .text.usb_control_recv
+                0x20001610       0x14 build/usb.o
+                0x20001610                usb_control_recv
+ .text.usb_task
+                0x20001624       0xe8 build/usb.o
+                0x20001624                usb_task
+ .text.usb_init
+                0x2000170c       0x1c build/usb_std.o
+                0x2000170c                usb_init
+ .text.usb_set_callback
+                0x20001728        0xc build/usb_std.o
+                0x20001728                usb_set_callback
+ .text.usb_handle_standard_request
+                0x20001734      0x26c build/usb_std.o
+                0x20001734                usb_handle_standard_request
+ .text.usb_send_callback
+                0x200019a0       0x18 build/usb_std.o
+                0x200019a0                usb_send_callback
+ .text.usb_recv_callback
+                0x200019b8       0x18 build/usb_std.o
+                0x200019b8                usb_recv_callback
+ .text.usb_cdc_ep_recv_callback
+                0x200019d0        0x8 build/usb_cdc.o
+ .text.usb_cdc_ep_send_callback
+                0x200019d8        0x8 build/usb_cdc.o
+ .text.usb_cdc_set_line_coding_handler
+                0x200019e0       0x20 build/usb_cdc.o
+ .text.usb_cdc_send_state_notify
+                0x20001a00       0x38 build/usb_cdc.o
+ .text.usb_cdc_ep_comm_callback
+                0x20001a38       0x20 build/usb_cdc.o
+ .text.usb_cdc_init
+                0x20001a58       0x5c build/usb_cdc.o
+                0x20001a58                usb_cdc_init
+ .text.usb_cdc_send
+                0x20001ab4        0xe build/usb_cdc.o
+                0x20001ab4                usb_cdc_send
+ .text.usb_cdc_recv
+                0x20001ac2        0xe build/usb_cdc.o
+                0x20001ac2                usb_cdc_recv
+ .text.usb_cdc_send_break
+                0x20001ad0        0x2 build/usb_cdc.o
+                0x20001ad0                usb_cdc_send_break
+ *fill*         0x20001ad2        0x2 
+ .text.usb_cdc_handle_request
+                0x20001ad4       0x80 build/usb_cdc.o
+                0x20001ad4                usb_cdc_handle_request
+ .text.irq_handler_dummy
+                0x20001b54        0x2 build/startup_rp2040.o
+                0x20001b54                irq_handler_pend_sv
+                0x20001b54                irq_handler_sio_proc1
+                0x20001b54                irq_handler_pwm
+                0x20001b54                irq_handler_uart0
+                0x20001b54                irq_handler_dummy
+                0x20001b54                irq_handler_io_bank0
+                0x20001b54                irq_handler_adc_fifo
+                0x20001b54                irq_handler_timer_3
+                0x20001b54                irq_handler_timer_2
+                0x20001b54                irq_handler_i2c0
+                0x20001b54                irq_handler_timer_1
+                0x20001b54                irq_handler_dma_0
+                0x20001b54                irq_handler_usbctrl
+                0x20001b54                irq_handler_pio0_0
+                0x20001b54                irq_handler_spi0
+                0x20001b54                irq_handler_pio1_1
+                0x20001b54                irq_handler_nmi
+                0x20001b54                irq_handler_sio_proc0
+                0x20001b54                irq_handler_sv_call
+                0x20001b54                irq_handler_pio0_1
+                0x20001b54                irq_handler_i2c1
+                0x20001b54                irq_handler_dma_1
+                0x20001b54                irq_handler_clocks
+                0x20001b54                irq_handler_sys_tick
+                0x20001b54                irq_handler_xip
+                0x20001b54                irq_handler_uart1
+                0x20001b54                irq_handler_spi1
+                0x20001b54                irq_handler_hard_fault
+                0x20001b54                irq_handler_pio1_0
+                0x20001b54                irq_handler_rtc
+                0x20001b54                irq_handler_timer_0
+                0x20001b54                irq_handler_io_qspi
+ *fill*         0x20001b56        0x2 
+ .text.memcpy   0x20001b58       0xa4 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memcpy-stub.o)
+                0x20001b58                memcpy
+ .text.memset   0x20001bfc       0xa8 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memset.o)
+                0x20001bfc                memset
+ .text.strlen   0x20001ca4       0x5c c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-strlen-stub.o)
+                0x20001ca4                strlen
+ *(.rodata)
+ *(.rodata.*)
+ .rodata.main.str1.1
+                0x20001d00       0x11 build/main.o
+ .rodata.hex.0  0x20001d11       0x11 build/utils.o
+ .rodata.change_setting.str1.1
+                0x20001d22        0xd build/capture.o
+                                 0x10 (size before relaxing)
+ .rodata.core1_main.str1.1
+                0x20001d2f      0x278 build/capture.o
+ .rodata.str1.1
+                0x20001fa7      0x120 build/capture.o
+ *fill*         0x200020c7        0x1 
+ .rodata.crc16_usb_tab
+                0x200020c8      0x200 build/capture.o
+ .rodata.crc5_usb_tab
+                0x200022c8      0x100 build/capture.o
+ .rodata.pio0_ops.1
+                0x200023c8       0x40 build/capture.o
+ .rodata.pio1_ops.0
+                0x20002408       0x24 build/capture.o
+ .rodata.print_handshake.str1.1
+                0x2000242c        0x3 build/display.o
+ .rodata.print_in_out_setup.str1.1
+                0x2000242c        0x7 build/display.o
+ .rodata.print_data.str1.1
+                0x20002433       0x13 build/display.o
+ .rodata.print_g_fold_count.str1.1
+                0x20002446       0x19 build/display.o
+                                 0x21 (size before relaxing)
+ .rodata.display_buffer.str1.1
+                0x2000245f      0x18d build/display.o
+                                0x1a1 (size before relaxing)
+ .rodata.str1.1
+                0x200025ec       0x27 build/usb_descriptors.o
+ *fill*         0x20002613        0x1 
+ .rodata.usb_configuration_hierarchy
+                0x20002614       0x4b build/usb_descriptors.o
+                0x20002614                usb_configuration_hierarchy
+ *fill*         0x2000265f        0x1 
+ .rodata.usb_device_descriptor
+                0x20002660       0x12 build/usb_descriptors.o
+                0x20002660                usb_device_descriptor
+ *fill*         0x20002672        0x2 
+ .rodata.usb_string_descriptor_zero
+                0x20002674        0x4 build/usb_descriptors.o
+                0x20002674                usb_string_descriptor_zero
+                0x20002678                . = ALIGN (0x4)
+                0x20002678                _etext = .
+
+.glue_7         0x20002678        0x0 load address 0x10002778
+ .glue_7        0x20002678        0x0 linker stubs
+
+.glue_7t        0x20002678        0x0 load address 0x10002778
+ .glue_7t       0x20002678        0x0 linker stubs
+
+.vfp11_veneer   0x20002678        0x0 load address 0x10002778
+ .vfp11_veneer  0x20002678        0x0 linker stubs
+
+.v4_bx          0x20002678        0x0 load address 0x10002778
+ .v4_bx         0x20002678        0x0 linker stubs
+
+.iplt           0x20002678        0x0 load address 0x10002778
+ .iplt          0x20002678        0x0 build/main.o
+
+.rel.dyn        0x20002678        0x0 load address 0x10002778
+ .rel.iplt      0x20002678        0x0 build/main.o
+
+.data           0x20002678       0x84 load address 0x10002778
+                0x20002678                _data = .
+ *(.ramfunc .ramfunc.*)
+ *(vtable)
+ *(.data*)
+ .data.capture_limit_str
+                0x20002678       0x20 build/capture.o
+ .data.capture_speed_str
+                0x20002698        0x8 build/capture.o
+ .data.capture_trigger_str
+                0x200026a0        0x8 build/capture.o
+ .data.display_data_str
+                0x200026a8       0x10 build/capture.o
+ .data.display_fold_str
+                0x200026b8        0x8 build/capture.o
+ .data.display_time_str
+                0x200026c0       0x10 build/capture.o
+ .data.g_capture_limit
+                0x200026d0        0x4 build/capture.o
+                0x200026d0                g_capture_limit
+ .data.g_capture_speed
+                0x200026d4        0x4 build/capture.o
+                0x200026d4                g_capture_speed
+ .data.g_capture_trigger
+                0x200026d8        0x4 build/capture.o
+                0x200026d8                g_capture_trigger
+ .data.g_display_data
+                0x200026dc        0x4 build/capture.o
+                0x200026dc                g_display_data
+ .data.g_display_time
+                0x200026e0        0x4 build/capture.o
+                0x200026e0                g_display_time
+ .data.usb_cdc_line_coding
+                0x200026e4        0x7 build/usb_cdc.o
+ *fill*         0x200026eb        0x1 
+ .data.usb_strings
+                0x200026ec       0x10 build/usb_descriptors.o
+                0x200026ec                usb_strings
+                0x200026fc                . = ALIGN (0x4)
+                0x200026fc                _edata = .
+
+.igot.plt       0x200026fc        0x0 load address 0x100027fc
+ .igot.plt      0x200026fc        0x0 build/main.o
+
+.bss            0x200026fc    0x3aa84 load address 0x100027fc
+                0x200026fc                _bss = .
+ *(.bss*)
+ .bss.app_recv_buffer
+                0x200026fc       0x40 build/main.o
+ .bss.app_recv_pending
+                0x2000273c        0x1 build/main.o
+ .bss.app_send_buffer
+                0x2000273d       0x40 build/main.o
+ *fill*         0x2000277d        0x3 
+ .bss.app_send_buffer_ptr
+                0x20002780        0x4 build/main.o
+ .bss.app_send_pending
+                0x20002784        0x1 build/main.o
+ .bss.app_send_zlp
+                0x20002785        0x1 build/main.o
+ .bss.app_vcp_open
+                0x20002786        0x1 build/main.o
+ *fill*         0x20002787        0x1 
+ .bss.core1_stack.2
+                0x20002788      0x800 build/capture.o
+ .bss.g_buffer  0x20002f88    0x3a000 build/capture.o
+                0x20002f88                g_buffer
+ .bss.g_buffer_info
+                0x2003cf88       0x1c build/capture.o
+                0x2003cf88                g_buffer_info
+ .bss.g_display_fold
+                0x2003cfa4        0x4 build/capture.o
+                0x2003cfa4                g_display_fold
+ .bss.g_may_fold
+                0x2003cfa8        0x1 build/capture.o
+ *fill*         0x2003cfa9        0x3 
+ .bss.g_rd_ptr  0x2003cfac        0x4 build/capture.o
+ .bss.g_sof_index
+                0x2003cfb0        0x4 build/capture.o
+ .bss.g_wr_ptr  0x2003cfb4        0x4 build/capture.o
+ .bss.g_check_delta
+                0x2003cfb8        0x1 build/display.o
+ *fill*         0x2003cfb9        0x3 
+ .bss.g_display_ptr
+                0x2003cfbc        0x4 build/display.o
+ .bss.g_fold_count
+                0x2003cfc0        0x4 build/display.o
+ .bss.g_folding
+                0x2003cfc4        0x1 build/display.o
+ *fill*         0x2003cfc5        0x3 
+ .bss.g_prev_time
+                0x2003cfc8        0x4 build/display.o
+ .bss.g_ref_time
+                0x2003cfcc        0x4 build/display.o
+ .bss.usb_control_recv_callback
+                0x2003cfd0        0x4 build/usb.o
+ .bss.usb_ep    0x2003cfd4      0x140 build/usb.o
+ .bss.usb_ep_buf_ptr
+                0x2003d114        0x4 build/usb.o
+ .bss.usb_config.0
+                0x2003d118        0x4 build/usb_std.o
+ .bss.usb_ep_callbacks
+                0x2003d11c       0x40 build/usb_std.o
+ .bss.usb_cdc_comm_busy
+                0x2003d15c        0x1 build/usb_cdc.o
+ *fill*         0x2003d15d        0x3 
+ .bss.usb_cdc_notify_message
+                0x2003d160        0xa build/usb_cdc.o
+ *fill*         0x2003d16a        0x2 
+ .bss.usb_cdc_serial_state
+                0x2003d16c        0x4 build/usb_cdc.o
+ .bss.usb_serial_number
+                0x2003d170       0x10 build/usb_descriptors.o
+                0x2003d170                usb_serial_number
+ *(COMMON)
+                0x2003d180                . = ALIGN (0x4)
+                0x2003d180                _ebss = .
+                [!provide]                PROVIDE (_end = .)
+                0x10000100                PROVIDE (_text_start = ORIGIN (flash))
+                0x20042000                PROVIDE (_stack_top = (ORIGIN (ram) + LENGTH (ram)))
+LOAD build/main.o
+LOAD build/utils.o
+LOAD build/capture.o
+LOAD build/display.o
+LOAD build/usb.o
+LOAD build/usb_std.o
+LOAD build/usb_cdc.o
+LOAD build/usb_descriptors.o
+LOAD build/startup_rp2040.o
+START GROUP
+LOAD c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a
+LOAD c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a
+END GROUP
+OUTPUT(build/okhi.elf elf32-littlearm)
+LOAD linker stubs
+
+.debug_info     0x00000000    0x255ff
+ .debug_info    0x00000000     0xbd54 build/main.o
+ .debug_info    0x0000bd54      0x2b7 build/utils.o
+ .debug_info    0x0000c00b     0xe012 build/capture.o
+ .debug_info    0x0001a01d     0x1de7 build/display.o
+ .debug_info    0x0001be04     0x6c95 build/usb.o
+ .debug_info    0x00022a99      0xd03 build/usb_std.o
+ .debug_info    0x0002379c      0x899 build/usb_cdc.o
+ .debug_info    0x00024035      0x85a build/usb_descriptors.o
+ .debug_info    0x0002488f      0xd70 build/startup_rp2040.o
+
+.debug_abbrev   0x00000000     0x18f0
+ .debug_abbrev  0x00000000      0x42a build/main.o
+ .debug_abbrev  0x0000042a      0x13b build/utils.o
+ .debug_abbrev  0x00000565      0x4a5 build/capture.o
+ .debug_abbrev  0x00000a0a      0x418 build/display.o
+ .debug_abbrev  0x00000e22      0x393 build/usb.o
+ .debug_abbrev  0x000011b5      0x210 build/usb_std.o
+ .debug_abbrev  0x000013c5      0x248 build/usb_cdc.o
+ .debug_abbrev  0x0000160d       0xdc build/usb_descriptors.o
+ .debug_abbrev  0x000016e9      0x207 build/startup_rp2040.o
+
+.debug_loc      0x00000000     0x2b11
+ .debug_loc     0x00000000      0x167 build/main.o
+ .debug_loc     0x00000167      0x23c build/utils.o
+ .debug_loc     0x000003a3      0xd3a build/capture.o
+ .debug_loc     0x000010dd      0x92f build/display.o
+ .debug_loc     0x00001a0c      0x6d0 build/usb.o
+ .debug_loc     0x000020dc      0x5df build/usb_std.o
+ .debug_loc     0x000026bb      0x3da build/usb_cdc.o
+ .debug_loc     0x00002a95       0x7c build/startup_rp2040.o
+
+.debug_aranges  0x00000000      0x300
+ .debug_aranges
+                0x00000000       0x60 build/main.o
+ .debug_aranges
+                0x00000060       0x38 build/utils.o
+ .debug_aranges
+                0x00000098       0x48 build/capture.o
+ .debug_aranges
+                0x000000e0       0x68 build/display.o
+ .debug_aranges
+                0x00000148       0xb0 build/usb.o
+ .debug_aranges
+                0x000001f8       0x48 build/usb_std.o
+ .debug_aranges
+                0x00000240       0x80 build/usb_cdc.o
+ .debug_aranges
+                0x000002c0       0x18 build/usb_descriptors.o
+ .debug_aranges
+                0x000002d8       0x28 build/startup_rp2040.o
+
+.debug_ranges   0x00000000      0x800
+ .debug_ranges  0x00000000       0xe8 build/main.o
+ .debug_ranges  0x000000e8       0x78 build/utils.o
+ .debug_ranges  0x00000160      0x298 build/capture.o
+ .debug_ranges  0x000003f8      0x110 build/display.o
+ .debug_ranges  0x00000508      0x168 build/usb.o
+ .debug_ranges  0x00000670       0xf0 build/usb_std.o
+ .debug_ranges  0x00000760       0x70 build/usb_cdc.o
+ .debug_ranges  0x000007d0       0x30 build/startup_rp2040.o
+
+.debug_line     0x00000000     0x2ff6
+ .debug_line    0x00000000      0x64a build/main.o
+ .debug_line    0x0000064a      0x261 build/utils.o
+ .debug_line    0x000008ab      0xb0f build/capture.o
+ .debug_line    0x000013ba      0x7c3 build/display.o
+ .debug_line    0x00001b7d      0x8cc build/usb.o
+ .debug_line    0x00002449      0x50c build/usb_std.o
+ .debug_line    0x00002955      0x399 build/usb_cdc.o
+ .debug_line    0x00002cee       0xe2 build/usb_descriptors.o
+ .debug_line    0x00002dd0      0x226 build/startup_rp2040.o
+
+.debug_str      0x00000000     0x79e1
+ .debug_str     0x00000000     0x3299 build/main.o
+                               0x342c (size before relaxing)
+ .debug_str     0x00003299       0x66 build/utils.o
+                                0x229 (size before relaxing)
+ .debug_str     0x000032ff     0x16cb build/capture.o
+                               0x3565 (size before relaxing)
+ .debug_str     0x000049ca      0x149 build/display.o
+                                0xcc6 (size before relaxing)
+ .debug_str     0x00004b13     0x18c8 build/usb.o
+                               0x1c9c (size before relaxing)
+ .debug_str     0x000063db      0x754 build/usb_std.o
+                                0xc40 (size before relaxing)
+ .debug_str     0x00006b2f      0x668 build/usb_cdc.o
+                                0xab0 (size before relaxing)
+ .debug_str     0x00007197      0x35e build/usb_descriptors.o
+                                0xc39 (size before relaxing)
+ .debug_str     0x000074f5      0x4ec build/startup_rp2040.o
+                                0x6f6 (size before relaxing)
+
+.comment        0x00000000       0x49
+ .comment       0x00000000       0x49 build/main.o
+                                 0x4a (size before relaxing)
+ .comment       0x00000049       0x4a build/utils.o
+ .comment       0x00000049       0x4a build/capture.o
+ .comment       0x00000049       0x4a build/display.o
+ .comment       0x00000049       0x4a build/usb.o
+ .comment       0x00000049       0x4a build/usb_std.o
+ .comment       0x00000049       0x4a build/usb_cdc.o
+ .comment       0x00000049       0x4a build/usb_descriptors.o
+ .comment       0x00000049       0x4a build/startup_rp2040.o
+
+.ARM.attributes
+                0x00000000       0x2c
+ .ARM.attributes
+                0x00000000       0x2c build/main.o
+ .ARM.attributes
+                0x0000002c       0x2c build/utils.o
+ .ARM.attributes
+                0x00000058       0x2c build/capture.o
+ .ARM.attributes
+                0x00000084       0x2c build/display.o
+ .ARM.attributes
+                0x000000b0       0x2c build/usb.o
+ .ARM.attributes
+                0x000000dc       0x2c build/usb_std.o
+ .ARM.attributes
+                0x00000108       0x2c build/usb_cdc.o
+ .ARM.attributes
+                0x00000134       0x2c build/usb_descriptors.o
+ .ARM.attributes
+                0x00000160       0x2c build/startup_rp2040.o
+ .ARM.attributes
+                0x0000018c       0x2c c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memcpy-stub.o)
+ .ARM.attributes
+                0x000001b8       0x2c c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memset.o)
+ .ARM.attributes
+                0x000001e4       0x2c c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-strlen-stub.o)
+
+.debug_frame    0x00000000      0x794
+ .debug_frame   0x00000000       0xd8 build/main.o
+ .debug_frame   0x000000d8       0x8c build/utils.o
+ .debug_frame   0x00000164       0xa8 build/capture.o
+ .debug_frame   0x0000020c      0x11c build/display.o
+ .debug_frame   0x00000328      0x1cc build/usb.o
+ .debug_frame   0x000004f4       0x9c build/usb_std.o
+ .debug_frame   0x00000590      0x148 build/usb_cdc.o
+ .debug_frame   0x000006d8       0x30 build/startup_rp2040.o
+ .debug_frame   0x00000708       0x34 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memcpy-stub.o)
+ .debug_frame   0x0000073c       0x30 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memset.o)
+ .debug_frame   0x0000076c       0x28 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-strlen-stub.o)

@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/esp_hw_support/port/esp32c2",
+		"source" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_hw_support/port/esp32c2"
+	}
+}

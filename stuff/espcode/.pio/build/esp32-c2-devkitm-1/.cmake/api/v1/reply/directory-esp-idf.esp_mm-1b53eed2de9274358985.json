@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/esp_mm",
+		"source" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_mm"
+	}
+}

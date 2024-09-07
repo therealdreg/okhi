@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>okhi - Open Keylogger Hardware Implant</title>
+    <style>
+        :root {
+            --main-bg: #f4f4f4;
+            --card-bg: #fff;
+            --text-color: #333;
+            --heading-color: #2c3e50;
+            --link-color: #2980b9;
+            --link-hover: #3498db;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--main-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+        h1, h2, h3 {
+            color: var(--heading-color);
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        h3 {
+            font-size: 0.8em;
+        }
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--link-hover);
+            text-decoration: underline;
+        }
+        .container {
+            max-width: 960px;
+            margin: 20px auto;
+            background: var(--card-bg);
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        header {
+            margin-bottom: 20px;
+        }
+        main section {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin: 20px 0 5px;
+            font-weight: bold;
+        }
+        textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: none;
+        }
+        button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-top: 10px;
+            background: var(--link-color);
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background: var(--link-hover);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>okhi - Open Keylogger Hardware Implant by Dreg</h1>
+            <h2>
+                <a href="https://www.rootkit.es/">rootkit.es</a> -
+                <a href="https://github.com/therealdreg/okhi/">GitHub</a>
+            </h2>
+            <h3>
+                <span id="fwversion"></span>
+                <span id="hwversion"></span>
+            </h3>
+        </header>
+        <main>
+            <section>
+                <label for="keyboardType">KEYBOARD LANG</label>
+                <select id="keyboardType">
+                    <option value="english" selected>english</option>
+                </select>
+            </section>
+            <section>
+                <article>
+                    <label for="hexData">KEYS</label>
+                    <textarea id="hexData" rows="10" readonly></textarea>
+                </article>
+            </section>
+            <section>
+                <article>
+                    <label for="bufferData">PS2 DATA</label>
+                    <textarea id="bufferData" rows="10" readonly></textarea>
+                </article>
+            </section>
+            <section>
+                <article>
+                    <label for="EspbufferData">ESP DEBUG DATA</label>
+                    <textarea id="EspbufferData" rows="10" readonly></textarea>
+                </article>
+            </section>
+            <section>
+                <article>
+                    <label for="RpbufferData">RP DEBUG DATA</label>
+                    <textarea id="RpbufferData" rows="10" readonly></textarea>
+                </article>
+            </section>
+            <section>
+                <button id="downloadButton">DOWNLOAD ALL DATA</button>
+            </section>
+        </main>
+    </div>
+    <script>
+        document.getElementById('downloadButton').addEventListener('click', function() {
+            const data = [];
+            const fwVersion = document.getElementById('fwversion').textContent;
+            const hwVersion = document.getElementById('hwversion').textContent;
+            data.push("Firmware Version: \n" + fwVersion);
+            data.push("Hardware Version: \n" + hwVersion);
+            data.push("KEYBOARD LANG: \n" + document.getElementById('keyboardType').value);
+            data.push("KEYS: \n" + document.getElementById('hexData').value);
+            data.push("PS2 DATA: \n" + document.getElementById('bufferData').value);
+            data.push("ESP DEBUG DATA: \n" + document.getElementById('EspbufferData').value);
+            data.push("RP DEBUG DATA: \n" + document.getElementById('RpbufferData').value);
+            const content = data.join('\n\n');
+            const element = document.createElement('a');
+            const file = new Blob([content], { type: 'text/plain' });
+            const timestamp = new Date().toISOString().replace(/[-:.]/g, "");
+            element.href = URL.createObjectURL(file);
+            element.download = `data_${timestamp}.txt`;
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        });
+        document.addEventListener("DOMContentLoaded", function() {
+            function getFirmVersion() {
+                fetch('/ver')
+                .then(response => response.text())
+                .then(version => {
+                    document.getElementById('fwversion').textContent = "Firmware v" + version;
+                })
+                .catch(error => {
+                    setTimeout(getFirmVersion, 4000);
+                });
+            }
+            setTimeout(getFirmVersion, 4000);
+        });
+        document.addEventListener("DOMContentLoaded", function() {
+            function getHwVersion() {
+                fetch('/hwver')
+                .then(response => response.text())
+                .then(version => {
+                    document.getElementById('hwversion').textContent = "Hardware " + version;
+                })
+                .catch(error => {
+                    setTimeout(getHwVersion, 4500);
+                });
+            }
+            setTimeout(getHwVersion, 4500);
+        });
+        class RemoteKeyboardTracker {
+            constructor() {
+                this.keys = {};
+                this.eventLog = document.getElementById('hexData');
+                this.releaseNext = false;
+                this.shiftPressed = false;
+                this.capsLockActive = false;
+                this.keyboardType = 'english';
+            }
+            setKeyboardType(type) {
+                this.keyboardType = type;
+            }
+            keyPressed(keyCode) {
+                if (keyCode === '<LSHIFT>' || keyCode === '<RSHIFT>') {
+                    this.shiftPressed = true;
+                    return;
+                }
+                if (keyCode === '<CAPS>') {
+                    this.capsLockActive = !this.capsLockActive;
+                    return;
+                }
+                const key = this.getKeyRepresentation(keyCode);
+                if (key) {
+                    this.updateEventLog(key);
+                }
+                this.keys[keyCode] = true;
+            }
+            keyReleased(keyCode) {
+                if (keyCode === '<LSHIFT>' || keyCode === '<RSHIFT>') {
+                    this.shiftPressed = false;
+                    return;
+                }
+                this.keys[keyCode] = false;
+            }
+            getKeyRepresentation(keyCode) {
+                let key = keyCode;
+                if (key.length === 1) {
+                    if (this.shiftPressed && key === '2') {
+                        key = '@';
+                    } else if (this.capsLockActive && this.shiftPressed) {
+                        key = key.toLowerCase();
+                    } else if (this.capsLockActive || this.shiftPressed) {
+                        key = key.toUpperCase();
+                    } else {
+                        key = key.toLowerCase();
+                    }
+                }
+                return key;
+            }
+            updateEventLog(key) {
+                this.eventLog.value += key;
+            }
+        }
+        const tracker = new RemoteKeyboardTracker();
+        document.getElementById('keyboardType').addEventListener('change', (event) => {
+            const selectedType = event.target.value;
+            tracker.setKeyboardType(selectedType);
+        });
+        function fetchBuffer() {
+            fetch('/buffer')
+            .then(response => response.text())
+            .then(data => {
+                let bufferData = document.getElementById('bufferData');
+                if (bufferData && data.trim() !== '') {
+                    bufferData.value += data;
+                    parseData(data);
+                }
+            });
+        }
+        function fetchEsp() {
+            fetch('/esp')
+            .then(response => response.text())
+            .then(data => {
+                let bufferData = document.getElementById('EspbufferData');
+                if (bufferData && data.trim() !== '') {
+                    bufferData.value = data + '\n' + bufferData.value;
+                }
+            });
+        }
+        function fetchRp() {
+            fetch('/rp')
+            .then(response => response.text())
+            .then(data => {
+                let bufferData = document.getElementById('RpbufferData');
+                if (bufferData && data.trim() !== '') {
+                    bufferData.value = data + '\n' + bufferData.value;
+                }
+            });
+        }
+        const keyMap = {
+            '0x1C': 'a','0x32': 'b','0x21': 'c','0x23': 'd','0x24': 'e','0x2B': 'f','0x34': 'g','0x33': 'h',
+            '0x43': 'i','0x3B': 'j','0x42': 'k','0x4B': 'l','0x3A': 'm','0x31': 'n','0x44': 'o','0x4D': 'p',
+            '0x15': 'q','0x2D': 'r','0x1B': 's','0x2C': 't','0x3C': 'u','0x2A': 'v','0x1D': 'w','0x22': 'x',
+            '0x35': 'y','0x1A': 'z','0x45': '0','0x16': '1','0x1E': '2','0x26': '3','0x25': '4','0x2E': '5',
+            '0x36': '6','0x3D': '7','0x3E': '8','0x46': '9','0x0E': '`','0x4E': '-','0x55': '=','0x5D': '\\',
+            '0x66': '<BKSP>','0x29': ' ','0x0D': '<TAB>','0x58': '<CAPS>','0x12': '<LSHIFT>','0x14': '<LCTRL>',
+            '0x11': '<LALT>','0x59': '<RSHIFT>','0x5A': '<ENTER>','0x76': '<ESC>','0x05': '<F1>','0x06': '<F2>',
+            '0x04': '<F3>','0x0C': '<F4>','0x03': '<F5>','0x0B': '<F6>','0x83': '<F7>','0x0A': '<F8>','0x01': '<F9>',
+            '0x09': '<F10>','0x78': '<F11>','0x07': '<F12>','0x7E': '<SCROLL>','0x54': '[','0x5B': ']','0x4C': ';',
+            '0x52': '\'','0x41': ',','0x49': '.','0x4A': '/','0xE0,70': '<INSERT>','0xE0,6C': '<HOME>','0xE0,7D': '<PGUP>',
+            '0xE0,71': '<DELETE>','0xE0,69': '<END>','0xE0,7A': '<PGDN>','0xE0,75': '<UP>','0xE0,6B': '<LEFT>','0xE0,72': '<DOWN>',
+            '0xE0,74': '<RIGHT>','0x77': '<NUM>','0xE0,4A': '<KP/>','0x7C': '<KP*>','0x7B': '<KP->','0x79': '<KP+>',
+            '0xE0,5A': '<KPENTER>','0x71': '<KP.>','0x70': '<KP0>','0x69': '<KP1>','0x72': '<KP2>','0x7A': '<KP3>',
+            '0x6B': '<KP4>','0x73': '<KP5>','0x74': '<KP6>','0x6C': '<KP7>','0x75': '<KP8>','0x7D': '<KP9>',
+            '0xE0,1F': '<LGUI>','0xE0,14': '<RCTRL>','0xE0,27': '<RGUI>','0xE0,11': '<RALT>','0xE0,2F': '<APPS>'
+        };
+        function parseData(data) {
+            const packets = data.split(';');
+            packets.forEach(packet => {
+                const match = packet.trim().match(/D:(\S+)\s+t:(\S+)/);
+                if (match && match[1]) {
+                    const keyCode = match[1];
+                    if (tracker.releaseNext) {
+                        tracker.releaseNext = false;
+                        const key = keyMap[keyCode];
+                        if (key) {
+                            tracker.keyReleased(key);
+                        }
+                    } else if (keyCode === '0xF0') {
+                        tracker.releaseNext = true;
+                    } else {
+                        const key = keyMap[keyCode];
+                        if (key) {
+                            tracker.keyPressed(key);
+                        }
+                    }
+                }
+            });
+        }
+        setInterval(fetchBuffer, 1000);
+        setInterval(fetchEsp, 2400);
+        setInterval(fetchRp, 3400);
+    </script>
+</body>
+</html>

@@ -1,0 +1,820 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "bootloader.elf"
+		}
+	],
+	"backtrace" : 2,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"project",
+			"target_link_options",
+			"set_property",
+			"idf_build_executable",
+			"target_link_libraries",
+			"add_dependencies"
+		],
+		"files" : 
+		[
+			"C:/Users/dreg/.platformio/packages/framework-espidf/tools/cmake/project.cmake",
+			"CMakeLists.txt",
+			"C:/Users/dreg/.platformio/packages/framework-espidf/tools/cmake/build.cmake"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 58,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 650,
+				"parent" : 1
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 708,
+				"parent" : 1
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 710,
+				"parent" : 1
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 712,
+				"parent" : 1
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 720,
+				"parent" : 1
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 780,
+				"parent" : 1
+			},
+			{
+				"command" : 3,
+				"file" : 2,
+				"line" : 636,
+				"parent" : 7
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 698,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 698,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 698,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 698,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 698,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 698,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 698,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 698,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 698,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 698,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 698,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 698,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 698,
+				"parent" : 1
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 698,
+				"parent" : 1
+			},
+			{
+				"command" : 6,
+				"file" : 0,
+				"line" : 651,
+				"parent" : 1
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-march=rv32imc_zicsr_zifencei "
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 9,
+					"define" : "SOC_MMU_PAGE_SIZE=CONFIG_MMU_PAGE_SIZE"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/riscv/include"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/Desktop/okhi/stuff/espcode/.pio/build/esp32-c2-devkitm-1/bootloader/config"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/log/include"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_rom/include"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_rom/include/esp32c2"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_rom/esp32c2"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_common/include"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_hw_support/include"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_hw_support/include/soc"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_hw_support/include/soc/esp32c2"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/newlib/platform_include"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/soc/include"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/soc/esp32c2"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/soc/esp32c2/include"
+				},
+				{
+					"backtrace" : 12,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/bootloader/subproject/components/micro-ecc"
+				},
+				{
+					"backtrace" : 12,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/bootloader/subproject/components/micro-ecc/micro-ecc"
+				},
+				{
+					"backtrace" : 13,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/hal/esp32c2/include"
+				},
+				{
+					"backtrace" : 13,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/hal/include"
+				},
+				{
+					"backtrace" : 13,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/hal/platform_port/include"
+				},
+				{
+					"backtrace" : 14,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/spi_flash/include"
+				},
+				{
+					"backtrace" : 15,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_app_format/include"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/bootloader_support/include"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/bootloader_support/bootloader_flash/include"
+				},
+				{
+					"backtrace" : 16,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/bootloader_support/private_include"
+				},
+				{
+					"backtrace" : 17,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/efuse/include"
+				},
+				{
+					"backtrace" : 17,
+					"path" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/efuse/esp32c2/include"
+				}
+			],
+			"language" : "C",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 9,
+			"id" : "__idf_soc::@824f1541829f13857909"
+		},
+		{
+			"backtrace" : 23,
+			"id" : "_project_elf_src::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 10,
+			"id" : "__idf_main::@7368607ed66887415643"
+		}
+	],
+	"id" : "bootloader.elf::@6890427a1f51a3e7e1df",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-march=rv32imc_zicsr_zifencei",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-nostartfiles -march=rv32imc_zicsr_zifencei --specs=nosys.specs",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "-Wl,--cref",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-Wl,--defsym=IDF_TARGET_ESP32C2=0",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "-Wl,--Map=C:/Users/dreg/Desktop/okhi/stuff/espcode/.pio/build/esp32-c2-devkitm-1/bootloader/bootloader.map",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "-Wl,--no-warn-rwx-segments",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-fno-rtti",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-fno-lto",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-Wl,--gc-sections",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-Wl,--warn-common",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "-T",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "esp32c2.rom.ld",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "-T",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "esp32c2.rom.api.ld",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "-T",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "esp32c2.rom.rvfp.ld",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "-T",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "esp32c2.rom.newlib.ld",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "-T",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "esp32c2.peripherals.ld",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-T",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "bootloader.ld",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-T",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "bootloader.rom.ld",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "-LC:\\Users\\dreg\\.platformio\\packages\\framework-espidf\\components\\esp_rom\\esp32c2\\ld",
+				"role" : "libraryPath"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "-LC:\\Users\\dreg\\.platformio\\packages\\framework-espidf\\components\\soc\\esp32c2\\ld",
+				"role" : "libraryPath"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-LC:\\Users\\dreg\\.platformio\\packages\\framework-espidf\\components\\bootloader\\subproject\\main\\ld\\esp32c2",
+				"role" : "libraryPath"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "esp-idf\\soc\\libsoc.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "esp-idf\\micro-ecc\\libmicro-ecc.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "esp-idf\\hal\\libhal.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 14,
+				"fragment" : "esp-idf\\spi_flash\\libspi_flash.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 15,
+				"fragment" : "esp-idf\\esp_app_format\\libesp_app_format.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 16,
+				"fragment" : "esp-idf\\bootloader_support\\libbootloader_support.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 17,
+				"fragment" : "esp-idf\\efuse\\libefuse.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 18,
+				"fragment" : "esp-idf\\esp_system\\libesp_system.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 19,
+				"fragment" : "esp-idf\\esp_hw_support\\libesp_hw_support.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 20,
+				"fragment" : "esp-idf\\esp_common\\libesp_common.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "esp-idf\\esp_rom\\libesp_rom.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 22,
+				"fragment" : "esp-idf\\log\\liblog.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "esp-idf\\main\\libmain.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "esp-idf\\soc\\libsoc.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "esp-idf\\micro-ecc\\libmicro-ecc.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "esp-idf\\hal\\libhal.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 14,
+				"fragment" : "esp-idf\\spi_flash\\libspi_flash.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 15,
+				"fragment" : "esp-idf\\esp_app_format\\libesp_app_format.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 16,
+				"fragment" : "esp-idf\\bootloader_support\\libbootloader_support.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 17,
+				"fragment" : "esp-idf\\efuse\\libefuse.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 18,
+				"fragment" : "esp-idf\\esp_system\\libesp_system.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 19,
+				"fragment" : "esp-idf\\esp_hw_support\\libesp_hw_support.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 20,
+				"fragment" : "esp-idf\\esp_common\\libesp_common.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "esp-idf\\esp_rom\\libesp_rom.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 22,
+				"fragment" : "esp-idf\\log\\liblog.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "esp-idf\\soc\\libsoc.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "esp-idf\\micro-ecc\\libmicro-ecc.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "esp-idf\\hal\\libhal.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 14,
+				"fragment" : "esp-idf\\spi_flash\\libspi_flash.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 15,
+				"fragment" : "esp-idf\\esp_app_format\\libesp_app_format.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 16,
+				"fragment" : "esp-idf\\bootloader_support\\libbootloader_support.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 17,
+				"fragment" : "esp-idf\\efuse\\libefuse.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 18,
+				"fragment" : "esp-idf\\esp_system\\libesp_system.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 19,
+				"fragment" : "esp-idf\\esp_hw_support\\libesp_hw_support.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 20,
+				"fragment" : "esp-idf\\esp_common\\libesp_common.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "esp-idf\\esp_rom\\libesp_rom.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 22,
+				"fragment" : "esp-idf\\log\\liblog.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "esp-idf\\soc\\libsoc.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "esp-idf\\micro-ecc\\libmicro-ecc.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "esp-idf\\hal\\libhal.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 14,
+				"fragment" : "esp-idf\\spi_flash\\libspi_flash.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 15,
+				"fragment" : "esp-idf\\esp_app_format\\libesp_app_format.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 16,
+				"fragment" : "esp-idf\\bootloader_support\\libbootloader_support.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 17,
+				"fragment" : "esp-idf\\efuse\\libefuse.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 18,
+				"fragment" : "esp-idf\\esp_system\\libesp_system.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 19,
+				"fragment" : "esp-idf\\esp_hw_support\\libesp_hw_support.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 20,
+				"fragment" : "esp-idf\\esp_common\\libesp_common.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "esp-idf\\esp_rom\\libesp_rom.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 22,
+				"fragment" : "esp-idf\\log\\liblog.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "esp-idf\\soc\\libsoc.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "esp-idf\\micro-ecc\\libmicro-ecc.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "esp-idf\\hal\\libhal.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 14,
+				"fragment" : "esp-idf\\spi_flash\\libspi_flash.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 15,
+				"fragment" : "esp-idf\\esp_app_format\\libesp_app_format.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 16,
+				"fragment" : "esp-idf\\bootloader_support\\libbootloader_support.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 17,
+				"fragment" : "esp-idf\\efuse\\libefuse.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 18,
+				"fragment" : "esp-idf\\esp_system\\libesp_system.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 19,
+				"fragment" : "esp-idf\\esp_hw_support\\libesp_hw_support.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 20,
+				"fragment" : "esp-idf\\esp_common\\libesp_common.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "esp-idf\\esp_rom\\libesp_rom.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 22,
+				"fragment" : "esp-idf\\log\\liblog.a",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-u __assert_func",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-u abort",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-u __ubsan_include",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-u bootloader_hooks_include",
+				"role" : "libraries"
+			}
+		],
+		"language" : "C"
+	},
+	"name" : "bootloader.elf",
+	"nameOnDisk" : "bootloader.elf",
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		},
+		{
+			"name" : "CMake Rules",
+			"sourceIndexes" : 
+			[
+				1
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "C:/Users/dreg/Desktop/okhi/stuff/espcode/.pio/build/esp32-c2-devkitm-1/bootloader/project_elf_src_esp32c2.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "C:/Users/dreg/Desktop/okhi/stuff/espcode/.pio/build/esp32-c2-devkitm-1/bootloader/project_elf_src_esp32c2.c.rule",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "EXECUTABLE"
+}

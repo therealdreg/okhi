@@ -1,0 +1,17 @@
+[
+  {
+    "Sourcefile": null,
+    "Include": "",
+    "Includepath": "C:\\Users\\dreg\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.0.0\\cores\\esp32"
+  },
+  {
+    "Sourcefile": null,
+    "Include": "",
+    "Includepath": "C:\\Users\\dreg\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.0.0\\variants\\esp32"
+  },
+  {
+    "Sourcefile": "C:\\Users\\dreg\\AppData\\Local\\Temp\\arduino\\sketches\\AC2D7F778F2E976555CCA3CF216F072E\\sketch\\BlinkRGB.ino.cpp",
+    "Include": "",
+    "Includepath": null
+  }
+]

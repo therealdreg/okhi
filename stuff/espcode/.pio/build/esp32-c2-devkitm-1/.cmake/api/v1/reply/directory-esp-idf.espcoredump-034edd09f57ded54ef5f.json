@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/espcoredump",
+		"source" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/espcoredump"
+	}
+}

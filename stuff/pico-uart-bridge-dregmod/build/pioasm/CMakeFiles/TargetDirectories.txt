@@ -1,0 +1,3 @@
+/home/dreg/pico-uart-bridge/build/pioasm/CMakeFiles/pioasm.dir
+/home/dreg/pico-uart-bridge/build/pioasm/CMakeFiles/edit_cache.dir
+/home/dreg/pico-uart-bridge/build/pioasm/CMakeFiles/rebuild_cache.dir

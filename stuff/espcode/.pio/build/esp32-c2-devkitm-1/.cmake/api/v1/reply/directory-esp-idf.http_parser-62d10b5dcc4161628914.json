@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/http_parser",
+		"source" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/http_parser"
+	}
+}
