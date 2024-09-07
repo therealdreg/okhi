@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/framework-arduinoespressif32",
+		"source" : "C:/Users/dreg/.platformio/packages/framework-arduinoespressif32"
+	}
+}

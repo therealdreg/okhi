@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "name": "Dreg",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/include"
+            ],
+            "intelliSenseMode": "${default}",
+            "cStandard": "c17"
+        }
+    ],
+    "version": 4
+}

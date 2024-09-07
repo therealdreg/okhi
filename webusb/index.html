@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>okhi - Open Keylogger Hardware Implant</title>
+    <style>
+        :root {
+            --main-bg: #f4f4f4;
+            --card-bg: #fff;
+            --text-color: #333;
+            --heading-color: #2c3e50;
+            --link-color: #2980b9;
+            --link-hover: #3498db;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--main-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+        h1, h2, h3 {
+            color: var(--heading-color);
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--link-hover);
+            text-decoration: underline;
+        }
+        .container {
+            max-width: 960px;
+            margin: 20px auto;
+            background: var(--card-bg);
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        header {
+            margin-bottom: 20px;
+        }
+        main section {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin: 20px 0 5px;
+            font-weight: bold;
+        }
+        textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: none;
+        }
+        #HIDREPORTS {
+            height: 200px;
+        }
+        button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-top: 10px;
+            background: var(--link-color);
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background: var(--link-hover);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>okhi - Open Keylogger Hardware Implant by Dreg</h1>
+            <h2>
+                <a href="https://www.rootkit.es/">rootkit.es</a> - 
+                <a href="https://github.com/therealdreg/okhi/">GitHub</a>
+            </h2>
+            <h3>
+                <span id="fwversion"></span>
+                <span id="hwversion"></span>
+            </h3>
+        </header>
+        <main>
+            <section>
+                <label for="keyboardType">KEYBOARD LANG</label>
+                <select id="keyboardType">
+                    <option value="english" selected>english</option>
+                </select>
+            </section>
+            <section>
+                <article>
+                    <label for="KEYS">KEYS</label>
+                    <textarea id="KEYS" rows="10" readonly></textarea>
+                </article>
+            </section>
+            <section>
+                <article>
+                    <label for="HIDREPORTS">HID REPORTS</label>
+                    <textarea id="HIDREPORTS" rows="10" readonly></textarea>
+                </article>
+            </section>
+            <section>
+                <article>
+                    <label for="EspbufferData">ESP DEBUG DATA</label>
+                    <textarea id="EspbufferData" rows="10" readonly></textarea>
+                </article>
+            </section>
+            <section>
+                <article>
+                    <label for="RpbufferData">RP DEBUG DATA</label>
+                    <textarea id="RpbufferData" rows="10" readonly></textarea>
+                </article>
+            </section>
+            <section>
+                <button id="downloadButton">DOWNLOAD ALL DATA</button>
+            </section>
+        </main>
+    </div>
+    <script>
+        document.getElementById('downloadButton').addEventListener('click', function() {
+            const data = [];
+            const fwVersion = document.getElementById('fwversion').textContent;
+            const hwVersion = document.getElementById('hwversion').textContent;
+            data.push("Firmware Version: \n" + fwVersion);
+            data.push("Hardware Version: \n" + hwVersion);
+            data.push("KEYBOARD LANG: \n" + document.getElementById('keyboardType').value);
+            data.push("KEYS: \n" + document.getElementById('KEYS').value);
+            data.push("HID REPORTS: \n" + document.getElementById('HIDREPORTS').value);
+            data.push("ESP DEBUG DATA: \n" + document.getElementById('EspbufferData').value);
+            data.push("RP DEBUG DATA: \n" + document.getElementById('RpbufferData').value);
+            const content = data.join('\n\n');
+            const element = document.createElement('a');
+            const file = new Blob([content], { type: 'text/plain' });
+            const timestamp = new Date().toISOString().replace(/[-:.]/g, "");
+            element.href = URL.createObjectURL(file);
+            element.download = `data_${timestamp}.txt`;
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        });
+        function getFirmVersion() {
+            fetch('/ver')
+                .then(response => response.text())
+                .then(version => {
+                    const fwEl = document.getElementById('fwversion');
+                    fwEl.textContent = "Firmware v" + version;
+                })
+                .catch(error => {
+                    console.error('Error al obtener la FW versión, reintentando...', error);
+                    setTimeout(getFirmVersion, 4000);
+                });
+        }
+        function getHwVersion() {
+            fetch('/hwver')
+                .then(response => response.text())
+                .then(version => {
+                    const hwEl = document.getElementById('hwversion');
+                    hwEl.textContent = "Hardware " + version;
+                })
+                .catch(error => {
+                    console.error('Error al obtener la HW versión, reintentando...', error);
+                    setTimeout(getHwVersion, 4500);
+                });
+        }
+        function fetchEsp() {
+            fetch('/esp')
+            .then(response => response.text())
+            .then(data => {
+                let espArea = document.getElementById('EspbufferData');
+                if (espArea && data.trim() !== '') {
+                    espArea.value = data + '\n' + espArea.value;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching Esp buffer:', error);
+            });
+        }
+        function fetchRp() {
+            fetch('/rp')
+            .then(response => response.text())
+            .then(data => {
+                let rpArea = document.getElementById('RpbufferData');
+                if (rpArea && data.trim() !== '') {
+                    rpArea.value = data + '\n' + rpArea.value;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching Rp buffer:', error);
+            });
+        }
+        function formatData(data) {
+            let parts = data.split("IN:");
+            let resultado = [];
+            parts.forEach(part => {
+                let trimmed = part.trim();
+                if (trimmed !== '') {
+                    resultado.push("\nIN: " + trimmed);
+                }
+            });
+            return resultado.join("");
+        }
+        function fetchBuffer() {
+            console.log('Fetching buffer');
+            fetch('/buffer')
+                .then(response => response.text())
+                .then(data => {
+                    console.log('Buffer data:', data);
+                    if (data.trim() !== '') {
+                        const data_cop = String(data);
+                        document.getElementById('HIDREPORTS').value += formatData(data_cop);
+                        let parsed = parseKeyboardHID(data_cop);
+                        if (parsed.trim() !== '') {
+                            document.getElementById('KEYS').value += parsed;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching buffer:', error);
+                });
+        }
+        function parseKeyboardHID(data) {
+            console.log('Parsing buffer data');
+            var lines = data.split('\n');
+            var output = '';
+            for (var line of lines) {
+                var parts = line.trim().split(' ');
+                if (parts.length < 2) continue;
+                if (parts[0] === "IN:") {
+                    parts.shift();
+                }
+                if (parts[0].includes('/')) {
+                    parts[0] = parts[0].split('/')[0];
+                }
+                var mod = parseInt(parts[0], 16);
+                if (!isNaN(mod)) {
+                    if (mod & 0x01) output += '[CTRL]';
+                    if (mod & 0x10) output += '[RCTRL]';
+                    if (mod & 0x02) output += '[SHIFT]';
+                    if (mod & 0x04) output += '[ALT]';
+                    if (mod & 0x40) output += '[ALTGR]';
+                }
+                for (var i = 1; i < parts.length; i++) {
+                    var keyHex = parts[i];
+                    if (keyHex !== '0x0') {
+                        var keycode = parseInt(keyHex, 16);
+                        if (keycode) {
+                            var char = keycodeToChar(keycode);
+                            if (char) output += char;
+                        }
+                    }
+                }
+            }
+            return output.trim();
+        }
+        function keycodeToChar(keycode) {
+            var map = {
+                4: 'a',  5: 'b',  6: 'c',  7: 'd',  8: 'e',  9: 'f',
+                10: 'g', 11: 'h', 12: 'i', 13: 'j', 14: 'k', 15: 'l',
+                16: 'm', 17: 'n', 18: 'o', 19: 'p', 20: 'q', 21: 'r',
+                22: 's', 23: 't', 24: 'u', 25: 'v', 26: 'w', 27: 'x',
+                28: 'y', 29: 'z', 30: '1', 31: '2', 32: '3', 33: '4',
+                34: '5', 35: '6', 36: '7', 37: '8', 38: '9', 39: '0',
+                40: '[ENTER]', 42: '[BACKSPACE]', 44: '[SPACE]', 57: '[CAPSLOCK]'
+            };
+            return map[keycode];
+        }
+        document.addEventListener("DOMContentLoaded", function() {
+            setTimeout(getFirmVersion, 2000);
+            setTimeout(getHwVersion, 2500);
+            setInterval(fetchBuffer, 1000);
+            setInterval(fetchEsp, 2400);
+            setInterval(fetchRp, 3400);
+        });
+    </script>
+</body>
+</html>

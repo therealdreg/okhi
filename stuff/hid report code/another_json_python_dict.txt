@@ -1,0 +1,1534 @@
+{
+  "Kind": "Defined",
+  "Id": 7,
+  "Name": "Keyboard/Keypad",
+  "UsageIds": [
+    {
+      "Id": 1,
+      "Name": "ErrorRollOver",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 2,
+      "Name": "POSTFail",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 3,
+      "Name": "ErrorUndefined",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 4,
+      "Name": "Keyboard A",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 5,
+      "Name": "Keyboard B",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 6,
+      "Name": "Keyboard C",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 7,
+      "Name": "Keyboard D",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 8,
+      "Name": "Keyboard E",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 9,
+      "Name": "Keyboard F",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 10,
+      "Name": "Keyboard G",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 11,
+      "Name": "Keyboard H",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 12,
+      "Name": "Keyboard I",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 13,
+      "Name": "Keyboard J",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 14,
+      "Name": "Keyboard K",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 15,
+      "Name": "Keyboard L",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 16,
+      "Name": "Keyboard M",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 17,
+      "Name": "Keyboard N",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 18,
+      "Name": "Keyboard O",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 19,
+      "Name": "Keyboard P",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 20,
+      "Name": "Keyboard Q",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 21,
+      "Name": "Keyboard R",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 22,
+      "Name": "Keyboard S",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 23,
+      "Name": "Keyboard T",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 24,
+      "Name": "Keyboard U",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 25,
+      "Name": "Keyboard V",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 26,
+      "Name": "Keyboard W",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 27,
+      "Name": "Keyboard X",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 28,
+      "Name": "Keyboard Y",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 29,
+      "Name": "Keyboard Z",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 30,
+      "Name": "Keyboard 1 and Bang",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 31,
+      "Name": "Keyboard 2 and At",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 32,
+      "Name": "Keyboard 3 and Hash",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 33,
+      "Name": "Keyboard 4 and Dollar",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 34,
+      "Name": "Keyboard 5 and Percent",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 35,
+      "Name": "Keyboard 6 and Caret",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 36,
+      "Name": "Keyboard 7 and Ampersand",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 37,
+      "Name": "Keyboard 8 and Star",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 38,
+      "Name": "Keyboard 9 and Left Bracket",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 39,
+      "Name": "Keyboard 0 and Right Bracket",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 40,
+      "Name": "Keyboard Return Enter",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 41,
+      "Name": "Keyboard Escape",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 42,
+      "Name": "Keyboard Delete",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 43,
+      "Name": "Keyboard Tab",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 44,
+      "Name": "Keyboard Spacebar",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 45,
+      "Name": "Keyboard Dash and Underscore",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 46,
+      "Name": "Keyboard Equals and Plus",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 47,
+      "Name": "Keyboard Left Brace",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 48,
+      "Name": "Keyboard Right Brace",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 49,
+      "Name": "Keyboard Backslash and Pipe",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 50,
+      "Name": "Keyboard Non-US Hash and Tilde",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 51,
+      "Name": "Keyboard SemiColon and Colon",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 52,
+      "Name": "Keyboard Left Apos and Double",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 53,
+      "Name": "Keyboard Grave Accent and Tilde",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 54,
+      "Name": "Keyboard Comma and LessThan",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 55,
+      "Name": "Keyboard Period and GreaterThan",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 56,
+      "Name": "Keyboard ForwardSlash and QuestionMark",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 57,
+      "Name": "Keyboard Caps Lock",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 58,
+      "Name": "Keyboard F1",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 59,
+      "Name": "Keyboard F2",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 60,
+      "Name": "Keyboard F3",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 61,
+      "Name": "Keyboard F4",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 62,
+      "Name": "Keyboard F5",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 63,
+      "Name": "Keyboard F6",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 64,
+      "Name": "Keyboard F7",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 65,
+      "Name": "Keyboard F8",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 66,
+      "Name": "Keyboard F9",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 67,
+      "Name": "Keyboard F10",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 68,
+      "Name": "Keyboard F11",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 69,
+      "Name": "Keyboard F12",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 70,
+      "Name": "Keyboard PrintScreen",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 71,
+      "Name": "Keyboard Scroll Lock",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 72,
+      "Name": "Keyboard Pause",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 73,
+      "Name": "Keyboard Insert",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 74,
+      "Name": "Keyboard Home",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 75,
+      "Name": "Keyboard PageUp",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 76,
+      "Name": "Keyboard Delete Forward",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 77,
+      "Name": "Keyboard End",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 78,
+      "Name": "Keyboard PageDown",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 79,
+      "Name": "Keyboard RightArrow",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 80,
+      "Name": "Keyboard LeftArrow",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 81,
+      "Name": "Keyboard DownArrow",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 82,
+      "Name": "Keyboard UpArrow",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 83,
+      "Name": "Keypad Num Lock and Clear",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 84,
+      "Name": "Keypad ForwardSlash",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 85,
+      "Name": "Keypad Star",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 86,
+      "Name": "Keypad Dash",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 87,
+      "Name": "Keypad Plus",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 88,
+      "Name": "Keypad ENTER",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 89,
+      "Name": "Keypad 1 and End",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 90,
+      "Name": "Keypad 2 and Down Arrow",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 91,
+      "Name": "Keypad 3 and PageDn",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 92,
+      "Name": "Keypad 4 and Left Arrow",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 93,
+      "Name": "Keypad 5",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 94,
+      "Name": "Keypad 6 and Right Arrow",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 95,
+      "Name": "Keypad 7 and Home",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 96,
+      "Name": "Keypad 8 and Up Arrow",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 97,
+      "Name": "Keypad 9 and PageUp",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 98,
+      "Name": "Keypad 0 and Insert",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 99,
+      "Name": "Keypad Period and Delete",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 100,
+      "Name": "Keyboard Non-US Backslash and Pipe",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 101,
+      "Name": "Keyboard Application",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 102,
+      "Name": "Keyboard Power",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 103,
+      "Name": "Keypad Equals",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 104,
+      "Name": "Keyboard F13",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 105,
+      "Name": "Keyboard F14",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 106,
+      "Name": "Keyboard F15",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 107,
+      "Name": "Keyboard F16",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 108,
+      "Name": "Keyboard F17",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 109,
+      "Name": "Keyboard F18",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 110,
+      "Name": "Keyboard F19",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 111,
+      "Name": "Keyboard F20",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 112,
+      "Name": "Keyboard F21",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 113,
+      "Name": "Keyboard F22",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 114,
+      "Name": "Keyboard F23",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 115,
+      "Name": "Keyboard F24",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 116,
+      "Name": "Keyboard Execute",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 117,
+      "Name": "Keyboard Help",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 118,
+      "Name": "Keyboard Menu",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 119,
+      "Name": "Keyboard Select",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 120,
+      "Name": "Keyboard Stop",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 121,
+      "Name": "Keyboard Again",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 122,
+      "Name": "Keyboard Undo",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 123,
+      "Name": "Keyboard Cut",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 124,
+      "Name": "Keyboard Copy",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 125,
+      "Name": "Keyboard Paste",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 126,
+      "Name": "Keyboard Find",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 127,
+      "Name": "Keyboard Mute",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 128,
+      "Name": "Keyboard Volume Up",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 129,
+      "Name": "Keyboard Volume Down",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 130,
+      "Name": "Keyboard Locking Caps Lock",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 131,
+      "Name": "Keyboard Locking Num Lock",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 132,
+      "Name": "Keyboard Locking Scroll Lock",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 133,
+      "Name": "Keypad Comma",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 134,
+      "Name": "Keypad Equal Sign",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 135,
+      "Name": "Keyboard International1",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 136,
+      "Name": "Keyboard International2",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 137,
+      "Name": "Keyboard International3",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 138,
+      "Name": "Keyboard International4",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 139,
+      "Name": "Keyboard International5",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 140,
+      "Name": "Keyboard International6",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 141,
+      "Name": "Keyboard International7",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 142,
+      "Name": "Keyboard International8",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 143,
+      "Name": "Keyboard International9",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 144,
+      "Name": "Keyboard LANG1",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 145,
+      "Name": "Keyboard LANG2",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 146,
+      "Name": "Keyboard LANG3",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 147,
+      "Name": "Keyboard LANG4",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 148,
+      "Name": "Keyboard LANG5",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 149,
+      "Name": "Keyboard LANG6",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 150,
+      "Name": "Keyboard LANG7",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 151,
+      "Name": "Keyboard LANG8",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 152,
+      "Name": "Keyboard LANG9",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 153,
+      "Name": "Keyboard Alternate Erase",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 154,
+      "Name": "Keyboard SysReq Attention",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 155,
+      "Name": "Keyboard Cancel",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 156,
+      "Name": "Keyboard Clear",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 157,
+      "Name": "Keyboard Prior",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 158,
+      "Name": "Keyboard Return",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 159,
+      "Name": "Keyboard Separator",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 160,
+      "Name": "Keyboard Out",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 161,
+      "Name": "Keyboard Oper",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 162,
+      "Name": "Keyboard Clear Again",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 163,
+      "Name": "Keyboard CrSel Props",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 164,
+      "Name": "Keyboard ExSel",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 176,
+      "Name": "Keypad Double 0",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 177,
+      "Name": "Keypad Triple 0",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 178,
+      "Name": "Thousands Separator",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 179,
+      "Name": "Decimal Separator",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 180,
+      "Name": "Currency Unit",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 181,
+      "Name": "Currency Sub-unit",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 182,
+      "Name": "Keypad Left Bracket",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 183,
+      "Name": "Keypad Right Bracket",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 184,
+      "Name": "Keypad Left Brace",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 185,
+      "Name": "Keypad Right Brace",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 186,
+      "Name": "Keypad Tab",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 187,
+      "Name": "Keypad Backspace",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 188,
+      "Name": "Keypad A",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 189,
+      "Name": "Keypad B",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 190,
+      "Name": "Keypad C",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 191,
+      "Name": "Keypad D",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 192,
+      "Name": "Keypad E",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 193,
+      "Name": "Keypad F",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 194,
+      "Name": "Keypad XOR",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 195,
+      "Name": "Keypad Caret",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 196,
+      "Name": "Keypad Percentage",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 197,
+      "Name": "Keypad Less",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 198,
+      "Name": "Keypad Greater",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 199,
+      "Name": "Keypad Ampersand",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 200,
+      "Name": "Keypad Double Ampersand",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 201,
+      "Name": "Keypad Bar",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 202,
+      "Name": "Keypad Double Bar",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 203,
+      "Name": "Keypad Colon",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 204,
+      "Name": "Keypad Hash",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 205,
+      "Name": "Keypad Space",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 206,
+      "Name": "Keypad At",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 207,
+      "Name": "Keypad Bang",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 208,
+      "Name": "Keypad Memory Store",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 209,
+      "Name": "Keypad Memory Recall",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 210,
+      "Name": "Keypad Memory Clear",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 211,
+      "Name": "Keypad Memory Add",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 212,
+      "Name": "Keypad Memory Subtract",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 213,
+      "Name": "Keypad Memory Multiply",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 214,
+      "Name": "Keypad Memory Divide",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 215,
+      "Name": "Keypad Plus Minus",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 216,
+      "Name": "Keypad Clear",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 217,
+      "Name": "Keypad Clear Entry",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 218,
+      "Name": "Keypad Binary",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 219,
+      "Name": "Keypad Octal",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 220,
+      "Name": "Keypad Decimal",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 221,
+      "Name": "Keypad Hexadecimal",
+      "Kinds": [
+        "Sel"
+      ]
+    },
+    {
+      "Id": 224,
+      "Name": "Keyboard LeftControl",
+      "Kinds": [
+        "DV"
+      ]
+    },
+    {
+      "Id": 225,
+      "Name": "Keyboard LeftShift",
+      "Kinds": [
+        "DV"
+      ]
+    },
+    {
+      "Id": 226,
+      "Name": "Keyboard LeftAlt",
+      "Kinds": [
+        "DV"
+      ]
+    },
+    {
+      "Id": 227,
+      "Name": "Keyboard Left GUI",
+      "Kinds": [
+        "DV"
+      ]
+    },
+    {
+      "Id": 228,
+      "Name": "Keyboard RightControl",
+      "Kinds": [
+        "DV"
+      ]
+    },
+    {
+      "Id": 229,
+      "Name": "Keyboard RightShift",
+      "Kinds": [
+        "DV"
+      ]
+    },
+    {
+      "Id": 230,
+      "Name": "Keyboard RightAlt",
+      "Kinds": [
+        "DV"
+      ]
+    },
+    {
+      "Id": 231,
+      "Name": "Keyboard Right GUI",
+      "Kinds": [
+        "DV"
+      ]
+    }
+  ],
+  "UsageIdGenerator": null
+}

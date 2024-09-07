@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/wpa_supplicant",
+		"source" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/wpa_supplicant"
+	}
+}

@@ -1,0 +1,16 @@
+
+
+"C:\Users\dreg\Desktop\tmp\okhi\github\okhi\esprogram\esptool-win64\esptool.exe" --chip esp32-c2 --port "COM23" --baud 460800 --before no_reset --after no_reset write_flash  -z --flash_mode keep --flash_freq keep --flash_size keep 0x1000 "C:\Users\dreg\Desktop\tmp\okhi\github\okhi\esprogram\mock/BlinkRGB.ino.bootloader.bin" 0x8000 "C:\Users\dreg\Desktop\tmp\okhi\github\okhi\esprogram\mock/BlinkRGB.ino.partitions.bin" 0xe000 "C:\Users\dreg\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.0.0/tools/partitions/boot_app0.bin" 0x10000 "C:\Users\dreg\Desktop\tmp\okhi\github\okhi\esprogram\mock/BlinkRGB.ino.bin" --force
+
+
+
+"C:\Users\dreg\Desktop\tmp\okhi\github\okhi\esprogram\esptool-win64\esptool.exe" --chip esp32-c2 --port "COM30" --baud 460800 --before no_reset --after no_reset write_flash  -z --flash_mode keep --flash_freq keep --flash_size keep 0x1000 "C:\Users\dreg\Desktop\tmp\okhi\github\okhi\esprogram\mock/BlinkRGB.ino.bootloader.bin" 0x8000 "C:\Users\dreg\Desktop\tmp\okhi\github\okhi\esprogram\mock/BlinkRGB.ino.partitions.bin" 0xe000 "C:\Users\dreg\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.0.0/tools/partitions/boot_app0.bin" 0x10000 "C:\Users\dreg\Desktop\tmp\okhi\github\okhi\esprogram\mock/BlinkRGB.ino.bin" --force
+
+
+
+
+"C:\Users\dreg\Desktop\tmp\okhi\github\okhi\esprogram\esptool-win64\esptool.exe" --chip esp32-c2 --port "COM30" --baud 921600 --before no_reset --after no_reset write_flash  -z --flash_mode keep --flash_freq keep --flash_size keep 0x1000 "C:\Users\dreg\Desktop\tmp\okhi\github\okhi\esprogram\mock/BlinkRGB.ino.bootloader.bin" 0x8000 "C:\Users\dreg\Desktop\tmp\okhi\github\okhi\esprogram\mock/BlinkRGB.ino.partitions.bin" 0xe000 "C:\Users\dreg\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.0.0/tools/partitions/boot_app0.bin" 0x10000 "C:\Users\dreg\Desktop\tmp\okhi\github\okhi\esprogram\mock/BlinkRGB.ino.bin" --force
+
+
+
+"C:\Users\dreg\Desktop\tmp\okhi\github\okhi\esprogram\esptool-win64\esptool.exe" --chip esp32c2 --port "COM30" --baud 921600 --before no_reset --after no_reset write_flash -z --flash_mode dio --flash_freq 60m --flash_size detect 0x0000 C:\Users\dreg\Desktop\tmp\okhi\github\okhi\stuff\espsecondpocweb\.pio\build\esp32-c2-devkitm-1\bootloader.bin 0x8000 C:\Users\dreg\Desktop\tmp\okhi\github\okhi\stuff\espsecondpocweb\.pio\build\esp32-c2-devkitm-1\partitions.bin 0xe000 C:\Users\dreg\.platformio\packages\framework-arduinoespressif32\tools\partitions\boot_app0.bin 0x10000 .pio\build\esp32-c2-devkitm-1\firmware.bin
