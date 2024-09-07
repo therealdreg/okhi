@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Prueba de Remote Keyboard Tracker</title>
+    <style>
+        #events {
+            font-family: monospace;
+            white-space: pre;
+            background: #f0f0f0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+            height: 150px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Prueba de Remote Keyboard Tracker</h1>
+    <form id="keyForm">
+        <label for="keysPressed">Teclas Pulsadas:</label>
+        <div id="events"></div>
+    </form>
+    <script>
+        class RemoteKeyboardTracker {
+            constructor() {
+                this.keys = {};
+                this.eventLog = document.getElementById('events');
+                this.modifiers = {
+                    'Shift': false,
+                    'CapsLock': false,
+                    'AltRight': false
+                };
+                this.keyMappings = {
+                    'KeyA': { normal: 'a', shift: 'A' },
+                    'KeyB': { normal: 'b', shift: 'B' }
+                };
+            }
+
+            keyPressed(keyCode, timestamp) {
+                if (keyCode === 'ShiftLeft' || keyCode === 'ShiftRight') {
+                    this.modifiers['Shift'] = true;
+                    keyCode = 'Shift';
+                }
+
+                if (keyCode in this.modifiers) {
+                    this.modifiers[keyCode] = true;
+                }
+
+                this.keys[keyCode] = {
+                    pressed: true,
+                    time: timestamp
+                };
+                this.updateEventLog(keyCode);
+            }
+
+            keyReleased(keyCode, timestamp) {
+                if (keyCode === 'ShiftLeft' || keyCode === 'ShiftRight') {
+                    this.modifiers['Shift'] = false;
+                    keyCode = 'Shift';
+                }
+
+                if (keyCode in this.modifiers) {
+                    this.modifiers[keyCode] = false;
+                }
+
+                this.keys[keyCode] = {
+                    pressed: false,
+                    time: timestamp
+                };
+                console.log(`Tecla ${keyCode} liberada en ${new Date(timestamp).toLocaleTimeString()}`);
+            }
+
+            updateEventLog(keyCode) {
+                if (this.keys[keyCode].pressed) {
+                    let displayText;
+                    if (keyCode in this.keyMappings) {
+                        const mapping = this.keyMappings[keyCode];
+                        const shiftPressed = this.modifiers['Shift'];
+                        displayText = shiftPressed ? mapping.shift : mapping.normal;
+                    } else {
+                        displayText = keyCode;
+                    }
+                    const keyElement = document.createElement('div');
+                    keyElement.innerHTML = displayText;
+                    this.eventLog.appendChild(keyElement);
+                }
+            }
+        }
+
+        const keyMap = {
+            '0x1C': {
+                key: 'KeyA',
+                press: '0x1C',
+                release: ['0xF0', '0x1C']
+            },
+            '0x32': {
+                key: 'KeyB',
+                press: '0x32',
+                release: ['0xF0', '0x32']
+            }
+        };
+
+        class KeyboardEventParser {
+            constructor(tracker) {
+                this.tracker = tracker;
+                this.buffer = "";
+                this.releaseBuffer = "";
+            }
+
+            processData(data) {
+                this.buffer += data;
+                let pos;
+                while ((pos = this.buffer.indexOf(';')) !== -1) {
+                    const rawMessage = this.buffer.slice(0, pos).trim();
+                    this.buffer = this.buffer.slice(pos + 1);
+                    if (rawMessage.startsWith('D:0xF0')) {
+                        this.releaseBuffer = rawMessage;
+                    } else if (this.releaseBuffer && rawMessage.length > 0) {
+                        this.handleRelease(rawMessage);
+                        this.releaseBuffer = "";
+                    } else if (rawMessage.length > 0) {
+                        this.handlePress(rawMessage);
+                    }
+                }
+            }
+
+            handlePress(rawMessage) {
+                const keyCodeHex = rawMessage.split(' ')[0].split(':')[1];
+                const keyData = keyMap[keyCodeHex];
+                if (keyData) {
+                    const timestamp = parseInt(rawMessage.split(' ')[1].split(':')[1], 16);
+                    this.tracker.keyPressed(keyData.key, timestamp);
+                }
+            }
+
+            handleRelease(keyCodeMessage) {
+                const keyCodeHex = keyCodeMessage.split(' ')[0].split(':')[1];
+                const keyData = keyMap[keyCodeHex];
+                if (keyData && this.releaseBuffer.startsWith('D:0xF0')) {
+                    const timestamp = parseInt(this.releaseBuffer.split(' ')[1].split(':')[1], 16);
+                    this.tracker.keyReleased(keyData.key, timestamp);
+                }
+            }
+        }
+
+        let tracker = new RemoteKeyboardTracker();
+        let parser = new KeyboardEventParser(tracker);
+
+        // Simulación de entrada de datos
+        function simulateData() {
+            parser.processData("D:0x1C t:0x00000001 ;");
+            setTimeout(() => {
+                parser.processData("D:0xF0 t:0x00000010 ; D:0x1C t:0x00000012 ;");
+                setTimeout(() => {
+                    parser.processData("D:0x32 t:0x00000020 ;");
+                    setTimeout(() => {
+                        parser.processData("D:0xF0 t:0x00000030 ; D:0x32 t:0x00000032 ;");
+                    }, 1000);
+                }, 1000);
+            }, 1000);
+        }
+
+        window.onload = simulateData;
+    </script>
+</body>
+</html>

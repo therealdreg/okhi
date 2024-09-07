@@ -1,0 +1,122 @@
+; MIT License - okhi - Open Keylogger Hardware Implant
+; ---------------------------------------------------------------------------
+; Copyright (c) [2024] by David Reguera Garcia aka Dreg
+; https://github.com/therealdreg/okhi
+; https://www.rootkit.es
+; X @therealdreg
+; dreg@rootkit.es
+; ---------------------------------------------------------------------------
+; Permission is hereby granted, free of charge, to any person obtaining a copy
+; of this software and associated documentation files (the "Software"), to deal
+; in the Software without restriction, including without limitation the rights
+; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+; copies of the Software, and to permit persons to whom the Software is
+; furnished to do so, subject to the following conditions:
+; 
+; The above copyright notice and this permission notice shall be included in all
+; copies or substantial portions of the Software.
+; 
+; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+; SOFTWARE.
+; ---------------------------------------------------------------------------
+; WARNING: BULLSHIT CODE X-)
+; ---------------------------------------------------------------------------
+
+; https://www.usbmadesimple.co.uk/
+; https://www.beyondlogic.org/usbnutshell/usb1.shtml
+; USB Documentation - Christopher D Leary and Devrin Talen (pdf)
+
+; Ported & adapted by Dreg to PICO SDK from: 
+; https://github.com/ataradov/usb-sniffer-lite by Alex Taradov
+
+
+; TO-DO tar_fullsp_pio0 for USB FULL SPEED
+; Alex Taradov modify the PIO0-instruction at runtime (USB SPEED SWITCH), 
+; but I dont like it. So, at this moment for keyboards we only support USB LOW SPEED
+; In the future I will add USB FULL SPEED support adding a new PIO program (maybe) 
+
+
+; PIO0 & PIO1 Must run at ~15.625 MHz (each PIO cycle is 64 ns / 0.064 µs / 0.000064 ms)
+; USB LOW SPEED 1.5 Mbit/s = 1.5 MHz (each cycle is ~666.66 ns / ~0.66 µs / ~0.00066 ms)
+; So, PIO0 & PIO1 is running ~10 times faster than USB LOW SPEED
+
+.program tar_lowsp_pio0
+.wrap_target
+idle:
+        mov X, !NULL                 ; 00 Reset the bit counter
+        wait 1 PIN 1                 ; 01 Wait until the bus goes idle (USB LOW SPEED). FULL SPEED-> wait 1 PIN 0
+        wait 0 PIN 1                 ; 02 Wait for the SOP (USB LOW SPEED). FULL SPEED-> wait 0 PIN 0 
+start0:
+        nop [1]                      ; 03 Skip to the middle of the bit
+read0:
+        jmp X-- pio0_label_4         ; 04 Decrement the bit counter
+pio0_label_4: 
+        in PINS, 1                   ; 05 Sample D+       
+        mov OSR, ::PINS              ; 06 Sample D+ and D-
+        out Y, 2                     ; 07 
+        jmp !Y eop                   ; 08 If both are 0, then it is an EOP
+        nop [3]                      ; 09 Skip to the middle of the bit
+        jmp PIN read0                ; 10 If D- is high, then D+ is low, read 0
+read1:
+        jmp X-- pio0_label_6         ; 11 Decrement the bit counter
+pio0_label_6:
+        in PINS, 1                   ; 12 Sample D+
+        mov OSR, ::PINS              ; 13 Sample D+ and D-
+        out Y, 2                     ; 14
+        jmp !Y eop                   ; 15 If both are 0, then it is an EOP
+        jmp PIN start0               ; 16 Look for a low to high transition on
+        jmp PIN start0               ; 17 D- to adjust the sample point location
+        jmp PIN start0               ; 18
+        jmp PIN start0               ; 19
+        jmp read1                    ; 20 
+eop:
+        push noblock                 ; 21 Transfer the last data
+        mov ISR, X                   ; 22 Transfer the bit count
+        push noblock                 ; 23 
+poll_reset:
+        set X, 31                    ; 24
+poll_loop:
+        mov OSR, ::PINS              ; 25 Sample D+ and D-
+        out Y, 2                     ; 26
+        jmp Y-- idle                 ; 27 If either is not zero, back to idle
+        jmp X-- poll_loop            ; 28
+        mov ISR, !NULL               ; 29
+        push noblock                 ; 30
+.wrap 
+        wait 1 PIN 2                 ; 31 Entry point, wait for a START signal from the PIO1
+        ; At this point PC goes to first instruction of the PIO program
+
+
+
+.program tar_pio1
+        set pindirs, 1               ; Set the START output
+        set pins, 0                  ; Set the START output (low)
+.wrap_target
+        nop [31]                     ; 00 Wait for the PIO0 to start
+        nop [31]                     ; 01
+        nop [31]                     ; 02
+        nop [31]                     ; 03
+wait_se0: 
+        mov OSR, ::PINS              ; 04 
+        out Y, 2                     ; 05
+        jmp Y-- wait_se0             ; 06 
+        mov OSR, ::PINS              ; 07
+        out Y, 2                     ; 08
+        jmp Y-- wait_se0             ; 09
+        mov OSR, ::PINS              ; 10
+        out Y, 2                     ; 11
+        jmp Y-- wait_se0             ; 12
+        mov OSR, ::PINS              ; 13
+        out Y, 2                     ; 14
+        jmp Y-- wait_se0             ; 15
+        set PINS, 1                  ; 16 Set the START output
+infinite_loop:
+        jmp infinite_loop            ; 17
+.wrap
+
+

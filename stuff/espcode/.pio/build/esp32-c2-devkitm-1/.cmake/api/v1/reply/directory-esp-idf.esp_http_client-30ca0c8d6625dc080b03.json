@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/esp_http_client",
+		"source" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/esp_http_client"
+	}
+}

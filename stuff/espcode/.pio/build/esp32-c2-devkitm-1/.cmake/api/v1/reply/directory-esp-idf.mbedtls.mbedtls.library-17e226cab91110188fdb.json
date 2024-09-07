@@ -1,0 +1,81 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/library/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 343,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 343,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 343,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"esp-idf/mbedtls/mbedtls/library/libmbedcrypto.a"
+			],
+			"targetId" : "mbedcrypto::@12759e2a35724d846b97",
+			"targetIndex" : 88,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"esp-idf/mbedtls/mbedtls/library/libmbedx509.a"
+			],
+			"targetId" : "mbedx509::@12759e2a35724d846b97",
+			"targetIndex" : 90,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 3,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"esp-idf/mbedtls/mbedtls/library/libmbedtls.a"
+			],
+			"targetId" : "mbedtls::@12759e2a35724d846b97",
+			"targetIndex" : 89,
+			"type" : "target"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "esp-idf/mbedtls/mbedtls/library",
+		"source" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/library"
+	}
+}

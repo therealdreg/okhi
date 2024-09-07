@@ -1,0 +1,41 @@
+[
+ {
+  "directory": "C:\\Users\\dreg\\Desktop\\BlinkRGB",
+  "arguments": [
+   "C:\\Users\\dreg\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\xtensa-esp32-elf-gcc\\esp-12.2.0_20230208/bin/xtensa-esp32-elf-g++",
+   "-MMD",
+   "-c",
+   "@C:\\Users\\dreg\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-arduino-libs\\idf-release_v5.1-442a798083/esp32/flags/cpp_flags",
+   "-w",
+   "-Os",
+   "-DF_CPU=240000000L",
+   "-DARDUINO=10607",
+   "-DARDUINO_ESP32_DEV",
+   "-DARDUINO_ARCH_ESP32",
+   "-DARDUINO_BOARD=\"ESP32_DEV\"",
+   "-DARDUINO_VARIANT=\"esp32\"",
+   "-DARDUINO_PARTITION_default",
+   "-DARDUINO_HOST_OS=\"windows\"",
+   "-DARDUINO_FQBN=\"esp32:esp32:esp32:UploadSpeed=921600,CPUFreq=240,FlashFreq=80,FlashMode=qio,FlashSize=4M,PartitionScheme=default,DebugLevel=none,PSRAM=disabled,LoopCore=1,EventsCore=1,EraseFlash=none,JTAGAdapter=default,ZigbeeMode=default\"",
+   "-DESP32",
+   "-DCORE_DEBUG_LEVEL=0",
+   "-DARDUINO_RUNNING_CORE=1",
+   "-DARDUINO_EVENT_RUNNING_CORE=1",
+   "-DARDUINO_USB_CDC_ON_BOOT=0",
+   "@C:\\Users\\dreg\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-arduino-libs\\idf-release_v5.1-442a798083/esp32/flags/defines",
+   "-IC:\\Users\\dreg\\Desktop\\BlinkRGB",
+   "-iprefix",
+   "C:\\Users\\dreg\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-arduino-libs\\idf-release_v5.1-442a798083/esp32/include/",
+   "@C:\\Users\\dreg\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-arduino-libs\\idf-release_v5.1-442a798083/esp32/flags/includes",
+   "-IC:\\Users\\dreg\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32-arduino-libs\\idf-release_v5.1-442a798083/esp32/qio_qspi/include",
+   "-IC:\\Users\\dreg\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.0.0\\cores\\esp32",
+   "-IC:\\Users\\dreg\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.0.0\\variants\\esp32",
+   "@C:\\Users\\dreg\\AppData\\Local\\Temp\\arduino\\sketches\\AC2D7F778F2E976555CCA3CF216F072E/build_opt.h",
+   "@C:\\Users\\dreg\\AppData\\Local\\Temp\\arduino\\sketches\\AC2D7F778F2E976555CCA3CF216F072E/file_opts",
+   "C:\\Users\\dreg\\AppData\\Local\\Temp\\arduino\\sketches\\AC2D7F778F2E976555CCA3CF216F072E\\sketch\\BlinkRGB.ino.cpp",
+   "-o",
+   "C:\\Users\\dreg\\AppData\\Local\\Temp\\arduino\\sketches\\AC2D7F778F2E976555CCA3CF216F072E\\sketch\\BlinkRGB.ino.cpp.o"
+  ],
+  "file": "C:\\Users\\dreg\\AppData\\Local\\Temp\\arduino\\sketches\\AC2D7F778F2E976555CCA3CF216F072E\\sketch\\BlinkRGB.ino.cpp"
+ }
+]

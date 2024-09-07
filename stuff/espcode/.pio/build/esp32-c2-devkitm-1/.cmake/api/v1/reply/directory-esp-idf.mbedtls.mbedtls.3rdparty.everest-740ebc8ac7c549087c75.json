@@ -1,0 +1,61 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/3rdparty/everest/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 31,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 39,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				"C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/3rdparty/everest/include/everest"
+			],
+			"type" : "directory"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"esp-idf/mbedtls/mbedtls/3rdparty/everest/libeverest.a"
+			],
+			"targetId" : "everest::@3ecd26ac3776729513f0",
+			"targetIndex" : 84,
+			"type" : "target"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "esp-idf/mbedtls/mbedtls/3rdparty/everest",
+		"source" : "C:/Users/dreg/.platformio/packages/framework-espidf/components/mbedtls/mbedtls/3rdparty/everest"
+	}
+}

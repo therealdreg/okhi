@@ -1,0 +1,81 @@
+{
+	"backtrace" : 2,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_custom_target",
+			"pico_generate_pio_header"
+		],
+		"files" : 
+		[
+			"C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/tools/CMakeLists.txt",
+			"C:/Users/dreg/Documents/Pico-v1.5.1/pico-extras/src/rp2_common/pico_audio_i2s/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 4,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 39,
+				"parent" : 1
+			}
+		]
+	},
+	"id" : "pico_audio_i2s_audio_i2s_pio_h::@54354557063177904464",
+	"name" : "pico_audio_i2s_audio_i2s_pio_h",
+	"paths" : 
+	{
+		"build" : "pico_extras/src/rp2_common/pico_audio_i2s",
+		"source" : "C:/Users/dreg/Documents/Pico-v1.5.1/pico-extras/src/rp2_common/pico_audio_i2s"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		},
+		{
+			"name" : "CMake Rules",
+			"sourceIndexes" : 
+			[
+				1,
+				2
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 2,
+			"isGenerated" : true,
+			"path" : "build/pico_extras/src/rp2_common/pico_audio_i2s/CMakeFiles/pico_audio_i2s_audio_i2s_pio_h",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "build/pico_extras/src/rp2_common/pico_audio_i2s/CMakeFiles/pico_audio_i2s_audio_i2s_pio_h.rule",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "build/pico_extras/src/rp2_common/pico_audio_i2s/audio_i2s.pio.h.rule",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "UTILITY"
+}

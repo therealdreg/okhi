@@ -1,0 +1,346 @@
+Archive member included to satisfy reference by file (symbol)
+
+c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_udivsi3.o)
+                              build/okhi.o (__aeabi_uidiv)
+c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_divsi3.o)
+                              build/okhi.o (__aeabi_idiv)
+c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_dvmd_tls.o)
+                              c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_udivsi3.o) (__aeabi_idiv0)
+c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memset.o)
+                              build/okhi.o (memset)
+
+Discarded input sections
+
+ .text          0x00000000        0x0 build/okhi.o
+ .data          0x00000000        0x0 build/okhi.o
+ .bss           0x00000000        0x0 build/okhi.o
+ .text.display_puthex
+                0x00000000       0x16 build/okhi.o
+ .text.display_value
+                0x00000000       0x24 build/okhi.o
+ .text.capture_init
+                0x00000000        0x8 build/okhi.o
+ .text.capture_command
+                0x00000000        0xe build/okhi.o
+ .text.set_error
+                0x00000000       0x14 build/okhi.o
+ .bss.g_ref_time
+                0x00000000        0x4 build/okhi.o
+ .data.g_capture_limit
+                0x00000000        0x4 build/okhi.o
+ .data.g_capture_speed
+                0x00000000        0x4 build/okhi.o
+ .data.g_capture_trigger
+                0x00000000        0x4 build/okhi.o
+ .data.g_display_data
+                0x00000000        0x4 build/okhi.o
+ .data.g_display_time
+                0x00000000        0x4 build/okhi.o
+ .text          0x00000000        0x0 build/utils.o
+ .data          0x00000000        0x0 build/utils.o
+ .bss           0x00000000        0x0 build/utils.o
+ .text.hw_divmod_s32
+                0x00000000       0x1c build/utils.o
+ .text.format_hex
+                0x00000000       0x28 build/utils.o
+ .rodata.hex.0  0x00000000       0x11 build/utils.o
+ .text          0x00000000        0x0 build/startup_rp2040.o
+ .data          0x00000000        0x0 build/startup_rp2040.o
+ .bss           0x00000000        0x0 build/startup_rp2040.o
+ .data          0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_udivsi3.o)
+ .bss           0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_udivsi3.o)
+ .data          0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_divsi3.o)
+ .bss           0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_divsi3.o)
+ .data          0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_dvmd_tls.o)
+ .bss           0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_dvmd_tls.o)
+ .text          0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memset.o)
+ .data          0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memset.o)
+ .bss           0x00000000        0x0 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memset.o)
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+boot             0x10000000         0x00000100         xr
+flash            0x10000100         0x001fff00         xr
+ram              0x20000000         0x00042000         xrw
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.boot           0x10000000      0x100
+ *(.boot.entry)
+ .boot.entry    0x10000000       0xe0 build/startup_rp2040.o
+                0x10000000                boot_entry
+ *(.boot*)
+                0x000000fc                . = 0xfc
+ *fill*         0x100000e0       0x1c 
+                0x100000fc        0x4 LONG 0xcccccccc
+
+.text           0x20000000     0x1b20 load address 0x10000100
+                0x20000000                _text = .
+ *(.vectors)
+ .vectors       0x20000000       0xa8 build/startup_rp2040.o
+                0x20000000                vectors
+ *(.text*)
+ .text.GetLastDbuffAddr
+                0x200000a8       0x14 build/okhi.o
+                0x200000a8                GetLastDbuffAddr
+ .text.core1_start
+                0x200000bc       0x68 build/okhi.o
+ .text.handle_folding
+                0x20000124       0x90 build/okhi.o
+ .text.display_putc
+                0x200001b4       0x10 build/okhi.o
+                0x200001b4                display_putc
+ .text.display_puts
+                0x200001c4       0x14 build/okhi.o
+                0x200001c4                display_puts
+ .text.display_putdec
+                0x200001d8       0x16 build/okhi.o
+                0x200001d8                display_putdec
+ *fill*         0x200001ee        0x2 
+ .text.display_buffer
+                0x200001f0      0x580 build/okhi.o
+                0x200001f0                display_buffer
+ .text.func     0x20000770       0x50 build/okhi.o
+                0x20000770                func
+ .text.core1_main
+                0x200007c0      0x2b8 build/okhi.o
+ .text.startup.main
+                0x20000a78      0x5e0 build/okhi.o
+                0x20000a78                main
+ .text.msprintf
+                0x20001058      0x20a build/utils.o
+                0x20001058                msprintf
+ .text.hw_divmod_u32
+                0x20001262       0x1c build/utils.o
+                0x20001262                hw_divmod_u32
+ .text.format_dec
+                0x2000127e       0x64 build/utils.o
+                0x2000127e                format_dec
+ .text.irq_handler_dummy
+                0x200012e2        0x2 build/startup_rp2040.o
+                0x200012e2                irq_handler_pend_sv
+                0x200012e2                irq_handler_sio_proc1
+                0x200012e2                irq_handler_pwm
+                0x200012e2                irq_handler_uart0
+                0x200012e2                irq_handler_dummy
+                0x200012e2                irq_handler_io_bank0
+                0x200012e2                irq_handler_adc_fifo
+                0x200012e2                irq_handler_timer_3
+                0x200012e2                irq_handler_timer_2
+                0x200012e2                irq_handler_i2c0
+                0x200012e2                irq_handler_timer_1
+                0x200012e2                irq_handler_dma_0
+                0x200012e2                irq_handler_usbctrl
+                0x200012e2                irq_handler_pio0_0
+                0x200012e2                irq_handler_spi0
+                0x200012e2                irq_handler_pio1_1
+                0x200012e2                irq_handler_nmi
+                0x200012e2                irq_handler_sio_proc0
+                0x200012e2                irq_handler_sv_call
+                0x200012e2                irq_handler_pio0_1
+                0x200012e2                irq_handler_i2c1
+                0x200012e2                irq_handler_dma_1
+                0x200012e2                irq_handler_clocks
+                0x200012e2                irq_handler_sys_tick
+                0x200012e2                irq_handler_xip
+                0x200012e2                irq_handler_uart1
+                0x200012e2                irq_handler_spi1
+                0x200012e2                irq_handler_hard_fault
+                0x200012e2                irq_handler_pio1_0
+                0x200012e2                irq_handler_rtc
+                0x200012e2                irq_handler_timer_0
+                0x200012e2                irq_handler_io_qspi
+ .text          0x200012e4      0x114 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_udivsi3.o)
+                0x200012e4                __aeabi_uidiv
+                0x200012e4                __udivsi3
+                0x200013f0                __aeabi_uidivmod
+ .text          0x200013f8      0x1d4 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_divsi3.o)
+                0x200013f8                __divsi3
+                0x200013f8                __aeabi_idiv
+                0x200015c4                __aeabi_idivmod
+ .text          0x200015cc        0x4 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_dvmd_tls.o)
+                0x200015cc                __aeabi_idiv0
+                0x200015cc                __aeabi_ldiv0
+ .text.memset   0x200015d0       0xa8 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memset.o)
+                0x200015d0                memset
+ *(.rodata)
+ .rodata        0x20001678      0x142 build/okhi.o
+ *(.rodata.*)
+ .rodata.crc16_usb_tab
+                0x200017ba      0x200 build/okhi.o
+ .rodata.crc5_usb_tab
+                0x200019ba      0x100 build/okhi.o
+ .rodata.pio0_ops.1
+                0x20001aba       0x40 build/okhi.o
+ .rodata.pio1_ops.0
+                0x20001afa       0x24 build/okhi.o
+                0x20001b20                . = ALIGN (0x4)
+ *fill*         0x20001b1e        0x2 
+                0x20001b20                _etext = .
+
+.glue_7         0x20001b20        0x0 load address 0x10001c20
+ .glue_7        0x20001b20        0x0 linker stubs
+
+.glue_7t        0x20001b20        0x0 load address 0x10001c20
+ .glue_7t       0x20001b20        0x0 linker stubs
+
+.vfp11_veneer   0x20001b20        0x0 load address 0x10001c20
+ .vfp11_veneer  0x20001b20        0x0 linker stubs
+
+.v4_bx          0x20001b20        0x0 load address 0x10001c20
+ .v4_bx         0x20001b20        0x0 linker stubs
+
+.iplt           0x20001b20        0x0 load address 0x10001c20
+ .iplt          0x20001b20        0x0 build/okhi.o
+
+.rel.dyn        0x20001b20        0x0 load address 0x10001c20
+ .rel.iplt      0x20001b20        0x0 build/okhi.o
+
+.firam
+ *(.firam)
+
+.fflash         0x10001c20        0x0
+ *(.fflash*)
+                0x10001c20                . = ALIGN (0x4)
+
+.data           0x20001b20        0x0 load address 0x10001c20
+                0x20001b20                _data = .
+ *(.ramfunc .ramfunc.*)
+ *(vtable)
+ *(.data*)
+                0x20001b20                . = ALIGN (0x4)
+                0x20001b20                _edata = .
+
+.igot.plt       0x20001b20        0x0 load address 0x10001c20
+ .igot.plt      0x20001b20        0x0 build/okhi.o
+
+.bss            0x20001b20    0x1fc68 load address 0x10001c20
+                0x20001b20                _bss = .
+ *(.bss*)
+ .bss.last_dbuff
+                0x20001b20        0x4 build/okhi.o
+ .bss.core1_stack.2
+                0x20001b24      0x800 build/okhi.o
+ .bss.curr_dbuff
+                0x20002324        0x4 build/okhi.o
+ .bss.dbuff1    0x20002328     0xfa1c build/okhi.o
+                0x20002328                dbuff1
+ .bss.dbuff2    0x20011d44     0xfa1c build/okhi.o
+                0x20011d44                dbuff2
+ .bss.g_check_delta
+                0x20021760        0x1 build/okhi.o
+ *fill*         0x20021761        0x3 
+ .bss.g_display_fold
+                0x20021764        0x4 build/okhi.o
+                0x20021764                g_display_fold
+ .bss.g_display_ptr
+                0x20021768        0x4 build/okhi.o
+ .bss.g_fold_count
+                0x2002176c        0x4 build/okhi.o
+ .bss.g_folding
+                0x20021770        0x1 build/okhi.o
+ .bss.g_may_fold
+                0x20021771        0x1 build/okhi.o
+ *fill*         0x20021772        0x2 
+ .bss.g_prev_time
+                0x20021774        0x4 build/okhi.o
+ .bss.g_rd_ptr  0x20021778        0x4 build/okhi.o
+ .bss.g_sof_index
+                0x2002177c        0x4 build/okhi.o
+ .bss.g_wr_ptr  0x20021780        0x4 build/okhi.o
+ .bss.last_pid_in.3
+                0x20021784        0x1 build/okhi.o
+ *(COMMON)
+                0x20021788                . = ALIGN (0x4)
+ *fill*         0x20021785        0x3 
+                0x20021788                _ebss = .
+
+.flash_end      0x10001c20        0x0
+                0x10001c20                __flash_binary_end = .
+                [!provide]                PROVIDE (_end = .)
+                0x10000100                PROVIDE (_text_start = ORIGIN (flash))
+                0x20042000                PROVIDE (_stack_top = (ORIGIN (ram) + LENGTH (ram)))
+LOAD build/okhi.o
+LOAD build/utils.o
+LOAD build/startup_rp2040.o
+START GROUP
+LOAD c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a
+LOAD c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a
+END GROUP
+OUTPUT(build/okhi.elf elf32-littlearm)
+LOAD linker stubs
+
+.debug_info     0x00000000    0x14014
+ .debug_info    0x00000000    0x12b34 build/okhi.o
+ .debug_info    0x00012b34      0x770 build/utils.o
+ .debug_info    0x000132a4      0xd70 build/startup_rp2040.o
+
+.debug_abbrev   0x00000000      0xacc
+ .debug_abbrev  0x00000000      0x677 build/okhi.o
+ .debug_abbrev  0x00000677      0x24e build/utils.o
+ .debug_abbrev  0x000008c5      0x207 build/startup_rp2040.o
+
+.debug_loc      0x00000000     0x2c31
+ .debug_loc     0x00000000     0x210c build/okhi.o
+ .debug_loc     0x0000210c      0xaa9 build/utils.o
+ .debug_loc     0x00002bb5       0x7c build/startup_rp2040.o
+
+.debug_aranges  0x00000000       0xf8
+ .debug_aranges
+                0x00000000       0x90 build/okhi.o
+ .debug_aranges
+                0x00000090       0x40 build/utils.o
+ .debug_aranges
+                0x000000d0       0x28 build/startup_rp2040.o
+
+.debug_ranges   0x00000000     0x10c8
+ .debug_ranges  0x00000000      0xf58 build/okhi.o
+ .debug_ranges  0x00000f58      0x140 build/utils.o
+ .debug_ranges  0x00001098       0x30 build/startup_rp2040.o
+
+.debug_line     0x00000000     0x27c6
+ .debug_line    0x00000000     0x1f92 build/okhi.o
+ .debug_line    0x00001f92      0x60e build/utils.o
+ .debug_line    0x000025a0      0x226 build/startup_rp2040.o
+
+.debug_str      0x00000000     0x5dc9
+ .debug_str     0x00000000     0x5837 build/okhi.o
+                               0x5a4e (size before relaxing)
+ .debug_str     0x00005837       0xb9 build/utils.o
+                                0x2b0 (size before relaxing)
+ .debug_str     0x000058f0      0x4d9 build/startup_rp2040.o
+                                0x6de (size before relaxing)
+
+.comment        0x00000000       0x49
+ .comment       0x00000000       0x49 build/okhi.o
+                                 0x4a (size before relaxing)
+ .comment       0x00000049       0x4a build/utils.o
+ .comment       0x00000049       0x4a build/startup_rp2040.o
+
+.ARM.attributes
+                0x00000000       0x2c
+ .ARM.attributes
+                0x00000000       0x2c build/okhi.o
+ .ARM.attributes
+                0x0000002c       0x2c build/utils.o
+ .ARM.attributes
+                0x00000058       0x2c build/startup_rp2040.o
+ .ARM.attributes
+                0x00000084       0x1e c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_udivsi3.o)
+ .ARM.attributes
+                0x000000a2       0x1e c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_divsi3.o)
+ .ARM.attributes
+                0x000000c0       0x1e c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_dvmd_tls.o)
+ .ARM.attributes
+                0x000000de       0x2c c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memset.o)
+
+.debug_frame    0x00000000      0x2dc
+ .debug_frame   0x00000000      0x18c build/okhi.o
+ .debug_frame   0x0000018c       0xb0 build/utils.o
+ .debug_frame   0x0000023c       0x30 build/startup_rp2040.o
+ .debug_frame   0x0000026c       0x20 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_udivsi3.o)
+ .debug_frame   0x0000028c       0x20 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_divsi3.o)
+ .debug_frame   0x000002ac       0x30 c:/program files/raspberry pi/pico sdk v1.5.1/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(lib_a-memset.o)

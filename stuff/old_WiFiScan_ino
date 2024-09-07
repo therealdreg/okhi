@@ -1,0 +1,204 @@
+#include <WiFi.h>
+#include <WebServer.h>
+#include <SPI.h>
+
+// Configuración del WiFi
+const char* ssid = "ESP";
+const char* password = "0123456789";
+
+// Configuración del servidor web
+WebServer server(80);
+
+// Buffer para almacenar datos y variables para manejar el buffer
+const unsigned int BUFFER_SIZE = 512;
+volatile unsigned char buffer[BUFFER_SIZE];
+volatile unsigned int bufferIndex = 0;
+
+SPIClass SPI2(HSPI);
+
+const int SS_PIN    = 10;  
+const int CLK_PIN   = 6;
+const int MISO_PIN  = 2;
+const int MOSI_PIN  = 7;
+
+
+void IRAM_ATTR handleSPIInterrupt() {
+          Serial.println("\r\nputa");
+          buffer[bufferIndex] = SPI2.transfer(0x00); // Leer el dato
+          Serial.write((char*) &(buffer[bufferIndex]), 1); // Mostrar el dato en el monitor serie
+          bufferIndex = (bufferIndex + 1) % sizeof(buffer);
+}
+
+void handleRoot() {
+  String html = "<!DOCTYPE html><html><head><title>Datos del Buffer</title>"
+                "<script>"
+                "function fetchBuffer() {"
+                "  fetch('/buffer').then(response => response.text()).then(data => {"
+                "    document.getElementById('bufferData').value = data;"
+                "    document.getElementById('hexData').value = stringToHex(data);"
+                "  });"
+                "}"
+                "function stringToHex(str) {"
+                "  var hex = '';"
+                "  for (var i = 0; i < str.length; i++) {"
+                "    hex += str.charCodeAt(i).toString(16).padStart(2, '0') + ' ';"
+                "  }"
+                "  return hex.trim();"
+                "}"
+                "setInterval(fetchBuffer, 1000);"
+                "</script>"
+                "</head><body>"
+                "<h1>Datos del Buffer</h1>"
+                "<form>"
+                "  <label for='bufferData'>Buffer:</label><br>"
+                "  <textarea id='bufferData' rows='10' cols='50' readonly></textarea><br><br>"
+                "</form>"
+                "<form>"
+                "  <label for='hexData'>Hexadecimal:</label><br>"
+                "  <textarea id='hexData' rows='10' cols='50' readonly></textarea><br><br>"
+                "</form>"
+                "</body></html>";
+  server.send(200, "text/html", html);
+}
+
+void handleBuffer() {
+  server.send(200, "text/plain", (char*) buffer);
+}
+
+#include <Arduino.h>
+#define CONFIG_IDF_TARGET_ESP32C3 // Dreg's hack
+#include <ESP32SPISlave.h>
+
+#define SPI_BUFFER_SIZE (4u)
+
+  ESP32SPISlave slave;
+
+
+
+uint8_t spiTxBuffer[SPI_BUFFER_SIZE];
+uint8_t spiRxBuffer[SPI_BUFFER_SIZE];
+
+void loop2(void)
+{
+
+    slave.wait(spiRxBuffer, spiTxBuffer, SPI_BUFFER_SIZE);
+
+    if (slave.available())
+    {
+        for (size_t i = 0; i < SPI_BUFFER_SIZE; ++i) {
+            printf("%d ", spiRxBuffer[i]);
+        }
+        printf("\n");
+
+        slave.pop();
+    }
+}
+
+void setup() {
+  Serial.begin(74880);
+  delay(500);
+
+
+static constexpr size_t BUFFER_SIZE = 8;
+static constexpr size_t QUEUE_SIZE = 1;
+uint8_t tx_buf[BUFFER_SIZE] {1, 2, 3, 4, 5, 6, 7, 8};
+uint8_t rx_buf[BUFFER_SIZE] {0, 0, 0, 0, 0, 0, 0, 0};
+
+ slave.setDataMode(SPI_MODE0);   // default: SPI_MODE0
+    slave.setQueueSize(QUEUE_SIZE); // default: 1
+
+    // begin() after setting
+    slave.begin(HSPI, CLK_PIN, MISO_PIN, MOSI_PIN, SS_PIN);  // default: HSPI (please refer README for pin assignments)
+
+    while(1)
+    {
+      const size_t received_bytes = slave.transfer(tx_buf, rx_buf, BUFFER_SIZE);
+
+      if (received_bytes > 0)
+      {
+        Serial.print("\r\nReceived Bytes: 0x");
+        Serial.print(received_bytes, HEX);
+        Serial.println();
+        for (int i = 0; i < received_bytes; i++)
+        {
+          Serial.print(rx_buf[i], HEX);
+        }
+      }
+    }
+
+
+  /*
+
+  Serial.print("MOSI: ");
+  Serial.println(MOSI);
+  Serial.print("MISO: ");
+  Serial.println(MISO);
+  Serial.print("SCK: ");
+  Serial.println(SCK);
+  Serial.print("SS: ");
+  Serial.println(SS);  
+
+  pinMode(CLK_PIN, INPUT_PULLUP);
+  pinMode(MISO_PIN, OUTPUT);
+  pinMode(MOSI_PIN, INPUT_PULLUP);
+  pinMode(SS_PIN, INPUT_PULLUP);
+  */
+  // Configuración de SPI en modo esclavo
+
+  
+  pinMode(CLK_PIN, INPUT_PULLUP);
+  pinMode(MISO_PIN, OUTPUT);
+  pinMode(MOSI_PIN, INPUT_PULLUP);
+  pinMode(SS_PIN, INPUT_PULLUP);
+
+ SPIClass* hspi = new SPIClass(HSPI); 
+ hspi->begin(CLK_PIN, MISO_PIN, MOSI_PIN, SS_PIN);
+
+while (1)
+{
+  if (digitalRead(SS_PIN) == LOW)
+  {
+    //Serial.println("Slave Select Activado");
+    do
+    {
+      byte receivedByte = hspi->transfer(0x00);
+      Serial.print("Received Byte: ");
+      Serial.print(receivedByte, HEX);
+      Serial.println();
+    } while (digitalRead(SS_PIN) == LOW);
+  }
+}
+
+  //SPI2.begin(CLK_PIN, MISO_PIN, MOSI_PIN, SS_PIN); // Ajusta los pines según tu hardware
+  attachInterrupt(digitalPinToInterrupt(SS_PIN), handleSPIInterrupt, FALLING);
+  
+  unsigned int last_index = 0;
+  while (1)
+  {
+
+    if (last_index != bufferIndex) {
+      last_index = bufferIndex % sizeof(buffer);
+      Serial.println("nuevo buffer: ");
+      Serial.write((uint8_t*) buffer, last_index);
+    }
+  }
+  
+
+  // Configuración del punto de acceso WiFi
+  WiFi.softAP(ssid, password, 1, false, 4);
+
+  // Mostrar la IP del ESP32
+  IPAddress IP = WiFi.softAPIP();
+  Serial.print("IP del punto de acceso: ");
+  Serial.println(IP);
+
+  // Configurar manejadores para las rutas del servidor
+  server.on("/", handleRoot);
+  server.on("/buffer", handleBuffer);
+  server.begin();
+  Serial.println("Servidor HTTP iniciado");  
+}
+
+void loop() {
+  server.handleClient();
+}

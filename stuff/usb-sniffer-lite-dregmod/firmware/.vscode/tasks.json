@@ -1,0 +1,55 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Flash",
+        "type": "shell",
+        "command": "openocd",
+        "options": {
+          "cwd": "${workspaceFolder}"
+        },
+        "args": [
+          "-f",
+          "interface/cmsis-dap.cfg",
+          "-f",
+          "target/rp2040.cfg",
+          "-c",
+          "adapter speed 5000; program build/build/okhi_crc.elf verify; init ; reset halt ; rp2040.core1 arp_reset assert 0 ; rp2040.core0 arp_reset assert 0 ; exit"
+        ],
+        "problemMatcher": []
+      },
+      {
+        "label": "BuildAndFlash",
+        "dependsOrder": "sequence",
+        "dependsOn": [ "build", "Flash" ],
+        "problemMatcher": []
+      },
+      {
+        "label": "build",
+        "command": "./build/build.bat",
+        "args": [
+          "one",
+          "two"
+        ],
+        "problemMatcher": {
+          "owner": "external",
+          "fileLocation": [
+            "relative",
+            "${workspaceFolder}"
+          ],
+          "pattern": {
+            "regexp": "^\\.?\\.?(.*)/(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+            "file": 2,
+            "line": 3,
+            "column": 4,
+            "severity": 5,
+            "message": 6
+          }
+        },
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        }
+      }
+    ]
+  }
