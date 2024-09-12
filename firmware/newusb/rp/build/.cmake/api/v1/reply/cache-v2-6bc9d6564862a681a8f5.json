@@ -1243,7 +1243,7 @@
 			[
 				{
 					"name" : "HELPSTRING",
-					"value" : "The CMake toolchain file"
+					"value" : "No help, variable specified on the command line."
 				}
 			],
 			"type" : "FILEPATH",
@@ -1319,7 +1319,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "[C:/Program Files/WindowsApps/PythonSoftwareFoundation.Python.3.12_3.12.1520.0_x64__qbz5n2kfra8p0/python3.12.exe][cfound components: Interpreter ][v3.12.5()]"
+			"value" : "[C:/Program Files/WindowsApps/PythonSoftwareFoundation.Python.3.12_3.12.1776.0_x64__qbz5n2kfra8p0/python3.12.exe][cfound components: Interpreter ][v3.12.6()]"
 		},
 		{
 			"name" : "PICO_BOARD",
@@ -1475,7 +1475,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : " C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs"
+			"value" : " C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs"
 		},
 		{
 			"name" : "PICO_DOXYGEN_PATHS",
@@ -1739,7 +1739,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Program Files/WindowsApps/PythonSoftwareFoundation.Python.3.12_3.12.1520.0_x64__qbz5n2kfra8p0/python3.12.exe"
+			"value" : "C:/Program Files/WindowsApps/PythonSoftwareFoundation.Python.3.12_3.12.1776.0_x64__qbz5n2kfra8p0/python3.12.exe"
 		},
 		{
 			"name" : "_Python3_INTERPRETER_PROPERTIES",
@@ -1751,7 +1751,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "Python;3;12;5;32;;;C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.1520.0_x64__qbz5n2kfra8p0\\Lib;C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.1520.0_x64__qbz5n2kfra8p0\\Lib;C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.1520.0_x64__qbz5n2kfra8p0\\Lib\\site-packages;C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.1520.0_x64__qbz5n2kfra8p0\\Lib\\site-packages"
+			"value" : "Python;3;12;6;32;;;C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.1776.0_x64__qbz5n2kfra8p0\\Lib;C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.1776.0_x64__qbz5n2kfra8p0\\Lib;C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.1776.0_x64__qbz5n2kfra8p0\\Lib\\site-packages;C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.1776.0_x64__qbz5n2kfra8p0\\Lib\\site-packages"
 		},
 		{
 			"name" : "_Python3_INTERPRETER_SIGNATURE",
@@ -1763,7 +1763,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "e59e1b46842c5160682ca2df7edee22f"
+			"value" : "c4c8e9701080266b7251f1103f7ed022"
 		},
 		{
 			"name" : "_Python3_NumPy_REASON_FAILURE",

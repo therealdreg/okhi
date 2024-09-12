@@ -41,9 +41,9 @@
 ; In the future I will add USB FULL SPEED support adding a new PIO program (maybe) 
 
 
-; PIO0 & PIO1 Must run at ~15.625 MHz (each PIO cycle is 64 ns / 0.064 µs / 0.000064 ms)
+; PIO0 & PIO1 Must run at 15 MHz (each PIO cycle is 64 ns / 0.064 µs / 0.000064 ms)
 ; USB LOW SPEED 1.5 Mbit/s = 1.5 MHz (each cycle is ~666.66 ns / ~0.66 µs / ~0.00066 ms)
-; So, PIO0 & PIO1 is running ~10 times faster than USB LOW SPEED
+; So, PIO0 & PIO1 is running 10 times faster than USB LOW SPEED
 
 .program tar_lowsp_pio0
 .wrap_target
@@ -95,7 +95,7 @@ poll_loop:
 
 .program tar_pio1
         set pindirs, 1               ; Set the START output
-        set pins, 0                  ; Set the START output (low)
+        set pins, 0                  ; Set the START output LOW
 .wrap_target
         nop [31]                     ; 00 Wait for the PIO0 to start
         nop [31]                     ; 01
@@ -114,7 +114,7 @@ wait_se0:
         mov OSR, ::PINS              ; 13
         out Y, 2                     ; 14
         jmp Y-- wait_se0             ; 15
-        set PINS, 1                  ; 16 Set the START output
+        set PINS, 1                  ; 16 Set the START output HIGH
 infinite_loop:
         jmp infinite_loop            ; 17
 .wrap

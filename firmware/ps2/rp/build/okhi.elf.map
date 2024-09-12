@@ -1227,9 +1227,9 @@ Discarded input sections
  .debug_frame   0x00000000       0xe4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
  .ARM.attributes
                 0x00000000       0x2c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
- .text          0x00000000        0x0 C:\Users\regue\AppData\Local\Temp\ccy9DPQj.o
- .data          0x00000000        0x0 C:\Users\regue\AppData\Local\Temp\ccy9DPQj.o
- .bss           0x00000000        0x0 C:\Users\regue\AppData\Local\Temp\ccy9DPQj.o
+ .text          0x00000000        0x0 C:\Users\regue\AppData\Local\Temp\ccU4z1VS.o
+ .data          0x00000000        0x0 C:\Users\regue\AppData\Local\Temp\ccU4z1VS.o
+ .bss           0x00000000        0x0 C:\Users\regue\AppData\Local\Temp\ccU4z1VS.o
  .data          0x00000000        0x0 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_dvmd_tls.o)
  .bss           0x00000000        0x0 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_dvmd_tls.o)
  .text          0x00000000        0x0 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-calloc.o)
@@ -1445,7 +1445,7 @@ LOAD c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.
 .boot2          0x10000000      0x100
                 0x10000000                __boot2_start__ = .
  *(.boot2)
- .boot2         0x10000000      0x100 C:\Users\regue\AppData\Local\Temp\ccy9DPQj.o
+ .boot2         0x10000000      0x100 C:\Users\regue\AppData\Local\Temp\ccU4z1VS.o
                 0x10000100                __boot2_end__ = .
                 0x00000001                ASSERT (((__boot2_end__ - __boot2_start__) == 0x100), ERROR: Pico second stage bootloader must be 256 bytes in size)
 
@@ -2704,7 +2704,7 @@ LOAD CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/
 LOAD CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
 LOAD CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
 LOAD CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
-LOAD C:\Users\regue\AppData\Local\Temp\ccy9DPQj.o
+LOAD C:\Users\regue\AppData\Local\Temp\ccU4z1VS.o
 LOAD c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libstdc++.a
 LOAD c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libm.a
 START GROUP
@@ -2805,7 +2805,7 @@ LOAD linker stubs
  .ARM.attributes
                 0x00000642       0x2c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
  .ARM.attributes
-                0x0000066e       0x22 C:\Users\regue\AppData\Local\Temp\ccy9DPQj.o
+                0x0000066e       0x22 C:\Users\regue\AppData\Local\Temp\ccU4z1VS.o
  .ARM.attributes
                 0x00000690       0x1e c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_dvmd_tls.o)
  .ARM.attributes

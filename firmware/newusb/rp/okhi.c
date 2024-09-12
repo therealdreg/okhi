@@ -583,7 +583,7 @@ void gpio_callback(uint gpio, uint32_t events) {
     }
 }
 
-void core1_main()
+void oldcore1_main()
 {
     sleep_ms(2000);
     gpio_init(ESP_RESET_GPIO);
@@ -691,8 +691,476 @@ void reinit_dbuff(volatile dbuff_t* dbuff)
 
 }
 
+static void print_g_fold_count(int count)
+{
+  printf("   ... : Folded ");
+
+  if (count == 1)
+  {
+    printf("1 frame");
+  }
+  else
+  {
+    printf("%d", count);
+    printf(" frames");
+  }
+
+  printf("\r\n");
+}
+
+
+static bool print_packet(void)
+{
+  int flags = last_dbuff->g_buffer[g_display_ptr];
+  int time  = last_dbuff->g_buffer[g_display_ptr+1];
+  int ftime = time - g_ref_time;
+  int delta = time - g_prev_time;
+  int size  = flags & CAPTURE_SIZE_MASK;
+  uint8_t *payload = (uint8_t *)&(last_dbuff->g_buffer[g_display_ptr+2]);
+  int pid = payload[1] & 0x0f;
+  static bool last_pid_in = false;
+  static uint8_t *last_payload = NULL;
+
+  last_payload = (uint8_t *)&(last_dbuff->g_buffer[g_display_ptr+2]);
+
+  if (g_check_delta && delta > MAX_PACKET_DELTA)
+  {
+    printf("Time delta between packets is too large, possible buffer corruption.\r\n");
+    return false;
+  }
+
+  g_display_ptr += (((size+3)/4) + 2);
+
+  g_prev_time = time;
+  g_check_delta = true;
+
+  if (flags & CAPTURE_LS_SOF)
+    pid = Pid_Sof;
+
+  if ((g_display_time == DisplayTime_SOF && pid == Pid_Sof) || (g_display_time == DisplayTime_Previous))
+    g_ref_time = time;
+
+  if (g_folding)
+  {
+    if (pid != Pid_Sof)
+      return true;
+
+    if (flags & CAPTURE_MAY_FOLD)
+    {
+      g_fold_count++;
+      return true;
+    }
+
+    //print_g_fold_count(g_fold_count);
+    g_folding = false;
+  }
+
+  if (flags & CAPTURE_MAY_FOLD && g_display_fold == DisplayFold_Enabled)
+  {
+    g_folding = true;
+    g_fold_count = 1;
+    return true;
+  }
+
+  //print_time(ftime);
+
+  if (flags & CAPTURE_RESET)
+  {
+    //print_reset();
+
+    if (g_display_time == DisplayTime_Reset)
+      g_ref_time = time;
+
+    g_check_delta = false;
+
+    return true;
+  }
+
+  if (flags & CAPTURE_LS_SOF)
+  {
+    //print_ls_sof();
+    return true;
+  }
+
+  if (flags & CAPTURE_ERROR_MASK)
+  {
+    //print_errors(flags, payload, size);
+    return true;
+  }
+
+  if (pid == Pid_In)
+  {
+    last_pid_in = true;
+  }
+  else
+  {
+    if (last_pid_in && (pid == Pid_Data0 || pid == Pid_Data1 || pid == Pid_Data2) && size - 4 == 8)
+    {
+        int v = (last_payload[3] << 8) | last_payload[2];
+        int addr = v & 0x7f;
+        int ep = (v >> 7) & 0xf;
+
+        
+        char pkts[256] = {0};
+        size_t sizepkt = sprintf(pkts, "IN: 0x%x/%d 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x;\r\n", addr, ep, last_payload[2], last_payload[3], last_payload[4], last_payload[5], last_payload[6], last_payload[7], last_payload[8], last_payload[9]);
+
+        puts(pkts);
+        //ospi_write_read_blocking(pkts, pkts, sizepkt);
+        sleep_ms(1);
+    }
+
+    last_pid_in = false;
+  }
+
+  return true;
+}
+
+void display_buffer(void)
+{
+  if (last_dbuff->g_buffer_info.count == 0)
+  {
+    printf("\r\nCapture buffer is empty\r\n");
+    return;
+  }
+
+  printf("\r\nCapture buffer:\r\n");
+
+  g_ref_time    = last_dbuff->g_buffer[1];
+  g_prev_time   = last_dbuff->g_buffer[1];
+  g_folding     = false;
+  g_check_delta = true;
+  g_fold_count  = 0;
+  g_display_ptr = 0;
+
+  for (int i = 0; i < last_dbuff->g_buffer_info.count; i++)
+  {
+    if (!print_packet())
+      break;
+  }
+
+  if (g_folding && g_fold_count)
+    print_g_fold_count(g_fold_count);
+
+  printf("\r\n");
+  printf("Total: ");
+  printf("%d", last_dbuff->g_buffer_info.errors);
+  printf(" error");
+  printf(", ");
+  printf("%d", last_dbuff->g_buffer_info.resets);
+  printf(" bus reset");
+  printf(", ");
+  printf("%d", last_dbuff->g_buffer_info.count);
+  printf(last_dbuff->g_buffer_info.fs ? " FS packet" : " LS packet");
+  printf(", ");
+  printf("%d", last_dbuff->g_buffer_info.frames);
+  printf(" frame");
+  printf(", ");
+  printf("%d", last_dbuff->g_buffer_info.folded);
+  printf(" empty frame");
+  printf("\r\n\r\n");
+
+}
+
+static uint16_t crc16_usb(uint8_t *data, int size)
+{
+  uint16_t crc = 0xffff;
+
+  for (int i = 0; i < size; i++)
+    crc = crc16_usb_tab[(crc ^ data[i]) & 0xff] ^ (crc >> 8);
+
+  return crc;
+}
+
+static uint8_t crc5_usb(uint8_t *data, int size)
+{
+  uint8_t crc = 0xff;
+
+  for (int i = 0; i < size; i++)
+    crc = crc5_usb_tab[(crc ^ data[i]) & 0xff] ^ (crc >> 8);
+
+  return crc;
+}
+
+void set_error(bool error)
+{
+  return;
+}
+
+static void handle_folding(int pid, uint32_t error)
+{
+  if (error)
+  {
+    last_dbuff->g_buffer_info.errors++;
+    set_error(true);
+  }
+
+  if (pid == Pid_Sof)
+  {
+    last_dbuff->g_buffer_info.frames++;
+
+    if (g_may_fold)
+    {
+      last_dbuff->g_buffer[g_sof_index] |= CAPTURE_MAY_FOLD;
+      last_dbuff->g_buffer_info.folded++;
+    }
+
+    g_sof_index = g_wr_ptr-2;
+    g_may_fold = true;
+  }
+  else if (pid != Pid_In && pid != Pid_Nak)
+  {
+    g_may_fold = false;
+  }
+
+  if (error)
+    g_may_fold = false;
+}
+
+static void process_packet(int size)
+{
+  uint8_t *out_data = (uint8_t *)&(last_dbuff->g_buffer[g_wr_ptr]);
+  uint32_t v = 0x80000000;
+  uint32_t error = 0;
+  int out_size = 0;
+  int out_bit = 0;
+  int out_byte = 0;
+  int stuff_count = 0;
+  int pid, npid;
+
+  while (size)
+  {
+    uint32_t w = last_dbuff->g_buffer[g_rd_ptr++];
+    int bit_count;
+
+    if (size < 31)
+    {
+      w <<= (30-size);
+      bit_count = size;
+    }
+    else
+    {
+      bit_count = 31;
+    }
+
+    v ^= (w ^ (w << 1));
+
+    for (int i = 0; i < bit_count; i++)
+    {
+      int bit = (v & 0x80000000) ? 0 : 1;
+
+      v <<= 1;
+
+      if (stuff_count == 6)
+      {
+        if (bit)
+          error |= CAPTURE_ERROR_STUFF;
+
+        stuff_count = 0;
+        continue;
+      }
+      else if (bit)
+        stuff_count++;
+      else
+        stuff_count = 0;
+
+      out_byte |= (bit << out_bit);
+      out_bit++;
+
+      if (out_bit == 8)
+      {
+        out_data[out_size++] = out_byte;
+        out_byte = 0;
+        out_bit = 0;
+      }
+    }
+
+    size -= bit_count;
+  }
+
+  if (out_bit)
+    error |= CAPTURE_ERROR_NBIT;
+
+  if (out_size < 1)
+  {
+    error |= CAPTURE_ERROR_SIZE;
+    return;
+  }
+
+  if (out_data[0] != (last_dbuff->g_buffer_info.fs ? 0x80 : 0x81))
+    error |= CAPTURE_ERROR_SYNC;
+
+  if (out_size < 2)
+  {
+    error |= CAPTURE_ERROR_SIZE;
+    return;
+  }
+
+  pid = out_data[1] & 0x0f;
+  npid = (~out_data[1] >> 4) & 0x0f;
+
+  if ((pid != npid) || (pid == Pid_Reserved))
+    error |= CAPTURE_ERROR_PID;
+
+  if (pid == Pid_Sof || pid == Pid_In || pid == Pid_Out || pid == Pid_Setup || pid == Pid_Ping || pid == Pid_Split)
+  {
+    if (((pid == Pid_Split) && (out_size != 5)) || ((pid != Pid_Split) && (out_size != 4)))
+      error |= CAPTURE_ERROR_SIZE;
+    else if (crc5_usb(&out_data[2], out_size-2) != 0x09)
+      error |= CAPTURE_ERROR_CRC;
+  }
+  else if (pid == Pid_Data0 || pid == Pid_Data1 || pid == Pid_Data2 || pid == Pid_MData)
+  {
+    if (out_size < 4)
+      error |= CAPTURE_ERROR_SIZE;
+    else if (crc16_usb(&out_data[2], out_size-2) != 0xb001)
+      error |= CAPTURE_ERROR_CRC;
+  }
+
+  handle_folding(pid, error);
+
+  last_dbuff->g_buffer[g_wr_ptr-2] = error | out_size;
+  g_wr_ptr += (out_size + 3) / 4;
+}
+
+static uint32_t start_time(uint32_t end_time, uint32_t size)
+{
+  if (last_dbuff->g_buffer_info.fs)
+    return end_time - ((size * 5461) >> 16); // Divide by 12
+  else
+    return end_time - ((size * 43691) >> 16); // Divide by 1.5
+}
+
+static void process_buffer(void)
+{
+  uint32_t time_offset = start_time(last_dbuff->g_buffer[1], last_dbuff->g_buffer[0]);
+  int out_count = 0;
+
+  g_rd_ptr = 0;
+  g_wr_ptr = 0;
+  g_sof_index = 0;
+  g_may_fold = false;
+
+  last_dbuff->g_buffer_info.errors = 0;
+  last_dbuff->g_buffer_info.resets = 0;
+  last_dbuff->g_buffer_info.frames = 0;
+  last_dbuff->g_buffer_info.folded = 0;
+
+  for (int i = 0; i < last_dbuff->g_buffer_info.count; i++)
+  {
+    uint32_t size = last_dbuff->g_buffer[g_rd_ptr];
+    uint32_t time = start_time(last_dbuff->g_buffer[g_rd_ptr+1], size);
+
+    if (size > 0xffff)
+    {
+      printf("Synchronization error. Check your speed setting.\r\n");
+      out_count = 0;
+      break;
+    }
+
+    last_dbuff->g_buffer[g_wr_ptr+1] = time - time_offset;
+    g_rd_ptr += 2;
+    g_wr_ptr += 2;
+    out_count++;
+
+    if (size == 0)
+    {
+      last_dbuff->g_buffer[g_wr_ptr-2] = CAPTURE_RESET;
+      handle_folding(-1, 0); // Prevent folding of resets
+      last_dbuff->g_buffer_info.resets++;
+    }
+    else if (size == 1)
+    {
+      if (last_dbuff->g_buffer_info.fs)
+      {
+        out_count--; // Discard the packet
+        g_wr_ptr -= 2;
+      }
+      else
+      {
+        last_dbuff->g_buffer[g_wr_ptr-2] = CAPTURE_LS_SOF;
+        handle_folding(Pid_Sof, 0); // Fold on LS SOFs
+      }
+
+      g_rd_ptr++;
+    }
+    else
+    {
+      process_packet(size-1);
+    }
+  }
+
+  last_dbuff->g_buffer_info.count = out_count;
+}
+
+void pio1_irq(void) 
+{
+    printf("PIO1 IRQ!\r\n");
+    if (pio1_hw->irq & 1) 
+    {
+        printf("    IRQ 1 !\r\n");
+        pio1_hw->irq = 1;
+    } 
+    else if (pio1_hw->irq & 2) 
+    {
+        printf("    IRQ 2 !\r\n");
+        pio1_hw->irq = 2;
+    }
+}
+
+void pio0_irq(void) 
+{
+    printf("PIO0 IRQ!\r\n");
+    if (pio0_hw->irq & 1) 
+    {
+        printf("    IRQ 1 !\r\n");
+        pio0_hw->irq = 1;
+    } 
+    else if (pio0_hw->irq & 2) 
+    {
+        printf("    IRQ 1 !\r\n");
+        pio0_hw->irq = 2;
+    }
+}
+
+void free_all_pio_state_machines(PIO pio) 
+{
+    for (int sm = 0; sm < 4; sm++) 
+    {
+        if (pio_sm_is_claimed(pio, sm)) 
+        {
+            pio_sm_unclaim(pio, sm); 
+        }
+    }
+}
+
+
+dbuff_t* __attribute__((optimize("O0"))) GetLastDbuffAddr(void) 
+{
+    return last_dbuff;
+}
+
+void core1_main()
+{
+    volatile dbuff_t* readed_last  = NULL;
+    while (1)
+    {
+      if (readed_last != GetLastDbuffAddr())
+      {
+          readed_last = GetLastDbuffAddr();
+          process_buffer();
+          display_buffer();
+          /*
+          char buff[] = "hola";
+          ospi_write_read_blocking(buff, buff, sizeof(buff) - 1);
+          */
+    }
+  }
+}
+
 int main(void) 
 {   
+      bool success = set_sys_clock_khz(120000, true);
+
     if (wait_20 == 0x69699696)
     {
         stdio_init_all();
@@ -717,6 +1185,15 @@ int main(void)
 
     printf("okhi started! Hardware v%s\r\n", hwver_name);
 
+    if (success) 
+    {
+        printf("Clock successfully set to 120 MHz\r\n");
+    } 
+    else 
+    {
+        printf("Failed to set the clock\r\n");
+    }
+
     uint32_t baud  __attribute__((unused)) = spi_init(SPI_ID, SPI_BAUD); 
     gpio_set_function(SPI_SCK_PIN, GPIO_FUNC_SPI);
     gpio_set_function(SPI_MOSI_PIN, GPIO_FUNC_SPI);
@@ -736,84 +1213,140 @@ int main(void)
             get_start_free_flash_space_addr(), 
             get_flash_end_address(),
             get_free_flash_space());
-
-
-    pio_clear_instruction_memory(pio0);
-    pio_clear_instruction_memory(pio1);
-
-    //multicore_launch_core1(core1_main);
-
-    int index, packet;
-
-    last_dbuff = NULL;
-    curr_dbuff = NULL;
-
-    memset((void*)&dbuff1, 0, sizeof(dbuff1));
-    memset((void*)&dbuff2, 0, sizeof(dbuff2));
-
-    reinit_dbuff(&dbuff1);
-    reinit_dbuff(&dbuff2);
-
-    curr_dbuff = &dbuff1;
-
-    // GPIO for PIO CONF, DP & DM input, START output low
+    
+    
+  // GPIO for PIO CONF, DP & DM input, START output low
+    gpio_init(START_INDEX);
+    gpio_set_dir(START_INDEX, GPIO_OUT);
+    gpio_put(START_INDEX, false);
     gpio_init(DP_INDEX);
     gpio_set_dir(DP_INDEX, GPIO_IN);
     gpio_init(DM_INDEX);
     gpio_set_dir(DM_INDEX, GPIO_IN);
-    gpio_init(START_INDEX);
-    gpio_set_dir(START_INDEX, GPIO_OUT);
-    gpio_put(START_INDEX, false);
+
+    free_all_pio_state_machines(pio0);
+    free_all_pio_state_machines(pio1);
+
+    pio_clear_instruction_memory(pio0);
+    pio_clear_instruction_memory(pio1);
 
     // only supporting USB LOW SPEED for keyboards
     // So I mod Alex Tarado's code-idea to only support LOW SPEED
 
-    // PIO0 & PIO1 Must run at ~15.625 MHz (each PIO cycle is 64 ns / 0.064 µs / 0.000064 ms)
+    // PIO0 & PIO1 Must run at 15 MHz (each PIO cycle is 64 ns / 0.064 µs / 0.000064 ms)
     // USB LOW SPEED 1.5 Mbit/s = 1.5 MHz (each cycle is ~666.66 ns / ~0.66 µs / ~0.00066 ms)
-    // So, PIO0 & PIO1 is running ~10 times faster than USB LOW SPEED
+    // So, PIO0 & PIO1 is running 10 times faster than USB LOW SPEED
     
-    float target_frequency_hz = 15625000.0f; 
+    float target_frequency_hz = 15000000.0f; 
     float sys_clk_hz = (float)clock_get_hz(clk_sys);
     float div = sys_clk_hz / target_frequency_hz;
 
+    printf("PIO clk div: %.2f - freq target: %.2f Mhz\r\n", div, target_frequency_hz / 1000000.0f);
+
+    pio_gpio_init(pio1, START_INDEX);
+    pio_set_irq0_source_mask_enabled(pio1, 0x0F00, true);
+    irq_set_exclusive_handler(PIO1_IRQ_0, pio1_irq);
+    irq_set_enabled(PIO1_IRQ_0, true);
     int pio1_sm = pio_claim_unused_sm(pio1, true);
     uint offset_pio1 = pio_add_program(pio1, &tar_pio1_program);
-    pio_sm_config c_pio1 = tar_pio1_program_get_default_config(offset_pio1);
-    sm_config_set_in_pins(&c_pio1, DP_INDEX);
+    pio_sm_set_consecutive_pindirs(pio1, pio1_sm, START_INDEX, 1, true);  
     pio_sm_set_consecutive_pindirs(pio1, pio1_sm, DP_INDEX, 2, false); 
+    pio_sm_config c_pio1 = tar_pio1_program_get_default_config(offset_pio1);
     sm_config_set_set_pins(&c_pio1, START_INDEX, 1);
-    sm_config_set_out_pins(&c_pio1, START_INDEX, 1);
-    sm_config_set_clkdiv(&c_pio1, div);
     sm_config_set_in_shift(&c_pio1, false, false, 0); 
     sm_config_set_out_shift(&c_pio1, false, false, 0); 
+    sm_config_set_in_pins(&c_pio1, DP_INDEX);
+    sm_config_set_clkdiv(&c_pio1, div);
     pio_sm_init(pio1, pio1_sm, offset_pio1, &c_pio1);
     pio_sm_set_enabled(pio1, pio1_sm, false);
     pio_sm_clear_fifos(pio1, pio1_sm);
     pio_sm_restart(pio1, pio1_sm);
     pio_sm_clkdiv_restart(pio1, pio1_sm);
-
+   // pio_sm_exec(pio1, pio1_sm, pio_encode_jmp(offset_pio1)); // Start from the last PIO instruction 
+  
+    pio_set_irq0_source_mask_enabled(pio0, 0x0F00, true);
+    irq_set_exclusive_handler(PIO0_IRQ_0, pio0_irq);
+    irq_set_enabled(PIO0_IRQ_0, true);
     int pio0_sm = pio_claim_unused_sm(pio0, true);
     uint offset_pio0 = pio_add_program(pio0, &tar_lowsp_pio0_program);
-    pio_sm_config c_pio0 = tar_lowsp_pio0_program_get_default_config(offset_pio0);
-    sm_config_set_clkdiv(&c_pio0, div); 
-    sm_config_set_jmp_pin(&c_pio0, DP_INDEX); // USB LOW SPEED (DM_INDEX for FS)
-    sm_config_set_in_shift(&c_pio0, true, true, 31); 
-    sm_config_set_fifo_join(&c_pio0, PIO_FIFO_JOIN_RX); 
-    sm_config_set_in_pins(&c_pio0, DP_INDEX);
     pio_sm_set_consecutive_pindirs(pio0, pio0_sm, DP_INDEX, 3, false);
+    pio_sm_config c_pio0 = tar_lowsp_pio0_program_get_default_config(offset_pio0);
+    sm_config_set_in_pins(&c_pio0, DP_INDEX);
+    sm_config_set_jmp_pin(&c_pio0, DP_INDEX); // USB LOW SPEED (DM_INDEX for FS)
+    sm_config_set_in_shift(&c_pio0, false, true, 31); 
+    sm_config_set_out_shift(&c_pio0, false, false, 32); 
+    sm_config_set_fifo_join(&c_pio0, PIO_FIFO_JOIN_RX); 
+    sm_config_set_clkdiv(&c_pio0, div); 
     pio_sm_init(pio0, pio0_sm, offset_pio0, &c_pio0);
     pio_sm_set_enabled(pio0, pio0_sm, false);
     pio_sm_clear_fifos(pio0, pio0_sm);
     pio_sm_restart(pio0, pio0_sm);
     pio_sm_clkdiv_restart(pio0, pio0_sm);
-    pio_sm_exec(pio0, pio0_sm, pio_encode_jmp(31)); // Start from the last PIO instruction 
-
-    pio_sm_set_enabled(pio1, pio1_sm, true);
-    pio_sm_set_enabled(pio0, pio0_sm, true);
+    //pio_sm_exec(pio0, pio0_sm, pio_encode_jmp(31)); // Start from the last PIO instruction 
     
+    int index = 0;
+    int packet = 0;
+
+    last_dbuff = NULL;
+    curr_dbuff = NULL;
+    memset((void*)&dbuff1, 0, sizeof(dbuff1));
+    memset((void*)&dbuff2, 0, sizeof(dbuff2));
+    reinit_dbuff(&dbuff1);
+    reinit_dbuff(&dbuff2);
+    curr_dbuff = &dbuff1;
+
+    printf("capture start!\r\n");
+
+    index = 2;
+    packet = 0;
+    curr_dbuff->g_buffer_info.count = 0;
+
+    set_error(false);
+
+    multicore_launch_core1(core1_main);
+
+    pio_sm_set_enabled(pio0, pio0_sm, true);
+    pio_sm_exec(pio0, pio0_sm, pio_encode_jmp(31));
+    pio_sm_clear_fifos(pio0, pio0_sm);
+    pio_sm_set_enabled(pio1, pio1_sm, true);
+
+    int a = 0;
     while (1)
     {
-        tight_loop_contents();
+        uint32_t v = pio_sm_get_blocking(pio0, pio0_sm);
+
+        if (v & 0x80000000)
+        {
+            curr_dbuff->g_buffer[packet+0] = 0xffffffff - v;
+            curr_dbuff->g_buffer[packet+1] = 0; // TIMER
+            curr_dbuff->g_buffer_info.count++;
+            packet = index;
+            index += 2;
+
+            if (curr_dbuff->g_buffer_info.count == curr_dbuff->g_buffer_info.limit)
+            {
+                last_dbuff = curr_dbuff;
+                curr_dbuff = (curr_dbuff == &dbuff1) ? &dbuff2 : &dbuff1;
+                memset((void*)&(curr_dbuff->g_buffer_info), 0, sizeof(curr_dbuff->g_buffer_info));
+                index = 2;
+                packet = 0;
+                reinit_dbuff(curr_dbuff);
+            }
+          }
+        else
+        {
+            if (index < (sizeof(curr_dbuff->g_buffer)-4)) // Reserve the space for a possible reset
+                curr_dbuff->g_buffer[index++] = v;
+            else
+            {
+                last_dbuff = curr_dbuff;
+                curr_dbuff = (curr_dbuff == &dbuff1) ? &dbuff2 : &dbuff1;
+                memset((void*)&(curr_dbuff->g_buffer_info), 0, sizeof(curr_dbuff->g_buffer_info));
+                index = 2;
+                packet = 0;
+                reinit_dbuff(curr_dbuff);
+            }
+        }
     }
 
     return 0;
