@@ -30,12 +30,15 @@ Thx Alex Taradov <alex@taradov.com> for the original work!
 #include "spi.h"
 #include "pio_asm.h"
 
+
 #define STATUS_TIMEOUT     500000 // us
 
 HAL_GPIO_PIN(OCS, 0, 13, sio_13)
 HAL_GPIO_PIN(LED_O, 0, 25, sio_25)
 HAL_GPIO_PIN(LED_R, 0, 26, sio_26)
 
+HAL_GPIO_PIN(USSEL, 0, 8, sio_8)
+HAL_GPIO_PIN(USOE, 0, 9, sio_9)
 
 INLINE int ospi_write_read_blocking(const uint8_t *src, uint8_t *dst, size_t len)
 {
@@ -1498,12 +1501,21 @@ INLINE void rmain(void)
   HAL_GPIO_LED_R_out();
   HAL_GPIO_LED_R_clr();
 
+  HAL_GPIO_USSEL_out();
+  HAL_GPIO_USSEL_set();
+  HAL_GPIO_USOE_out();
+  HAL_GPIO_USOE_set();
+
+  HAL_GPIO_USSEL_write(0);
+  HAL_GPIO_USOE_write(1);
+
   uart_init(BAUD_RATE);  
   uart_puts("\r\nokhi on uart0!\r\n");
 
   uart1_init(BAUD_RATE);
   uart1_puts("\r\nokhi on uart1!\r\n");
 
+  HAL_GPIO_USSEL_write(1);
   spi_init(spi1, 5000000); // ~4.6 mhz
   gpio_set_function(10, GPIO_FUNC_SPI);
   gpio_set_function(11, GPIO_FUNC_SPI);
@@ -1520,6 +1532,8 @@ INLINE void rmain(void)
 */
 
   capture_init();
+
+  HAL_GPIO_USOE_write(0);
 
   volatile dbuff_t* readed_last  = NULL;
   while (1)
