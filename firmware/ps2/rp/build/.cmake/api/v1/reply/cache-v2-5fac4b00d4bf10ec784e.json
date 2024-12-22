@@ -195,7 +195,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "c:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/newusb/rp/build"
+			"value" : "c:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/ps2/rp/build"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -679,7 +679,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/newusb/rp/build/CMakeFiles/pkgRedirects"
+			"value" : "C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/ps2/rp/build/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -739,7 +739,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/newusb/rp"
+			"value" : "C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/ps2/rp"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -1319,7 +1319,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "[C:/Program Files/WindowsApps/PythonSoftwareFoundation.Python.3.12_3.12.1776.0_x64__qbz5n2kfra8p0/python3.12.exe][cfound components: Interpreter ][v3.12.6()]"
+			"value" : "[C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/python/python.exe][cfound components: Interpreter ][v3.9.13()]"
 		},
 		{
 			"name" : "PICO_BOARD",
@@ -1475,7 +1475,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : " C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs"
+			"value" : " C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2_common/cmsis C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk/src/rp2040/hardware_regs"
 		},
 		{
 			"name" : "PICO_DOXYGEN_PATHS",
@@ -1739,7 +1739,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Program Files/WindowsApps/PythonSoftwareFoundation.Python.3.12_3.12.1776.0_x64__qbz5n2kfra8p0/python3.12.exe"
+			"value" : "C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/python/python.exe"
 		},
 		{
 			"name" : "_Python3_INTERPRETER_PROPERTIES",
@@ -1751,7 +1751,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "Python;3;12;6;32;;;C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.1776.0_x64__qbz5n2kfra8p0\\Lib;C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.1776.0_x64__qbz5n2kfra8p0\\Lib;C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.1776.0_x64__qbz5n2kfra8p0\\Lib\\site-packages;C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.1776.0_x64__qbz5n2kfra8p0\\Lib\\site-packages"
+			"value" : "Python;3;9;13;32;;;C:\\Program Files\\Raspberry Pi\\Pico SDK v1.5.1\\python\\Lib;C:\\Program Files\\Raspberry Pi\\Pico SDK v1.5.1\\python\\Lib;C:\\Program Files\\Raspberry Pi\\Pico SDK v1.5.1\\python\\Lib\\site-packages;C:\\Program Files\\Raspberry Pi\\Pico SDK v1.5.1\\python\\Lib\\site-packages"
 		},
 		{
 			"name" : "_Python3_INTERPRETER_SIGNATURE",
@@ -1763,7 +1763,19 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "c4c8e9701080266b7251f1103f7ed022"
+			"value" : "bcbc177056d44093696079043ea46d72"
+		},
+		{
+			"name" : "_Python3_Interpreter_REASON_FAILURE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Interpreter reason failure"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
 		},
 		{
 			"name" : "_Python3_NumPy_REASON_FAILURE",
@@ -1799,7 +1811,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/newusb/rp/build"
+			"value" : "C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/ps2/rp/build"
 		},
 		{
 			"name" : "pico_examples_IS_TOP_LEVEL",
@@ -1823,7 +1835,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/newusb/rp"
+			"value" : "C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/ps2/rp"
 		},
 		{
 			"name" : "pico_extras_BINARY_DIR",
@@ -1835,7 +1847,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/newusb/rp/build/pico_extras"
+			"value" : "C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/ps2/rp/build/pico_extras"
 		},
 		{
 			"name" : "pico_extras_IS_TOP_LEVEL",
@@ -1871,7 +1883,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/newusb/rp/build/pico-sdk"
+			"value" : "C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/ps2/rp/build/pico-sdk"
 		},
 		{
 			"name" : "pico_sdk_IS_TOP_LEVEL",

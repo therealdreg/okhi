@@ -30,5 +30,14 @@
     "string.h": "c",
     "cstdlib": "c",
     "bootrom.h": "c"
+  },
+  "editor.inlineSuggest.enabled": true,
+  "github.copilot.enable": {
+      "*": true,
+      "yaml": true,
+      "plaintext": true,
+      "markdown": true,
+      "javascript": true,
+      "python": true
   }
 }
