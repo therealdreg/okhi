@@ -31,6 +31,11 @@ Ported & adapted some by Dreg to PICO SDK from:
 https://github.com/ataradov/usb-sniffer-lite by Alex Taradov
 */
 
+/* 
+  Dreg's note: I have tried to document everything as best as possible and make the code and project
+  as accessible as possible for beginners. There may be errors (I am a lazy bastard using COPILOT)
+  if you find any, please make a PR
+*/
 
 // This project assumes that copy_to_ram is enabled, so ALL code is running from RAM
 
@@ -805,7 +810,14 @@ static bool print_packet(void)
         size_t sizepkt = sprintf(pkts, "IN: 0x%x/%d 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x;\r\n", addr, ep, last_payload[2], last_payload[3], last_payload[4], last_payload[5], last_payload[6], last_payload[7], last_payload[8], last_payload[9]);
 
         puts(pkts);
-        //ospi_write_read_blocking(pkts, pkts, sizepkt);
+        
+        // hello, how are you?
+
+        // how are you?
+
+        // veamos si esto funciona bie
+        
+         //ospi_write_read_blocking(pkts, pkts, sizepkt);
         sleep_ms(1);
     }
 
@@ -1159,7 +1171,15 @@ void core1_main()
 
 int main(void) 
 {   
-      bool success = set_sys_clock_khz(120000, true);
+    /*
+      Setting the RP clock to 120 MHz is crucial for USB sniffing.
+      This clock speed ensures that the PIO (Programmable Input/Output) 
+      can accurately capture USB signals
+
+      Using the default clock settings (125 MHz) can cause capture errors because the clock divider 
+      for the PIO is not an exact multiple for achieving the required 1.5 MHz USB low-speed clock.
+    */
+    bool success = set_sys_clock_khz(120000, true); 
 
     if (wait_20 == 0x69699696)
     {
@@ -1231,10 +1251,10 @@ int main(void)
     pio_clear_instruction_memory(pio1);
 
     // only supporting USB LOW SPEED for keyboards
-    // So I mod Alex Tarado's code-idea to only support LOW SPEED
+    // So I mod Alex Taradov's code-idea to only support LOW SPEED
 
     // PIO0 & PIO1 Must run at 15 MHz (each PIO cycle is 64 ns / 0.064 µs / 0.000064 ms)
-    // USB LOW SPEED 1.5 Mbit/s = 1.5 MHz (each cycle is ~666.66 ns / ~0.66 µs / ~0.00066 ms)
+    // USB LOW SPEED 1.5 Mbit/s = 1.5 MHz (each cycle is 666.66 ns / 0.66 µs / 0.00066 ms)
     // So, PIO0 & PIO1 is running 10 times faster than USB LOW SPEED
     
     float target_frequency_hz = 15000000.0f; 
@@ -1242,6 +1262,9 @@ int main(void)
     float div = sys_clk_hz / target_frequency_hz;
 
     printf("PIO clk div: %.2f - freq target: %.2f Mhz\r\n", div, target_frequency_hz / 1000000.0f);
+
+    // I want to avoid mental uncertainty when solving problems and knowing where things are, 
+    // so ALL the programs in PIO0/1 are in the same place and order in each execution.
 
     pio_gpio_init(pio1, START_INDEX);
     pio_set_irq0_source_mask_enabled(pio1, 0x0F00, true);
