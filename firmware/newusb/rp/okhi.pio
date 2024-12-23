@@ -70,7 +70,11 @@
 ; and a logical '1' is represented by no change. By not managing NRZI encoding, this program relies on the host
 ; system to decode the NRZI signals and accurately detect bit transitions.
 
-; This PIO program captures USB LOW SPEED data from the D+ and D- lines of the USB bus.
+; This PIO program captures USB data from the D+ and D- lines of the USB bus. It detects the start of a packet 
+; (SOP, EOP) by monitoring both lines, but for the actual data capture, only the D+ line is sampled. 
+; This approach simplifies the data capture process. The program relies on the host system to decode the 
+; captured data and handle any necessary bit stuffing or NRZI decoding.
+
 ; Must be started by the PIO1 program, which sends a START SIGNAL to synchronize the data capture process.
 ; It waits for a START SIGNAL from the PIO1 program to synchronize the data capture process.
 ; The program captures the data and sends it to the host using the FIFO.
@@ -93,6 +97,11 @@
 ; after the last element is read from the PIO. 
 ; The host knows the speed at which the PIO runs and how many cycles everything takes, so it is easy to 
 ; calculate the time between samples etc.
+
+; The instructions "mov OSR, ::PINS" followed by "out Y, 2" capture the state of the D+ and D- lines,
+; while ignoring the START SIGNAL pin. This ensures that only the USB data lines (D+ and D-) are sampled.
+; The bit reverse operation "::PINS" is performed to exclude the START SIGNAL pin when outputting to Y,
+; because the original PIN order is D+, D-, START SIGNAL. Therefore, the bit reverse operation is necessary.
 
 ; The entry point for this program is the last instruction (31), which is executed using:
 ; pio_sm_exec(pio0, pio0_sm, pio_encode_jmp(31));
