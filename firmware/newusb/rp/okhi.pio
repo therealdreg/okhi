@@ -65,6 +65,11 @@
 ; Bit stuffing involves inserting extra bits into the data stream to prevent long sequences of identical bits.
 ; The host is responsible for removing these extra bits from the captured data.
 
+; This PIO program captures data from the D+ line without handling NRZI (Non-Return-to-Zero Inverted) encoding.
+; NRZI is a binary encoding technique where a logical '0' is represented by a transition in the signal level,
+; and a logical '1' is represented by no change. By not managing NRZI encoding, this program relies on the host
+; system to decode the NRZI signals and accurately detect bit transitions.
+
 ; This PIO program captures USB LOW SPEED data from the D+ and D- lines of the USB bus.
 ; Must be started by the PIO1 program, which sends a START SIGNAL to synchronize the data capture process.
 ; It waits for a START SIGNAL from the PIO1 program to synchronize the data capture process.
