@@ -930,6 +930,7 @@ static void handle_folding(int pid, uint32_t error)
 
 static void process_packet(int size)
 {
+  // bit stuffing, NRZI....
   uint8_t *out_data = (uint8_t *)&(last_dbuff->g_buffer[g_wr_ptr]);
   uint32_t v = 0x80000000;
   uint32_t error = 0;
