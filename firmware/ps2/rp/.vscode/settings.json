@@ -29,6 +29,16 @@
     "uart.h": "c",
     "string.h": "c",
     "cstdlib": "c",
-    "bootrom.h": "c"
+    "bootrom.h": "c",
+    "last_firmv.h": "c"
+  },
+  "editor.inlineSuggest.enabled": true,
+  "github.copilot.enable": {
+      "*": true,
+      "yaml": true,
+      "plaintext": true,
+      "markdown": true,
+      "javascript": true,
+      "python": true
   }
 }

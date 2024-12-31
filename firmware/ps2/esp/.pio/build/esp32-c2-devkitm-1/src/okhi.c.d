@@ -53,4 +53,4 @@
  C:/Users/regue/.platformio/packages/framework-arduinoespressif32/tools/esp32-arduino-libs/esp32c2/include/soc/esp32c2/include/soc/gpio_pins.h \
  C:/Users/regue/.platformio/packages/framework-arduinoespressif32/tools/esp32-arduino-libs/esp32c2/include/driver/gpio/include/driver/gpio_etm.h \
  C:/Users/regue/.platformio/packages/framework-arduinoespressif32/tools/esp32-arduino-libs/esp32c2/include/esp_hw_support/include/esp_etm.h \
- src/okhi.h
+ src/okhi.h src/../../com_ps2.c src/../../../com.c

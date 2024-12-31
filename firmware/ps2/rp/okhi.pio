@@ -76,124 +76,142 @@
 ; 11) Wait for the device to bring Clock  low.
 ; 12) Wait for the device to release Data and Clock
 
+
+; ---- PIO0 AREA ---------------------------------------------------------------------
+
 .program inhibited_signal
 ; PIO0_1, Must run at 1 MHz (each cycle 1 microsecond)
 ; Detect if CLOCK is LOW + DAT is HIGH for at least 100 microseconds
-; JMP PIN = CLOCK
-; INPUT PIN = DAT
-; 0: DAT
-; 1: CLOCK
+; irq0: Inhibited communication detected
+; irq1: No Host Request-to-Send detected after inhibiting communication
+
+; FIFO_JOIN_RX: RX FIFO length: 8, TX FIFO is disabled
+; IN PIN 0: DAT
+; IN PIN 1: CLOCK
+; JMP PIN: CLOCK
 .wrap_target
 wait_inhibited:
-    wait 1 pin 0 ; Wait while DAT is LOW
-    jmp pin wait_inhibited ; Wait while CLOCK is HIGH
-    set x, 16 ; At 1 MHz, 6 instructions * 16 times = 96 cycles = 96 microseconds
+    wait 1 pin 0               ; 00 Wait while DAT is LOW
+    jmp pin wait_inhibited     ; 01 Wait while CLOCK is HIGH
+    set x, 16                  ; 02 At 1 MHz, 6 instructions * 16 times = 96 cycles = 96 microseconds
 count_loop:
-    mov isr, null
-    in pins, 1
-    mov y, isr
-    jmp !y, wait_inhibited ; DAT == LOW? then restart
-    jmp pin, wait_inhibited ; CLOCK == HIGH? then restart
-    jmp x--, count_loop
-    irq set 0 ; Trigger Inhibited communication detected
-    wait 1 pin 1 ; Wait while CLOCK is LOW
-    mov isr, null
-    in pins, 1
-    mov y, isr
-    jmp !y, wait_inhibited ; DAT == LOW? then wait_inhibited
-    irq set 1 ; Trigger No Host Request-to-Send detected after inhibiting communication
+    mov isr, null              ; 03
+    in pins, 1                 ; 04
+    mov y, isr                 ; 05
+    jmp !y, wait_inhibited     ; 06 DAT == LOW? then restart
+    jmp pin, wait_inhibited    ; 07 CLOCK == HIGH? then restart
+    jmp x--, count_loop        ; 08 
+    irq set 0                  ; 09 Trigger Inhibited communication detected
+    wait 1 pin 1               ; 10 Wait while CLOCK is LOW
+    mov isr, null              ; 11
+    in pins, 1                 ; 12
+    mov y, isr                 ; 13
+    jmp !y, wait_inhibited     ; 14 DAT == LOW? then wait_inhibited
+    irq set 1                  ; 15 Trigger No Host Request-to-Send detected after inhibiting communication
 .wrap
 
 
 .program device_to_host
 ; PIO0_2, Must run ~133.6 kHz, 7.5 microseconds per cycle
 ; it is expected to have no fewer than 8 PIO state machine cycles for each keyboard clock cycle
-; the data transition occours when the Clock line is low
-; 0: DAT
-; 1: CLOCK
-; JMP PIN = EXTERNAL SIGNAL
+; the data transition occurs when the Clock line is low
+
+; FIFO_JOIN_RX: RX FIFO length: 8, TX FIFO is disabled
+; IN PIN 0: DAT
+; IN PIN 1: CLOCK
+; JMP PIN: EXTERNAL PIN SIGNAL  TO WAIT START
+; shift ISR to right, autopush: false, threshold: 0 bits
 .wrap_target
 wait_start:
-    jmp pin wait_start
-    mov isr, null
-    wait 0 pin 1     ; skip start bit
+    jmp pin wait_start    ; 00
+    mov isr, null         ; 01
+    wait 0 pin 1          ; 02 skip start bit
     wait 1 pin 1
-    set x, 7         ; 8 bit counter
+    set x, 7              ; 03 8 bit counter
 bitloop:
-    wait 0 pin 1 [1] ; wait negative clock edge
-    in pins, 1       ; sample data
-    wait 1 pin 1     ; wait for positive edge
-    jmp x-- bitloop
-    wait 0 pin 1     ; skip parity and stop bits
-    wait 1 pin 1
-    wait 0 pin 1
-    wait 1 pin 1
-    jmp pin wait_start
-    push 
+    wait 0 pin 1 [1]      ; 04 wait negative clock edge
+    in pins, 1            ; 05 sample data
+    wait 1 pin 1          ; 06 wait for positive edge
+    jmp x-- bitloop       ; 07
+    wait 0 pin 1          ; 08 skip parity and stop bits
+    wait 1 pin 1          ; 09
+    wait 0 pin 1          ; 10 
+    wait 1 pin 1          ; 11
+    jmp pin wait_start    ; 12
+    push                  ; 13
 .wrap
+
+
+
+; ---- PIO1 AREA ---------------------------------------------------------------------
 
 
 .program host_to_device
 ; PIO1_1, Must run ~133.6 kHz, 7.5 microseconds per cycle
 ; it is expected to have no fewer than 8 PIO state machine cycles for each keyboard clock cycle
-; the data transition occours when the Clock line is high
-; 0: DAT
-; 1: CLOCK
-; JMP PIN = EXTERNAL SIGNAL
+; the data transition occurs when the Clock line is high
+
+; FIFO_JOIN_RX: RX FIFO length: 8, TX FIFO is disabled
+; IN PIN 0: DAT
+; IN PIN 1: CLOCK
+; JMP PIN: EXTERNAL PIN SIGNAL  TO WAIT START
+; shift ISR to right, autopush: false, threshold: 0 bits
 .wrap_target
 wait_start:
-    jmp pin wait_start
-    mov isr, null
-    wait 1 pin 1     ; skip start bit
-    wait 0 pin 1
-    set x, 7         ; 8 bit counter
+    jmp pin wait_start        ; 00
+    mov isr, null             ; 01
+    wait 1 pin 1              ; 02 skip start bit
+    wait 0 pin 1              ; 03
+    set x, 7                  ; 04 8 bit counter
 bitloop:
-    wait 1 pin 1 [1] ; wait positive clock edge
-    in pins, 1       ; sample data
-    wait 0 pin 1     ; wait for negative edge
-    jmp x-- bitloop
-    wait 1 pin 1     ; skip parity and stop bits
-    wait 0 pin 1
-    wait 1 pin 1
-    wait 0 pin 1 ; skip ACK bit
+    wait 1 pin 1 [1]          ; 05 wait positive clock edge
+    in pins, 1                ; 06 sample data
+    wait 0 pin 1              ; 07 wait for negative edge
+    jmp x-- bitloop           ; 08
+    wait 1 pin 1              ; 09 skip parity and stop bits
+    wait 0 pin 1              ; 10
+    wait 1 pin 1              ; 11
+    wait 0 pin 1              ; 12 skip ACK bit
     ; !!! Notice the change in timing for the "ack" bit (wait 0), the data transition occours when 
     ; the Clock line is high (rather than when it is low as is the case for the other 11 bits.)
     ; Example for sampling the ACK bit (replace the line above with this to effectively sample the ACK bit):
     ;       wait 0 pin 1 [1]
     ;       in pins, 1
-    jmp pin wait_start
-    push 
+    jmp pin wait_start        ; 13     
+    push                      ; 14
 .wrap
 
 .program idle_signal
 ; PIO1_2, Must run at 1 MHz (each cycle 1 microsecond)
+
 ; Detect idle_signal state:
 ; irq0: CLOCK is HIGH + DAT is HIGH for at least 100 microseconds
 ; irq1: not idle state
-; JMP PIN = CLOCK
-; INPUT PIN = DAT
-; 0: DAT
-; 1: CLOCK
+
+; FIFO_JOIN_RX: RX FIFO length: 8, TX FIFO is disabled
+; IN PIN 0: DAT
+; IN PIN 1: CLOCK
+; JMP PIN: CLOCK
 .wrap_target
 wait_idle:
-    wait 1 pin 0 ; Wait while DAT is LOW
-    jmp pin both_high_idle ; JMP IF DAT + CLOCK = HIGH
-    jmp wait_idle ; Wait while CLOCK or DAT is LOW
+    wait 1 pin 0                        ; 01 Wait while DAT is LOW
+    jmp pin both_high_idle              ; 02 JMP IF DAT + CLOCK = HIGH
+    jmp wait_idle                       ; 03 Wait while CLOCK or DAT is LOW
 both_high_idle:
-    set x, 15 ; At 1 MHz, 6 instructions * 15 times = 90 cycles = 90 microseconds
+    set x, 15                           ; 04 At 1 MHz, 6 instructions * 15 times = 90 cycles = 90 microseconds
 loop_check_idle:
-    mov isr, null
-    in pins, 1
-    mov y, isr
-    jmp !y, not_idle ; DAT == LOW? then signal NOT IDLE
-    jmp pin, continue_loop_check_idle ; CLOCK == HIGH? then continue loop
-    jmp not_idle ; CLOCK == LOW? then signal NOT IDLE
+    mov isr, null                       ; 05
+    in pins, 1                          ; 06
+    mov y, isr                          ; 07
+    jmp !y, not_idle                    ; 08 DAT == LOW? then signal NOT IDLE
+    jmp pin, continue_loop_check_idle   ; 09 CLOCK == HIGH? then continue loop
+    jmp not_idle                        ; 10 CLOCK == LOW? then signal NOT IDLE
 continue_loop_check_idle:
-    jmp x--, loop_check_idle
-    irq set 0 ; end loop, signal IDLE
-    jmp wait_idle ; restart
+    jmp x--, loop_check_idle            ; 11
+    irq set 0 ; end loop, signal IDLE   ; 12
+    jmp wait_idle ; restart             ; 13
 not_idle:
-    irq set 1 ; signal NOT IDLE
+    irq set 1 ; signal NOT IDLE         ; 14
 .wrap ; restart
 
 

@@ -53,6 +53,8 @@ There might still be some code/deadcode from this project
 #include "hardware/timer.h"
 #include "okhi.pio.h"
 #include "../../../../last_firmv.h"
+#include "../com_ps2.c"
+#include "../../com.c"
 
 // uncomment to enable dev build
 #define DEV_BUILD 1
@@ -70,6 +72,9 @@ There might still be some code/deadcode from this project
 #define FLASH_SECTOR_SIZE 4096
 #endif   
 #define FLASH_TOTAL_SIZE (16 * 1024 * 1024) 
+
+#define USSEL_PIN 8  
+#define USOE_PIN  9
 
 #define UART_BAUD 921600 // 460800 // 230400 // 115200
 #define UART_ID uart1
@@ -608,6 +613,19 @@ get_sym_ret_t get_sym(unsigned char* buff, size_t size, unsigned char** next, bo
 	return GSYR_ERROR;
 }
 
+
+void free_all_pio_state_machines(PIO pio) 
+{
+    for (int sm = 0; sm < 4; sm++) 
+    {
+        if (pio_sm_is_claimed(pio, sm)) 
+        {
+            pio_sm_unclaim(pio, sm); 
+        }
+    }
+}
+
+
 unsigned char* get_base_flash_space_addr(void)
 {
     return (unsigned char*)XIP_BASE;
@@ -935,6 +953,15 @@ int main(void)
     gpio_init(ELOG_SLAVEREADY_GPIO);
     gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);   
 
+
+    gpio_init(USSEL_PIN);
+    gpio_set_dir(USSEL_PIN, GPIO_OUT);
+    gpio_put(USSEL_PIN, false);
+
+    gpio_init(USOE_PIN);
+    gpio_set_dir(USOE_PIN, GPIO_OUT);
+    gpio_put(USOE_PIN, true);
+
     init_ver(); 
 
     // uart init must be called after init_ver(), because on devboard the same pins are used for UART
@@ -953,6 +980,9 @@ int main(void)
     uart_puts(UART_ID, "\r\nokhi started!\r\n"); 
     */
 
+
+    gpio_put(USSEL_PIN, true);
+
     printf("okhi started! Hardware v%s\r\n", hwver_name);
 
     uint32_t baud  __attribute__((unused)) = spi_init(SPI_ID, SPI_BAUD); 
@@ -967,6 +997,8 @@ int main(void)
     spi_set_format(SPI_ID, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
     printf("Firmware version: v%s\r\n", FIRMV_STR);
     printf("SPI Mode 0: %.2f MHz (%d)\r\n", ((float)baud) / 1000000.0, baud);
+
+    gpio_put(USOE_PIN, false);
 
     printf("flash free space addr: 0x%08x\r\n"
            "flash end addr: 0x%08x\r\n"
@@ -993,6 +1025,9 @@ int main(void)
     printf("DAT_GPIO: %d\r\n", gpio_get(DAT_GPIO));
     printf("JMP_AUX D2H: %d\r\n", gpio_get(AUX_D2H_JMP_GPIO));
     printf("JMP_AUX H2D: %d\r\n", gpio_get(AUX_H2D_JMP_GPIO));
+
+    free_all_pio_state_machines(pio0);
+    free_all_pio_state_machines(pio1);
 
     pio_clear_instruction_memory(pio0);
     pio_clear_instruction_memory(pio1);
@@ -1159,6 +1194,31 @@ int main(void)
 
 
 /*
+
+; PIN 0 & JMP PIN = same PIN
+; 2 MHz, each cycle 0.5 us, so 2 instructions = 1 us
+; a pulse less than ~15 us = glitch
+.wrap_target
+start:
+	set x, 15 
+	set y, !NULL
+	wait 0 PIN 0
+	wait 1 PIN 0
+
+loop_glitch:
+	jmp pin next_iter
+	jmp glitch_detected
+next_iter:
+	jmp x-- loop_glitch
+	
+	jmp x!=y glitch_detected
+	jmp start
+glitch_detected:
+	mov isr, x
+	push noblock
+.wrap
+
+
 
     //set_sys_clock_khz(250000, true);
     

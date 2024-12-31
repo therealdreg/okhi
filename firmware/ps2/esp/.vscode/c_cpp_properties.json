@@ -467,7 +467,7 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=60115",
+                "PLATFORMIO=60116",
                 "CONFIG_SPI_SLAVE_IN_IRAM=y",
                 "ESP_PLATFORM",
                 "IDF_VER=\"5.1.4.240822\"",

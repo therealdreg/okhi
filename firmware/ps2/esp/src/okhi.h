@@ -32,6 +32,9 @@ WARNING: BULLSHIT CODE X-)
 #ifndef POC_H
 #define POC_H
 
+#include "../../com_ps2.c"
+#include "../../../com.c"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1,10 +1,43 @@
 {
-    "files.associations": {
-        "*.h": "c",
-        "*.c": "c",
-        "rp2040.h": "c",
-        "hal_gpio.h": "c",
-        "globals.h": "c",
-        "usb.h": "c"
+  // These settings tweaks to the cmake plugin will ensure
+  // that you debug using cortex-debug instead of trying to launch
+  // a Pico binary on the host
+  "cmake.statusbar.advanced": {
+    "debug": {
+      "visibility": "hidden"
+    },
+    "launch": {
+      "visibility": "hidden"
+    },
+    "build": {
+      "visibility": "hidden"
+    },
+    "buildTarget": {
+      "visibility": "hidden"
     }
+  },
+  "cmake.buildBeforeRun": true,
+  "cmake.configureOnOpen": true,
+  "cmake.configureSettings": {
+    "CMAKE_MODULE_PATH": "${env:PICO_INSTALL_PATH}/pico-sdk-tools"
+  },
+  "cmake.generator": "Ninja",
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "files.associations": {
+    "pll.h": "c",
+    "clocks.h": "c",
+    "uart.h": "c",
+    "string.h": "c",
+    "cstdlib": "c",
+    "bootrom.h": "c"
+  },
+  "editor.inlineSuggest.enabled": true,
+  "github.copilot.enable": {
+      "*": true,
+      "yaml": true,
+      "plaintext": true,
+      "markdown": true,
+      "javascript": true,
+      "python": true
+  }
 }
