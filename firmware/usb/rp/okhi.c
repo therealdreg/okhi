@@ -57,10 +57,17 @@ https://github.com/ataradov/usb-sniffer-lite by Alex Taradov
 #include "hardware/flash.h"
 #include "hardware/timer.h"
 #include "hardware/watchdog.h"
+#include "hardware/adc.h"
 #include "okhi.pio.h"
 #include "../../../../last_firmv.h"
 #include "../com_usb.c"
 #include "../../com.c"
+
+
+uint32_t __scratch_x("my_group_nameX") fooX = 23;
+uint32_t __scratch_y("my_group_nameY") fooY = 23;
+#define __core1_func(x) __scratch_y(__STRING(x)) x
+#define __core2_func(x) __scratch_x(__STRING(x)) x
 
 // uncomment to enable dev build
 #define DEV_BUILD 1
@@ -107,6 +114,9 @@ https://github.com/ataradov/usb-sniffer-lite by Alex Taradov
 #define SPI_MOSI_PIN 11
 #define SPI_MISO_PIN 12
 #define SPI_CS_PIN 13
+
+#define RP_LED_GPIO  26 // From PCB v5
+#define RP_ADC_GPIO  27 // From PCB v5
 
 #define EBOOT_MASTERDATAREADY_GPIO 14
 #define ELOG_SLAVEREADY_GPIO  15
@@ -1254,6 +1264,18 @@ void core1_main()
   }
 }
 
+void blink_led(int n) 
+{
+    for (int i = 0; i < n; i++) 
+    {
+        gpio_put(RP_LED_GPIO, 1);
+        sleep_ms(200);
+        gpio_put(RP_LED_GPIO, 0);
+        sleep_ms(200);
+    }
+    gpio_put(RP_LED_GPIO, 0);
+}
+
 void init_seq(void)
 {
      if (wait_20 == 0x69699696)
@@ -1282,6 +1304,11 @@ void init_seq(void)
     gpio_set_dir(USOE_PIN, GPIO_OUT);
     gpio_put(USOE_PIN, true);
 
+    // INIT RP_LED_GPIO
+    gpio_init(RP_LED_GPIO);
+    gpio_set_dir(RP_LED_GPIO, GPIO_OUT);
+    gpio_put(RP_LED_GPIO, 0);
+
     init_ver(); 
 
     // uart init must be called after init_ver(), because on devboard the same pins are used for UART
@@ -1298,6 +1325,21 @@ void init_seq(void)
     uart_set_irq_enables(UART_ID, false, false);
 
     uart_puts(UART_ID, "\r\nokhi started!\r\n"); 
+    */
+
+    /*
+    TEST USB SWITCH BEFORE ENABLE
+    Just run this code and after a few blinks, connect +3v3 TO DP_INDEX
+    THE LED WILL NEVER STOP BLINKING
+
+    gpio_init(DP_INDEX);
+    gpio_set_dir(DP_INDEX, GPIO_IN);
+    gpio_pull_down(DP_INDEX);
+    sleep_ms(100);
+    while (gpio_get(DP_INDEX) == 0) 
+    {
+        blink_led(4);
+    }
     */
 
     gpio_put(USSEL_PIN, true);
@@ -1334,6 +1376,29 @@ void init_seq(void)
 
     pio_clear_instruction_memory(pio0);
     pio_clear_instruction_memory(pio1);
+
+    adc_init();
+    adc_gpio_init(RP_ADC_GPIO);
+    adc_select_input(1); // ADC1
+    // 12-bit conversion, assume max value == ADC_VREF == 3.3 V
+    const float conversion_factor = 3.3f / (1 << 12);
+    uint16_t result = adc_read();
+    printf("Raw value: 0x%03x, voltage: %f V\n", result, result * conversion_factor);
+
+    /*
+    TEST USB SWITCH AFTER ENABLE
+    Just run this code and after a few blinks, connect +3v3 TO DP_INDEX
+    THE LED WILL STOP BLINKING
+
+    gpio_init(DP_INDEX);
+    gpio_set_dir(DP_INDEX, GPIO_IN);
+    gpio_pull_down(DP_INDEX);
+    sleep_ms(100);
+    while (gpio_get(DP_INDEX) == 0) 
+    {
+        blink_led(4);
+    }
+    */
 }
 
 int main(void) 
@@ -1349,6 +1414,12 @@ int main(void)
     bool success = set_sys_clock_khz(120000, true); 
 
     init_seq();
+
+    if (watchdog_caused_reboot()) 
+    {
+        printf("Watchdog caused reset!\r\n");
+        blink_led(10);
+    }
 
     if (success) 
     {

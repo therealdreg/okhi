@@ -50,13 +50,12 @@ WARNING: BULLSHIT CODE X-)
 
 #include "../../../../last_firmv.h"
 
+#include "../../../com_esp_ard.h"
+
+
 char HwVer[256];
 
 bool hwver_init = false;
-
-
-const char* ssid = "ESP";
-const char* password = "0123456789";
 
 WebServer server(80);
 
@@ -187,11 +186,7 @@ void setup()
 
   xTaskCreate(spi_task, "spi_task", 4096, NULL, configMAX_PRIORITIES - 1, NULL);
 
-  WiFi.softAP(ssid, password, 1, false, 1);
-
-  IPAddress IP = WiFi.softAPIP();
-  Serial.print("IP del punto de acceso: ");
-  Serial.println(IP);
+  wifi_set();
 
   server.on("/", handleRoot);
   server.on("/buffer", handleBuffer);

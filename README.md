@@ -6,6 +6,10 @@ okhi is an implant that can be utilized to log keystrokes from a USB/PS2 keyboar
 
 It is based on the RP2040 + ESP chip. The RP2040 is responsible for sniffing & parsing the keyboard data, while the ESP chip is used to transmit the data over WiFi.
 
+The **RP2040** features a dual-core Arm Cortex-M0+ processor, making it highly efficient for handling multiple tasks simultaneously (PIO rlz!). 
+
+okhi leverages the **ESP32-C2**, a new chip from Espressif, specifically the **ESP8684**. This chip includes a RISC-V single-core CPU, which is known for its small size. It is important to note that the ESP8266, ESP8285, and ESP8654 are different chips and should not be confused with the **ESP8684**.
+
 ----
 
 ![](stuff/images/wifiweb.jpg)
@@ -64,6 +68,29 @@ Gerber, Pick and Place files and BOM will be available soon.
  At this moment only Windows is documented. Linux and Mac will be documented soon. I am only one person, so please be patient....
 
  ----
+
+# What a mess of names!
+
+The okhi board integrates two main processors: the RP2040 and the ESP8684-MINI-1-H4. The RP2040 is a dual-core Arm Cortex-M0+ processor running at up to 133 MHz, equipped with 264 KB of on-chip SRAM. While the RP2040 does not include flash memory, an additional 16 MB of external flash has been added, enhancing its storage capabilities. Additionally, the RP2040 is well-suited for overclocking. This processor is also the foundation for the popular Raspberry Pi Pico microcontroller board.
+
+Complementing the RP2040, the ESP8684-MINI-1-H4 module operates at speeds up to 120 MHz and includes 4 MB of internal flash memory. It features a built-in PCB antenna, eliminating the need for an external one, and is housed within a PCB-to-PCB module that incorporates the ESP8684 chip along with other essential components. 
+
+The ESP8684 itself is a single-core RISC-V processor and serves as the core of the ESP32-C2 modules (ESP32-C2 is a generic name). The ESP32-C2 offers a cost-effective solution with Wi-Fi 4 and Bluetooth 5 (LE) connectivity, outperforming the older ESP8266 in both size and performance. It is built around a 32-bit single-core RISC-V processor, featuring 272 KB of SRAM (with 16 KB dedicated to cache) and 576 KB of ROM.
+
+The ESP8684-DevKitM-1 provides a dedicated development board tailored for the ESP8684-MINI-1-H4 module.
+
+
+# ESP8684-MINI-1-H4 module (ESP32-C2)
+
+okhi uses ESP8684-MINI-1-H4 module (ESP32-C2), which is known for its small size. 
+
+![](stuff/images/miniesp.jpg)
+
+ESP8684-MINI-1-H4 module vs ESP8684-WROOM-02C-H4 module:
+
+![](stuff/images/ESP8684-MINI-1-H4_DIFFS_ESP8684-WROOM-02C-H4.jpg) 
+
+With WIFI speeds up to 72Mbps (9MB/s), this module is ideal for a physical keylogger. However, in real-world scenarios, the WIFI speed is typically much lower, but still sufficient for a web interface displaying keystrokes.
 
  # Starter pack
  
@@ -178,7 +205,9 @@ Note: Some adapters use purple for the keyboard, others use green for the keyboa
 
 # Developers setup
 
- - Install the latest version of pico-sdk: https://github.com/raspberrypi/pico-setup-windows/releases/latest/download/pico-setup-windows-x64-standalone.exe
+ - Install pico-sdk SDK **v1.5.1**: https://github.com/raspberrypi/pico-setup-windows/releases/latest/download/pico-setup-windows-x64-standalone.exe
+
+**WARNING: Do not install pico-sdk 2.0 or higher (including PICO VSCODE extensions), as it is not supported yet.**
 
  - Clone this repo or download the zip file: https://github.com/therealdreg/okhi/archive/refs/heads/main.zip
 
@@ -248,51 +277,9 @@ Note: Some adapters use purple for the keyboard, others use green for the keyboa
 
 -----
 
-To compile USB firmware, follow the same steps but RP2040 firmware compilation is different, so change these steps:
+To compile USB firmware, follow the same steps. Just select the firmware\usb\rp folder and firmware\usb\esp folder.
 
-- Close all instances of the "Pico - Visual Studio Code" 
-
-- Install Python 3: https://www.python.org/downloads/
-
-- Select add python.exe to PATH before install
-
-![](stuff/images/addpythopath.png)
-
-- Install MSYS2: https://www.msys2.org/
-
-- Install make in MSYS2 console: pacman -S make
-
-- Add C:\msys64\usr\bin to your ENV PATH
-
-![](stuff/images/msysenvars.png)
-
-- Open the "Pico - Visual Studio Code" shortcut (it is installed with the pico-setup-windows). Never use a normal Visual Studio Code!!
-
-- Select "firmware\usb\" folder
-![](stuff/images/rpussbfolder.png)
-
-- Trust the authors if you see this message:
-![](stuff/images/trustauthors.png)
-
-- Edit "firmware\usb\rp\build\build.bat" file and change the path to your pico-sdk installation path:
-
-```
-call "C:\Program Files\Raspberry Pi\Pico SDK v1.5.1\pico-env.cmd"
-```
-
-- To compile don't use cmake, just press shift+ctrl+p and type ">tasks build" and select "Run Build Task"
-
-![](stuff/images/tasskbuildrp.png)
-
-- If everything is ok, a new firmware\usb\rp\build\okhi.uf2 file is created and ready to be uploaded to okhi
-
-![](stuff/images/buildbare.png)
-
-- The rest of the steps are the same
-
-This RP2040-USB project only can be compiled on Windows. Linux and Mac will be supported soon.
-
-Note: I modified the original usb-sniffer-lite project by Alex Taradov build process with own scripts, .exe files, etc...
+Note: I modified the original usb-sniffer-lite project by Alex Taradov (porting to pico-sdk). I am not a RP2040 expert, so I am learning a lot with this project.
 
 # Developers web
 
@@ -319,6 +306,8 @@ Check node version
 node.exe -v
 v22.7.0
 ```
+
+**WARNING: type "node.exe" instead of "node"**
 
 Install deps
 
@@ -404,22 +393,6 @@ PIO code tasks:
 Note: I just code (very fast) the necessary for the adapter from hell + others. So, the PIO code and main cores code will be improved in the future. And not all PIO code tasks are implemented yet (maybe will be not necessary).
 
 I tested the current PIO + main cores code with different PS2 adapters and it works fine.
-
-# Developers notes for USB firmware
-
-Currently USB firmware is based on usb-sniffer-lite project by Alex Taradov: https://github.com/ataradov/usb-sniffer-lite
-
-I've modified this project for my own needs. I've added a lot of code that's pretty much junk and it kind of works.
-
-(I copy-paste code from the original pico-sdk because I am a very lazy bastard). 
-
-The main goal is to parse USB keyboard data and send it to the ESP chip.
-
-This is an educational project, so the idea is convert the bare-metal code by Alex Taradov to a "legacy" pico-sdk C/C++ code (including the PIO code). 
-
-Thx Alex for your great work! 
-
-I am not a RP2040 expert, so I am learning a lot with this project.
 
 # Developers hardware pack
 
@@ -516,18 +489,29 @@ Hard resetting via RTS pin...
  *  Terminal will be reused by tasks, press any key to close it. 
 ```
 
-
 # Developers doc
 
 - https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf
 
 - https://datasheets.raspberrypi.com/pico/raspberry-pi-pico-c-sdk.pdf
 
+- https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf
+
 - https://docs.espressif.com/projects/esp-idf/en/latest/esp32c2/get-started/index.html
+
+- https://www.espressif.com/sites/default/files/documentation/esp8684_datasheet_en.pdf
+
+- https://www.espressif.com/sites/default/files/documentation/esp8684_technical_reference_manual_en.pdf
+
+- https://esp32.com/
+
+- https://forums.raspberrypi.com/
 
 - https://www.usbmadesimple.co.uk/
 
 - https://www.beyondlogic.org/usbnutshell/usb1.shtml
+
+Take a look at the [stuff](stuff) folder, there are some useful documents.
 
 - [PS2 Keyboard - Adam Chapweske.pdf](stuff/PS2_Keyboard.pdf)
 

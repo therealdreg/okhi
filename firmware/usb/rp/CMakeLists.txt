@@ -43,7 +43,8 @@ target_link_libraries(okhi
     hardware_pio 
     hardware_spi 
     hardware_flash 
-    hardware_sync)
+    hardware_sync
+    hardware_adc)
 
 pico_generate_pio_header(okhi ${CMAKE_CURRENT_LIST_DIR}/okhi.pio)
 

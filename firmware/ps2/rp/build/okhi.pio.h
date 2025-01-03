@@ -137,37 +137,207 @@ static inline pio_sm_config host_to_device_program_get_default_config(uint offse
 // ----------- //
 
 #define idle_signal_wrap_target 0
-#define idle_signal_wrap 13
+#define idle_signal_wrap 6
 
 static const uint16_t idle_signal_program_instructions[] = {
             //     .wrap_target
-    0x20a0, //  0: wait   1 pin, 0                   
-    0x00c3, //  1: jmp    pin, 3                     
-    0x0000, //  2: jmp    0                          
-    0xe02f, //  3: set    x, 15                      
-    0xa0c3, //  4: mov    isr, null                  
-    0x4001, //  5: in     pins, 1                    
-    0xa046, //  6: mov    y, isr                     
-    0x006d, //  7: jmp    !y, 13                     
-    0x00ca, //  8: jmp    pin, 10                    
-    0x000d, //  9: jmp    13                         
-    0x0044, // 10: jmp    x--, 4                     
-    0xc000, // 11: irq    nowait 0                   
-    0x0000, // 12: jmp    0                          
-    0xc001, // 13: irq    nowait 1                   
+    0xe03e, //  0: set    x, 30                      
+    0xa048, //  1: mov    y, !pins                   
+    0x0065, //  2: jmp    !y, 5                      
+    0xc001, //  3: irq    nowait 1                   
+    0x0000, //  4: jmp    0                          
+    0x0041, //  5: jmp    x--, 1                     
+    0xc000, //  6: irq    nowait 0                   
             //     .wrap
 };
 
 #if !PICO_NO_HARDWARE
 static const struct pio_program idle_signal_program = {
     .instructions = idle_signal_program_instructions,
-    .length = 14,
+    .length = 7,
     .origin = -1,
 };
 
 static inline pio_sm_config idle_signal_program_get_default_config(uint offset) {
     pio_sm_config c = pio_get_default_sm_config();
     sm_config_set_wrap(&c, offset + idle_signal_wrap_target, offset + idle_signal_wrap);
+    return c;
+}
+#endif
+
+// ------------------------------- //
+// two_pin_mirror_reverse_inverter //
+// ------------------------------- //
+
+#define two_pin_mirror_reverse_inverter_wrap_target 0
+#define two_pin_mirror_reverse_inverter_wrap 2
+
+static const uint16_t two_pin_mirror_reverse_inverter_program_instructions[] = {
+            //     .wrap_target
+    0x4002, //  0: in     pins, 2                    
+    0xa056, //  1: mov    y, ::isr                   
+    0xa00a, //  2: mov    pins, !y                   
+            //     .wrap
+};
+
+#if !PICO_NO_HARDWARE
+static const struct pio_program two_pin_mirror_reverse_inverter_program = {
+    .instructions = two_pin_mirror_reverse_inverter_program_instructions,
+    .length = 3,
+    .origin = -1,
+};
+
+static inline pio_sm_config two_pin_mirror_reverse_inverter_program_get_default_config(uint offset) {
+    pio_sm_config c = pio_get_default_sm_config();
+    sm_config_set_wrap(&c, offset + two_pin_mirror_reverse_inverter_wrap_target, offset + two_pin_mirror_reverse_inverter_wrap);
+    return c;
+}
+#endif
+
+// ---------------- //
+// two_pin_inverter //
+// ---------------- //
+
+#define two_pin_inverter_wrap_target 0
+#define two_pin_inverter_wrap 0
+
+static const uint16_t two_pin_inverter_program_instructions[] = {
+            //     .wrap_target
+    0xa008, //  0: mov    pins, !pins                
+            //     .wrap
+};
+
+#if !PICO_NO_HARDWARE
+static const struct pio_program two_pin_inverter_program = {
+    .instructions = two_pin_inverter_program_instructions,
+    .length = 1,
+    .origin = -1,
+};
+
+static inline pio_sm_config two_pin_inverter_program_get_default_config(uint offset) {
+    pio_sm_config c = pio_get_default_sm_config();
+    sm_config_set_wrap(&c, offset + two_pin_inverter_wrap_target, offset + two_pin_inverter_wrap);
+    return c;
+}
+#endif
+
+// -------------- //
+// two_pin_mirror //
+// -------------- //
+
+#define two_pin_mirror_wrap_target 0
+#define two_pin_mirror_wrap 0
+
+static const uint16_t two_pin_mirror_program_instructions[] = {
+            //     .wrap_target
+    0xa000, //  0: mov    pins, pins                 
+            //     .wrap
+};
+
+#if !PICO_NO_HARDWARE
+static const struct pio_program two_pin_mirror_program = {
+    .instructions = two_pin_mirror_program_instructions,
+    .length = 1,
+    .origin = -1,
+};
+
+static inline pio_sm_config two_pin_mirror_program_get_default_config(uint offset) {
+    pio_sm_config c = pio_get_default_sm_config();
+    sm_config_set_wrap(&c, offset + two_pin_mirror_wrap_target, offset + two_pin_mirror_wrap);
+    return c;
+}
+#endif
+
+// --------------- //
+// two_pin_reverse //
+// --------------- //
+
+#define two_pin_reverse_wrap_target 0
+#define two_pin_reverse_wrap 1
+
+static const uint16_t two_pin_reverse_program_instructions[] = {
+            //     .wrap_target
+    0x4002, //  0: in     pins, 2                    
+    0xa016, //  1: mov    pins, ::isr                
+            //     .wrap
+};
+
+#if !PICO_NO_HARDWARE
+static const struct pio_program two_pin_reverse_program = {
+    .instructions = two_pin_reverse_program_instructions,
+    .length = 2,
+    .origin = -1,
+};
+
+static inline pio_sm_config two_pin_reverse_program_get_default_config(uint offset) {
+    pio_sm_config c = pio_get_default_sm_config();
+    sm_config_set_wrap(&c, offset + two_pin_reverse_wrap_target, offset + two_pin_reverse_wrap);
+    return c;
+}
+#endif
+
+// -------------------- //
+// glitch_det_fast_rise //
+// -------------------- //
+
+#define glitch_det_fast_rise_wrap_target 0
+#define glitch_det_fast_rise_wrap 6
+
+static const uint16_t glitch_det_fast_rise_program_instructions[] = {
+            //     .wrap_target
+    0xe02f, //  0: set    x, 15                      
+    0x20a0, //  1: wait   1 pin, 0                   
+    0x2020, //  2: wait   0 pin, 0                   
+    0x00c6, //  3: jmp    pin, 6                     
+    0x0043, //  4: jmp    x--, 3                     
+    0x0000, //  5: jmp    0                          
+    0x4001, //  6: in     pins, 1                    
+            //     .wrap
+};
+
+#if !PICO_NO_HARDWARE
+static const struct pio_program glitch_det_fast_rise_program = {
+    .instructions = glitch_det_fast_rise_program_instructions,
+    .length = 7,
+    .origin = -1,
+};
+
+static inline pio_sm_config glitch_det_fast_rise_program_get_default_config(uint offset) {
+    pio_sm_config c = pio_get_default_sm_config();
+    sm_config_set_wrap(&c, offset + glitch_det_fast_rise_wrap_target, offset + glitch_det_fast_rise_wrap);
+    return c;
+}
+#endif
+
+// -------------------- //
+// glitch_det_fast_fall //
+// -------------------- //
+
+#define glitch_det_fast_fall_wrap_target 0
+#define glitch_det_fast_fall_wrap 6
+
+static const uint16_t glitch_det_fast_fall_program_instructions[] = {
+            //     .wrap_target
+    0xe02f, //  0: set    x, 15                      
+    0x2020, //  1: wait   0 pin, 0                   
+    0x20a0, //  2: wait   1 pin, 0                   
+    0x00c6, //  3: jmp    pin, 6                     
+    0x4001, //  4: in     pins, 1                    
+    0x0000, //  5: jmp    0                          
+    0x0043, //  6: jmp    x--, 3                     
+            //     .wrap
+};
+
+#if !PICO_NO_HARDWARE
+static const struct pio_program glitch_det_fast_fall_program = {
+    .instructions = glitch_det_fast_fall_program_instructions,
+    .length = 7,
+    .origin = -1,
+};
+
+static inline pio_sm_config glitch_det_fast_fall_program_get_default_config(uint offset) {
+    pio_sm_config c = pio_get_default_sm_config();
+    sm_config_set_wrap(&c, offset + glitch_det_fast_fall_wrap_target, offset + glitch_det_fast_fall_wrap);
     return c;
 }
 #endif

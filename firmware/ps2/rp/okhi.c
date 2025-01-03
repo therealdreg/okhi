@@ -51,6 +51,7 @@ There might still be some code/deadcode from this project
 #include "hardware/pio.h"
 #include "hardware/flash.h"
 #include "hardware/timer.h"
+#include "hardware/watchdog.h"
 #include "okhi.pio.h"
 #include "../../../../last_firmv.h"
 #include "../com_ps2.c"
@@ -99,6 +100,12 @@ There might still be some code/deadcode from this project
 #define EBOOT_MASTERDATAREADY_GPIO 14
 #define ELOG_SLAVEREADY_GPIO  15
 #define ESP_RESET_GPIO  28
+
+#define CLK_INVERTED_GPIO 0
+#define DAT_INVERTED_GPIO 1
+
+#define DAT_MIRROR_GPIO 2
+#define CLK_MIRROR_GPIO 3
 
 #define BS 0x8
 #define TAB 0x9
@@ -934,6 +941,51 @@ void uart_pure_soft_puts(const char* str) {
     }
 }
 
+void test_pin_mirror(void)
+{
+    int last_dat_state = -1;
+    int last_clk_state = -1;
+
+    int current_dat_state;
+    int current_clk_state;
+    int current_dat_inverted_state;
+    int current_clk_inverted_state;
+
+    for (int i = 0; ; i++) 
+    {
+        current_dat_state = gpio_get(DAT_GPIO);
+        current_clk_state = gpio_get(CLK_GPIO);
+        current_dat_inverted_state = gpio_get(DAT_INVERTED_GPIO);
+        current_clk_inverted_state = gpio_get(CLK_INVERTED_GPIO);
+
+        if (current_dat_state != last_dat_state || current_clk_state != last_clk_state) 
+        {
+            last_dat_state = current_dat_state;
+            last_clk_state = current_clk_state;
+
+            puts("--------------------");
+            printf("DAT_GPIO: %d\r\n", current_dat_state);
+            printf("DAT_INVERTED_GPIO: %d\r\n", current_dat_inverted_state);
+            puts(" ");
+            printf("CLK_GPIO: %d\r\n", current_clk_state);
+            printf("CLK_INVERTED_GPIO: %d\r\n", current_clk_inverted_state);
+        }
+    }
+}
+
+void test_glitch_detector(uint kbd_glitch_sm)
+{
+    int i = 0;
+    while (1) 
+    {
+        if (pio_sm_get_rx_fifo_level(pio1, kbd_glitch_sm) > 0) 
+        {
+            uint32_t data = pio_sm_get(pio1, kbd_glitch_sm);
+            printf("Glitch detected n[%d]: %d\r\n", i++, data);
+        }
+    }
+}
+
 int main(void) 
 {   
     if (wait_20 == 0x69699696)
@@ -1032,7 +1084,93 @@ int main(void)
     pio_clear_instruction_memory(pio0);
     pio_clear_instruction_memory(pio1);
 
+    /*
+
+    
+    
+    // INIT MIRROR PINS
+    gpio_init(DAT_INVERTED_GPIO);
+    gpio_set_dir(DAT_INVERTED_GPIO, GPIO_OUT);
+    gpio_put(DAT_INVERTED_GPIO, false);
+    gpio_init(CLK_INVERTED_GPIO);
+    gpio_set_dir(CLK_INVERTED_GPIO, GPIO_OUT);
+    gpio_put(CLK_INVERTED_GPIO, false);
+    pio_gpio_init(pio0, DAT_INVERTED_GPIO);
+    pio_gpio_init(pio0, CLK_INVERTED_GPIO);
+
+    // INIT REVERSE PINS
+    gpio_init(DAT_MIRROR_GPIO);
+    gpio_set_dir(DAT_MIRROR_GPIO, GPIO_OUT);
+    gpio_put(DAT_MIRROR_GPIO, false);
+    gpio_init(CLK_MIRROR_GPIO);
+    gpio_set_dir(CLK_MIRROR_GPIO, GPIO_OUT);
+    gpio_put(CLK_MIRROR_GPIO, false);
+    pio_gpio_init(pio0, DAT_MIRROR_GPIO);
+    pio_gpio_init(pio0, CLK_MIRROR_GPIO);
+
     //sleep_ms(6000);
+
+    
+    // MIRROR AND REVERSE PINS
+    int kbd_prm_sm = pio_claim_unused_sm(pio0, true);
+    uint offset_kbd_prm = pio_add_program(pio0, &two_pin_mirror_reverse_inverter_program);
+    pio_sm_set_consecutive_pindirs(pio0, kbd_prm_sm, DAT_GPIO, 2, false);
+    pio_sm_set_consecutive_pindirs(pio0, kbd_prm_sm, DAT_MIRROR_GPIO, 2, true);
+    pio_sm_config c_kbd_prm = two_pin_mirror_reverse_inverter_program_get_default_config(offset_kbd_prm);
+    sm_config_set_in_pins(&c_kbd_prm, DAT_GPIO);
+    sm_config_set_in_shift(&c_kbd_prm, true, false, 0);
+    sm_config_set_out_pins(&c_kbd_prm, DAT_MIRROR_GPIO, 2);
+    // Must run at maximum possible frequency
+    sm_config_set_clkdiv(&c_kbd_prm, 1.0);
+    pio_sm_init(pio0, kbd_prm_sm, offset_kbd_prm, &c_kbd_prm);
+    pio_sm_set_enabled(pio0, kbd_prm_sm, false);
+    pio_sm_clear_fifos(pio0, kbd_prm_sm);
+    pio_sm_restart(pio0, kbd_prm_sm);
+    pio_sm_clkdiv_restart(pio0, kbd_prm_sm);
+    pio_sm_set_enabled(pio0, kbd_prm_sm, true);
+    pio_sm_exec(pio0, kbd_prm_sm, pio_encode_jmp(offset_kbd_prm));
+
+    /*
+
+    // MIRROR AND INVERT PINS
+    int kbd_pim_sm = pio_claim_unused_sm(pio0, true);
+    uint offset_kbd_pim = pio_add_program(pio0, &pins_invert_mirror_program);
+    pio_sm_set_consecutive_pindirs(pio0, kbd_pim_sm, DAT_GPIO, 2, false);
+    pio_sm_set_consecutive_pindirs(pio0, kbd_pim_sm, CLK_INVERTED_GPIO, 2, true);
+    pio_sm_config c_kbd_pim = pins_invert_mirror_program_get_default_config(offset_kbd_pim);
+    sm_config_set_in_pins(&c_kbd_pim, DAT_GPIO);
+    sm_config_set_out_pins(&c_kbd_pim, CLK_INVERTED_GPIO, 2);
+    // Must run at maximum possible frequency
+    sm_config_set_clkdiv(&c_kbd_pim, 1.0);
+    pio_sm_init(pio0, kbd_pim_sm, offset_kbd_pim, &c_kbd_pim);
+    pio_sm_set_enabled(pio0, kbd_pim_sm, false);
+    pio_sm_clear_fifos(pio0, kbd_pim_sm);
+    pio_sm_restart(pio0, kbd_pim_sm);
+    pio_sm_clkdiv_restart(pio0, kbd_pim_sm);
+    pio_sm_set_enabled(pio0, kbd_pim_sm, true);
+    pio_sm_exec(pio0, kbd_pim_sm, pio_encode_jmp(offset_kbd_pim));
+    // test_pin_mirror();
+
+    // GLITCH DETECTOR FAST RISE
+    uint kbd_glitch_sm = pio_claim_unused_sm(pio1, true);
+    uint offset_kbd_glitch = pio_add_program(pio1, &glitch_det_fast_rise_program);
+    pio_sm_set_consecutive_pindirs(pio1, kbd_glitch_sm, CLK_GPIO, 1, false);
+    pio_sm_config c_kbd_glitch = glitch_det_fast_rise_program_get_default_config(offset_kbd_glitch);
+    sm_config_set_in_pins(&c_kbd_glitch, CLK_GPIO);
+    sm_config_set_in_shift(&c_kbd_glitch, false, true, 1);
+    sm_config_set_jmp_pin(&c_kbd_glitch, CLK_GPIO);
+    float div_kbd_glitch = (float)clock_get_hz(clk_sys) / 4000000.0; // 4 MHz
+    sm_config_set_clkdiv(&c_kbd_glitch, div_kbd_glitch);    
+    pio_sm_init(pio1, kbd_glitch_sm, offset_kbd_glitch, &c_kbd_glitch);
+    pio_sm_set_enabled(pio1, kbd_glitch_sm, false);
+    pio_sm_clear_fifos(pio1, kbd_glitch_sm);
+    pio_sm_restart(pio1, kbd_glitch_sm);
+    pio_sm_clkdiv_restart(pio1, kbd_glitch_sm);
+    pio_sm_set_enabled(pio1, kbd_glitch_sm, true);
+    pio_sm_exec(pio1, kbd_glitch_sm, pio_encode_jmp(offset_kbd_glitch));
+    //test_glitch_detector(kbd_glitch_sm);
+
+    */
 
     // host to device:
     // get a state machine

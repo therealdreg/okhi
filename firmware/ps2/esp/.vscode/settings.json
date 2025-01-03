@@ -1,6 +1,10 @@
 {
     "files.associations": {
-        "*.txt": "cpp"
+        "*.txt": "cpp",
+        "com.c": "cpp",
+        "com_ps2.c": "cpp",
+        "com_esp.c": "cpp",
+        "com_esp_ard.c": "cpp"
     },
     "editor.inlineSuggest.enabled": true,
     "github.copilot.enable": {

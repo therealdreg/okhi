@@ -77,42 +77,53 @@
 ; 12) Wait for the device to release Data and Clock
 
 
+; WARNING: Do not remove lines that seem unnecessary (like mov isr, null).
+; They cannot be optimized out due to potential issues with garbage values in the ISR register.
+; MCU is changing PC register in any moment, so we need to avoid garbage values in the ISR register.
+
+
 ; ---- PIO0 AREA ---------------------------------------------------------------------
 
 .program inhibited_signal
-; PIO0_1, Must run at 1 MHz (each cycle 1 microsecond)
+; PIO0_0, Must run at 1 MHz (each cycle 1 microsecond)
+
 ; Detect if CLOCK is LOW + DAT is HIGH for at least 100 microseconds
+
 ; irq0: Inhibited communication detected
 ; irq1: No Host Request-to-Send detected after inhibiting communication
+
+; WARNING: two mov isr, null lines may seem optional but are essential. 
+; They cannot be optimized out due to potential issues with garbage values in the ISR register.
+; MCU is changing PC register in any moment, so we need to avoid garbage values in the ISR register.
 
 ; FIFO_JOIN_RX: RX FIFO length: 8, TX FIFO is disabled
 ; IN PIN 0: DAT
 ; IN PIN 1: CLOCK
 ; JMP PIN: CLOCK
 .wrap_target
-wait_inhibited:
-    wait 1 pin 0               ; 00 Wait while DAT is LOW
-    jmp pin wait_inhibited     ; 01 Wait while CLOCK is HIGH
-    set x, 16                  ; 02 At 1 MHz, 6 instructions * 16 times = 96 cycles = 96 microseconds
-count_loop:
-    mov isr, null              ; 03
-    in pins, 1                 ; 04
-    mov y, isr                 ; 05
-    jmp !y, wait_inhibited     ; 06 DAT == LOW? then restart
-    jmp pin, wait_inhibited    ; 07 CLOCK == HIGH? then restart
-    jmp x--, count_loop        ; 08 
-    irq set 0                  ; 09 Trigger Inhibited communication detected
-    wait 1 pin 1               ; 10 Wait while CLOCK is LOW
-    mov isr, null              ; 11
-    in pins, 1                 ; 12
-    mov y, isr                 ; 13
-    jmp !y, wait_inhibited     ; 14 DAT == LOW? then wait_inhibited
-    irq set 1                  ; 15 Trigger No Host Request-to-Send detected after inhibiting communication
-.wrap
-
+await_inhibition:
+    wait 1 pin 0                    ; 00 Wait until DAT goes HIGH
+    jmp pin await_inhibition        ; 01 Wait until CLOCK goes LOW
+    set x, 16                       ; 02 At 1 MHz, 6 instructions × 16 = 96 cycles = 96 µs
+inhibition_count_loop:
+    mov isr, null                   ; 03 Clear the ISR to remove any garbage
+    in pins, 1                      ; 04 Read the DAT pin
+    mov y, isr                      ; 05 Store the value in Y
+    jmp !y, await_inhibition        ; 06 If DAT is LOW, restart
+    jmp pin, await_inhibition       ; 07 If CLOCK is HIGH, restart
+    jmp x--, inhibition_count_loop  ; 08 Decrement X, continue checking
+    irq nowait 0                    ; 09 Trigger "Inhibited communication" IRQ0
+    wait 1 pin 1                    ; 10 Wait until CLOCK goes HIGH
+    mov isr, null                   ; 11 Clear the ISR again
+    in pins, 1                      ; 12 Read the DAT pin
+    mov y, isr                      ; 13 Store the value in Y
+    jmp !y, await_inhibition        ; 14 If DAT is LOW, jump back to await_inhibition
+    irq nowait 1                    ; 15 Trigger "No Host RTS" IRQ after inhibition IRQ1
+.wrap                               ; Restart program
 
 .program device_to_host
-; PIO0_2, Must run ~133.6 kHz, 7.5 microseconds per cycle
+; PIO0_1, Must run ~133.6 kHz, 7.5 microseconds per cycle
+
 ; it is expected to have no fewer than 8 PIO state machine cycles for each keyboard clock cycle
 ; the data transition occurs when the Clock line is low
 
@@ -122,24 +133,24 @@ count_loop:
 ; JMP PIN: EXTERNAL PIN SIGNAL  TO WAIT START
 ; shift ISR to right, autopush: false, threshold: 0 bits
 .wrap_target
-wait_start:
-    jmp pin wait_start    ; 00
-    mov isr, null         ; 01
-    wait 0 pin 1          ; 02 skip start bit
-    wait 1 pin 1
-    set x, 7              ; 03 8 bit counter
-bitloop:
-    wait 0 pin 1 [1]      ; 04 wait negative clock edge
-    in pins, 1            ; 05 sample data
-    wait 1 pin 1          ; 06 wait for positive edge
-    jmp x-- bitloop       ; 07
-    wait 0 pin 1          ; 08 skip parity and stop bits
-    wait 1 pin 1          ; 09
-    wait 0 pin 1          ; 10 
-    wait 1 pin 1          ; 11
-    jmp pin wait_start    ; 12
-    push                  ; 13
-.wrap
+await_start_bit:
+    jmp pin await_start_bit   ; 00 Keep waiting if pin is HIGH
+    mov isr, null             ; 01 Clear the ISR to remove any leftover data
+    wait 0 pin 1              ; 02 Wait for CLOCK LOW (skip the start bit)
+    wait 1 pin 1              ; 03 Wait for CLOCK HIGH
+    set x, 7                  ; 04 Prepare to capture 8 bits
+bit_capture_loop:
+    wait 0 pin 1 [1]          ; 05 Wait for the falling edge of CLOCK
+    in pins, 1                ; 06 Sample the DAT pin
+    wait 1 pin 1              ; 07 Wait for the rising edge of CLOCK
+    jmp x-- bit_capture_loop  ; 08 Decrement X, repeat until 8 bits are read
+    wait 0 pin 1              ; 09 Skip parity bit (CLOCK LOW)
+    wait 1 pin 1              ; 10 Skip parity bit (CLOCK HIGH)
+    wait 0 pin 1              ; 11 Skip stop bit (CLOCK LOW)
+    wait 1 pin 1              ; 12 Skip stop bit (CLOCK HIGH)
+    jmp pin await_start_bit   ; 13 If pin is HIGH again, wait for a new start
+    push                      ; 14 Push the 8 captured bits to the FIFO
+.wrap                         ; Restart program
 
 
 
@@ -147,7 +158,8 @@ bitloop:
 
 
 .program host_to_device
-; PIO1_1, Must run ~133.6 kHz, 7.5 microseconds per cycle
+; PIO1_0, Must run ~133.6 kHz, 7.5 microseconds per cycle
+
 ; it is expected to have no fewer than 8 PIO state machine cycles for each keyboard clock cycle
 ; the data transition occurs when the Clock line is high
 
@@ -157,61 +169,219 @@ bitloop:
 ; JMP PIN: EXTERNAL PIN SIGNAL  TO WAIT START
 ; shift ISR to right, autopush: false, threshold: 0 bits
 .wrap_target
-wait_start:
-    jmp pin wait_start        ; 00
-    mov isr, null             ; 01
-    wait 1 pin 1              ; 02 skip start bit
-    wait 0 pin 1              ; 03
-    set x, 7                  ; 04 8 bit counter
-bitloop:
-    wait 1 pin 1 [1]          ; 05 wait positive clock edge
-    in pins, 1                ; 06 sample data
-    wait 0 pin 1              ; 07 wait for negative edge
-    jmp x-- bitloop           ; 08
-    wait 1 pin 1              ; 09 skip parity and stop bits
-    wait 0 pin 1              ; 10
-    wait 1 pin 1              ; 11
-    wait 0 pin 1              ; 12 skip ACK bit
-    ; !!! Notice the change in timing for the "ack" bit (wait 0), the data transition occours when 
-    ; the Clock line is high (rather than when it is low as is the case for the other 11 bits.)
-    ; Example for sampling the ACK bit (replace the line above with this to effectively sample the ACK bit):
-    ;       wait 0 pin 1 [1]
-    ;       in pins, 1
-    jmp pin wait_start        ; 13     
-    push                      ; 14
-.wrap
+await_start_signal:
+    jmp pin await_start_signal ; 00 Continue waiting if pin is HIGH
+    mov isr, null              ; 01 Clear the ISR to remove any leftover data
+    wait 1 pin 1               ; 02 Skip the start bit (CLOCK HIGH)
+    wait 0 pin 1               ; 03 Wait for CLOCK LOW
+    set x, 7                   ; 04 Prepare to capture 8 bits
+capture_bits:
+    wait 1 pin 1 [1]           ; 05 Wait for CLOCK rising edge
+    in pins, 1                 ; 06 Sample the DAT pin
+    wait 0 pin 1               ; 07 Wait for CLOCK falling edge
+    jmp x-- capture_bits       ; 08 Decrement X and capture all 8 bits
+    wait 1 pin 1               ; 09 Skip parity and stop bits (CLOCK HIGH)
+    wait 0 pin 1               ; 10 Wait for CLOCK LOW
+    wait 1 pin 1               ; 11 Wait for CLOCK HIGH
+    wait 0 pin 1               ; 12 Skip the ACK bit (CLOCK LOW)
+    ; -------------------------------------------------------------------------
+    ; IMPORTANT PS/2 PROTOCOL NOTE (for ACK bit):
+    ; The ACK bit timing is different: the data transitions while CLOCK is HIGH,
+    ; whereas the other 11 bits transition while CLOCK is LOW.
+    ; If you need to actually sample the ACK bit, you could replace the line above 
+    ; with something like:
+    ;    wait 0 pin 1 [1]
+    ;    in pins, 1
+    ; -------------------------------------------------------------------------
+    jmp pin await_start_signal ; 13 If pin is HIGH again, wait for the next start
+    push                       ; 14 Push the captured 8 bits to FIFO
+.wrap                          ; Restart program
 
 .program idle_signal
-; PIO1_2, Must run at 1 MHz (each cycle 1 microsecond)
+; PIO1_1, Must run at 1 MHz (each cycle 1 microsecond)
 
-; Detect idle_signal state:
-; irq0: CLOCK is HIGH + DAT is HIGH for at least 100 microseconds
-; irq1: not idle state
+; Detects an IDLE state where both CLOCK and DAT remain HIGH for ≥100 µs.
+; Triggers irq0 if IDLE is detected, irq1 otherwise.
 
 ; FIFO_JOIN_RX: RX FIFO length: 8, TX FIFO is disabled
 ; IN PIN 0: DAT
 ; IN PIN 1: CLOCK
 ; JMP PIN: CLOCK
 .wrap_target
-wait_idle:
-    wait 1 pin 0                        ; 01 Wait while DAT is LOW
-    jmp pin both_high_idle              ; 02 JMP IF DAT + CLOCK = HIGH
-    jmp wait_idle                       ; 03 Wait while CLOCK or DAT is LOW
-both_high_idle:
-    set x, 15                           ; 04 At 1 MHz, 6 instructions * 15 times = 90 cycles = 90 microseconds
-loop_check_idle:
-    mov isr, null                       ; 05
-    in pins, 1                          ; 06
-    mov y, isr                          ; 07
-    jmp !y, not_idle                    ; 08 DAT == LOW? then signal NOT IDLE
-    jmp pin, continue_loop_check_idle   ; 09 CLOCK == HIGH? then continue loop
-    jmp not_idle                        ; 10 CLOCK == LOW? then signal NOT IDLE
-continue_loop_check_idle:
-    jmp x--, loop_check_idle            ; 11
-    irq set 0 ; end loop, signal IDLE   ; 12
-    jmp wait_idle ; restart             ; 13
-not_idle:
-    irq set 1 ; signal NOT IDLE         ; 14
-.wrap ; restart
+wait_for_idle:
+    set x, 30                           ; 00 At 1 MHz, repeating 3 instructions × 30 = 90 cycles = 90 µs 
+check_idle_loop:
+    mov y, !pins                        ; 01 Capture inverted DAT and CLOCK signals
+    jmp !y, next_idle_check             ; 02 If DAT & CLOCK are both HIGH, continue checking
+not_idle_detected:
+    irq nowait 1                        ; 03 Trigger IRQ to indicate NOT IDLE, , trigger IRQ 1
+    jmp wait_for_idle                   ; 04 Restart detection
+next_idle_check:
+    jmp x--, check_idle_loop            ; 05 Decrement X and re-check
+idle_detected:
+    irq nowait 0                        ; 06 IDLE detected, trigger IRQ 0
+.wrap                                   ; Wrap to restart
 
+
+
+
+; PIO??? AREA ---------------------------------------------------------------------
+
+
+
+.program two_pin_mirror_reverse_inverter
+; PIO???, should run at the highest possible frequency.
+
+; This program reads two consecutive input pins (DAT on pin 0, CLOCK on pin 1),
+; then outputs their inverted states on two consecutive pins in reverse order:
+;   - OUT PIN 0: Inverted CLOCK
+;   - OUT PIN 1: Inverted DAT
+;
+; Essentially:
+;   1 → 0
+;   0 → 1
+; and the pin positions are swapped.
+
+; IN PIN 0: DAT
+; IN PIN 1: CLOCK
+; OUT PIN 0: CLOCK (inverted)
+; OUT PIN 1: DAT (inverted)
+.wrap_target
+    in pins, 2            ; 00 sample both pins
+    mov y, ::isr          ; 01 store the value in Y in reverse order
+    mov pins, !y          ; 02 output the inverted values
+.wrap                     ; Restart the program
+
+.program two_pin_inverter
+; PIO???, should run at the highest possible frequency.
+
+; This program reads two consecutive input pins (DAT on pin 0, CLOCK on pin 1),
+; then outputs their inverted states on two consecutive pins in the same order:
+;   - OUT PIN 0: Inverted DAT
+;   - OUT PIN 1: Inverted CLOCK
+;
+; Essentially, the pin positions are mirrored, and the states are inverted.
+
+; IN PIN 0: DAT
+; IN PIN 1: CLOCK
+; OUT PIN 0: DAT  (inverter)
+; OUT PIN 1: CLOCK (inverter)
+.wrap_target
+    mov pins, !pins       ; 00 sample and output inverted values
+.wrap                     ; Restart the program
+
+.program two_pin_mirror
+; PIO???, should run at the highest possible frequency.
+
+; This program reads two consecutive input pins (DAT on pin 0, CLOCK on pin 1),
+; then outputs their states on two consecutive pins in the same order:
+;   - OUT PIN 0: DAT
+;   - OUT PIN 1: CLOCK
+;
+; Essentially, the pin positions are mirrored.
+
+; IN PIN 0: DAT
+; IN PIN 1: CLOCK
+; OUT PIN 0: DAT 
+; OUT PIN 1: CLOCK
+
+.wrap_target
+    mov pins, pins       ; 00 sample and output the same values
+.wrap                     ; Restart the program
+
+.program two_pin_reverse
+; PIO???, should run at the highest possible frequency.
+
+; This program reads two consecutive input pins (DAT on pin 0, CLOCK on pin 1),
+; then outputs their states on two consecutive pins in reverse order:
+;   - OUT PIN 0: CLOCK
+;   - OUT PIN 1: DAT
+;
+; Essentially, the pin positions are swapped.
+
+; IN PIN 0: DAT
+; IN PIN 1: CLOCK
+; OUT PIN 0: CLOCK 
+; OUT PIN 1: DAT 
+.wrap_target
+    in pins, 2            ; 00 sample both pins
+    mov pins, ::isr       ; 01 output the values in reverse order
+.wrap                     ; Restart the program
+
+.program glitch_det_fast_rise
+; PIO???, Must run at 4 MHz (each instruction takes 0.25 µs).
+
+; It detects very short pulses ("glitches") on a clock input pin, measuring
+; from a falling edge to the next rising edge. Glitches of ~8 µs or shorter
+; are considered detected.
+
+;   - We need to observe a ~8 µs window, which corresponds to 32 instructions 
+;     at 4 MHz (32 × 0.25 µs = 8 µs).
+;   - The loop uses 16 iterations, each taking 2 instructions,
+;     resulting in a total of 32 instructions for the detection window.
+;   - If the clock pin goes HIGH during these iterations, we register it
+;     as a glitch.
+
+;    Normal clock (no glitch):
+;        ___          _________          ________
+; CLOCK:    |________|         |________|        |________
+;
+;    With a short glitch
+;        ___          __  _____          _________
+; CLOCK:    |________|  ||     |________|         |________
+;                         ↑
+;                       short glitch (~8 µs)
+
+; The PIO program detects this fast rise (transition to HIGH)
+; happening sooner than expected, which qualifies it as a glitch.
+
+; Make sure the state machine is clocked at 4 MHz in your PIO setup.
+
+; IN PIN 0: CLOCK
+; JMP PIN: CLOCK
+.wrap_target
+init_detection:
+    set x, 15                 ; 00 Initialize X for 16 loop iterations 
+    wait 1 pin, 0             ; 01 Ensure the CLOCK pin goes HIGH first (avoids false triggers)
+    wait 0 pin, 0             ; 02 Now wait until the CLOCK pin goes LOW (start point for measuring)
+check_for_glitch:
+    jmp pin, glitch_detected  ; 03 If the pin transitions HIGH prematurely, it's a glitch
+    jmp x--, check_for_glitch ; 04 If still LOW, repeat up to 16 times
+    jmp init_detection        ; 05 No glitch detected in this window; restart
+glitch_detected:
+    in pins, 1                ; 06 Read the CLOCK pin to register the glitch event
+.wrap                         ; Restart program
+
+.program glitch_det_fast_fall
+; PIO???, Must run at 4 MHz (each instruction takes 0.25 µs).
+
+; The same as glitch_det_fast_rise but for detecting the opposite transition.
+
+;    Normal clock (no glitch):
+;        ___          _________          ________
+; CLOCK:    |________|         |________|        |________
+;
+;    With a short glitch
+;        ___          _________          _________
+; CLOCK:    |___||___|         |________|         |________
+;                ↑
+;              short glitch (~8 µs)
+
+; The PIO program detects this fast fall (transition to LOW)
+
+; IN PIN 0: CLOCK
+; JMP PIN: CLOCK
+.wrap_target
+init_detection:
+    set x, 15                           ; 00 Initialize X for 16 loop iterations 
+    wait 0 pin, 0                       ; 01 Ensure the CLOCK pin goes LOW first (avoids false triggers)
+    wait 1 pin, 0                       ; 02 Now wait until the CLOCK pin goes HIGH (start point for measuring)
+check_for_glitch:
+    jmp pin, no_glitch_detected         ; 03 If the pin transitions LOW prematurely, it's a glitch
+glitch_detected:
+    in pins, 1                          ; 04 Read the CLOCK pin to register the glitch event
+    jmp init_detection                  ; 05 Restart detection
+no_glitch_detected:
+    jmp x--, check_for_glitch           ; 06 If still HIGH, repeat up to 16 times
+.wrap                                   ; Restart program
 
