@@ -216,5 +216,3 @@ wait_se0:
 infinite_loop:
     jmp infinite_loop        ; 17
 .wrap
-
-

@@ -207,6 +207,16 @@ Note: Some adapters use purple for the keyboard, others use green for the keyboa
 
 ![](stuff/images/neverbuy.png)
 
+# Reporting issues
+
+If you have a PS2-USB adapter that doesn't work with the sniffer, please send me some captures of the device using a logic analyzer or the pico-ps2-diagnostic-tool. This tool is designed to capture and replay signals on a PS/2 interface, specifically targeting the DATA and CLOCK lines:
+
+https://github.com/therealdreg/pico-ps2-diagnostic-tool
+
+![](stuff/images/originalvsre.png)
+
+ A short pulse was captured on the original CLOCK signal, and the replayed signal successfully reproduced it.
+
 # Developers setup
 
  - Install pico-sdk SDK **v1.5.1**: https://github.com/raspberrypi/pico-setup-windows/releases/latest/download/pico-setup-windows-x64-standalone.exe
@@ -532,6 +542,8 @@ Take a look at the [stuff](stuff) folder, there are some useful documents.
 - https://github.com/therealdreg/pico-usb-sniffer-lite
 
 - https://github.com/therealdreg/pico-ps2-sniffer
+
+- https://github.com/therealdreg/pico-ps2-diagnostic-tool
 
 # Schematic
 

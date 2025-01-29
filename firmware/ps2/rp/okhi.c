@@ -248,55 +248,55 @@ static int init_ver(void)
 
     switch (hwver)
     {
-    case VERSION_00:
-        hwver_name = "00";
-        printf("Hardware version: 00\n");
-        break;
+        case VERSION_00:
+            hwver_name = "00";
+            printf("Hardware version: 00\n");
+            break;
 
-    case VERSION_01:
-        hwver_name = "01";
-        printf("Hardware version: 01\n");
-        break;
+        case VERSION_01:
+            hwver_name = "01";
+            printf("Hardware version: 01\n");
+            break;
 
-    case VERSION_10:
-        hwver_name = "10";
-        printf("Hardware version: 10\n");
-        break;
+        case VERSION_10:
+            hwver_name = "10";
+            printf("Hardware version: 10\n");
+            break;
 
-    case VERSION_11:
-        hwver_name = "11";
-        printf("Hardware version: 11\n");
-        break;
+        case VERSION_11:
+            hwver_name = "11";
+            printf("Hardware version: 11\n");
+            break;
 
-    case VERSION_FF:
-        hwver_name = "FF";
-        printf("Hardware version: FF (both floating)\n");
-        break;
+        case VERSION_FF:
+            hwver_name = "FF";
+            printf("Hardware version: FF (both floating)\n");
+            break;
 
-    case VERSION_0F:
-        hwver_name = "0F";
-        printf("Hardware version: 0F (A low, B floating)\n");
-        break;
+        case VERSION_0F:
+            hwver_name = "0F";
+            printf("Hardware version: 0F (A low, B floating)\n");
+            break;
 
-    case VERSION_1F:
-        hwver_name = "1F";
-        printf("Hardware version: 1F (A high, B floating)\n");
-        break;
+        case VERSION_1F:
+            hwver_name = "1F";
+            printf("Hardware version: 1F (A high, B floating)\n");
+            break;
 
-    case VERSION_F0:
-        hwver_name = "F0";
-        printf("Hardware version: F0 (A floating, B low)\n");
-        break;
+        case VERSION_F0:
+            hwver_name = "F0";
+            printf("Hardware version: F0 (A floating, B low)\n");
+            break;
 
-    case VERSION_F1:
-        hwver_name = "F1";
-        printf("Hardware version: F1 (A floating, B high)\n");
-        break;
+        case VERSION_F1:
+            hwver_name = "F1";
+            printf("Hardware version: F1 (A floating, B high)\n");
+            break;
 
-    default:
-        hwver_name = "UK";
-        printf("Hardware version: Unknown\n");
-        break;
+        default:
+            hwver_name = "UK";
+            printf("Hardware version: Unknown\n");
+            break;
     }
 
     return 0;

@@ -29,6 +29,8 @@
   "editor.defaultFormatter": "ms-vscode.cpptools",
   "editor.formatOnSave": true,
   "editor.inlineSuggest.enabled": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
   "github.copilot.enable": {
       "*": true,
       "yaml": true,
