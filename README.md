@@ -509,6 +509,48 @@ Hard resetting via RTS pin...
  *  Terminal will be reused by tasks, press any key to close it.
 ```
 
+# PS2 Captures 
+
+Using the Saleae logic software, PulseView, and the pico-ps2-diagnostic-tool, I captured data from a variety of USB-to-PS2 adapters and real motherboards. This data illustrates the differences among these devices, showing that the PIO code must be compatible with them all. The diagnostic tool also allows you to replay the data to the implant to verify its functionality.
+
+All captures are stored in the **stuff/ps2caps** folder. Each capture contains the following keystroke events:
+
+drg[Caps Lock]
+
+Additionally, by pressing [Caps Lock from another keyboard], the PS2 keyboard receives the LED SET event.
+
+## ASUS 970 PRO GAMING/AURA ACPI BIOS Revision 1001
+
+[Download Captures: ASUS 970 PRO GAMING/AURA ACPI BIOS Revision 1001](stuff/ps2caps/asus_970_pro_gaming_aura_acpi_bios_revision_1001.zip)
+
+This board features dual PS2 ports, supporting both a PS2 keyboard and a PS2 mouse:
+
+![](stuff/images/ps2conn.jpeg)
+
+## Adapter from Hell (AMAZON)
+
+[Download Captures: Adapter from Hell](stuff/ps2caps/adapter_from_hell.zip)
+
+This adapter is notoriously difficult to work with due to its erratic behavior. The PIO code and main firmware must be carefully designed to accommodate its quirks.
+
+![](stuff/images/hellpsadapter.png)
+
+## Adapter 2 from Aliexpress
+
+[Download Captures: Adapter 2 from Aliexpress](stuff/ps2caps/adapter2_aliexpress.zip)
+
+Although this adapter is somewhat easier to parse, it still presents challenges. Saleae’s Logic software PS2 parser may struggle to decode certain events.
+
+![](stuff/images/ps2adapter2.png)
+
+## Adapter 5 from Aliexpress
+
+[Download Captures: Adapter 5 from Aliexpress](stuff/ps2caps/adapter5_aliexpress.zip)
+
+This adapter is one of the most reliable, as it is the easiest to parse. Saleae’s Logic software successfully decodes all events.
+
+![](stuff/images/ps2adapter5.png)
+
 # Developers doc
 
 - https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf
