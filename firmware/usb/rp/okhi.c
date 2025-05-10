@@ -50,9 +50,13 @@ https://github.com/ataradov/usb-sniffer-lite by Alex Taradov
 #include "hardware/irq.h"
 #include "hardware/pio.h"
 #include "hardware/pll.h"
+#include "hardware/regs/io_qspi.h"
 #include "hardware/spi.h"
 #include "hardware/structs/clocks.h"
+#include "hardware/structs/ioqspi.h"
 #include "hardware/structs/pll.h"
+#include "hardware/structs/sio.h"
+#include "hardware/sync.h"
 #include "hardware/timer.h"
 #include "hardware/uart.h"
 #include "hardware/watchdog.h"
@@ -473,55 +477,55 @@ static int init_ver(void)
 
     switch (hwver)
     {
-    case VERSION_00:
-        hwver_name = "00";
-        printf("Hardware version: 00\n");
-        break;
+        case VERSION_00:
+            hwver_name = "00";
+            printf("Hardware version: 00\n");
+            break;
 
-    case VERSION_01:
-        hwver_name = "01";
-        printf("Hardware version: 01\n");
-        break;
+        case VERSION_01:
+            hwver_name = "01";
+            printf("Hardware version: 01\n");
+            break;
 
-    case VERSION_10:
-        hwver_name = "10";
-        printf("Hardware version: 10\n");
-        break;
+        case VERSION_10:
+            hwver_name = "10";
+            printf("Hardware version: 10\n");
+            break;
 
-    case VERSION_11:
-        hwver_name = "11";
-        printf("Hardware version: 11\n");
-        break;
+        case VERSION_11:
+            hwver_name = "11";
+            printf("Hardware version: 11\n");
+            break;
 
-    case VERSION_FF:
-        hwver_name = "FF";
-        printf("Hardware version: FF (both floating)\n");
-        break;
+        case VERSION_FF:
+            hwver_name = "FF";
+            printf("Hardware version: FF (both floating)\n");
+            break;
 
-    case VERSION_0F:
-        hwver_name = "0F";
-        printf("Hardware version: 0F (A low, B floating)\n");
-        break;
+        case VERSION_0F:
+            hwver_name = "0F";
+            printf("Hardware version: 0F (A low, B floating)\n");
+            break;
 
-    case VERSION_1F:
-        hwver_name = "1F";
-        printf("Hardware version: 1F (A high, B floating)\n");
-        break;
+        case VERSION_1F:
+            hwver_name = "1F";
+            printf("Hardware version: 1F (A high, B floating)\n");
+            break;
 
-    case VERSION_F0:
-        hwver_name = "F0";
-        printf("Hardware version: F0 (A floating, B low)\n");
-        break;
+        case VERSION_F0:
+            hwver_name = "F0";
+            printf("Hardware version: F0 (A floating, B low)\n");
+            break;
 
-    case VERSION_F1:
-        hwver_name = "F1";
-        printf("Hardware version: F1 (A floating, B high)\n");
-        break;
+        case VERSION_F1:
+            hwver_name = "F1";
+            printf("Hardware version: F1 (A floating, B high)\n");
+            break;
 
-    default:
-        hwver_name = "UK";
-        printf("Hardware version: Unknown\n");
-        break;
+        default:
+            hwver_name = "UK";
+            printf("Hardware version: Unknown\n");
+            break;
     }
 
     return 0;
@@ -1324,8 +1328,54 @@ static void init_seq(void)
     printf("Raw value: 0x%03x, voltage: %f V\n", result, result * conversion_factor);
 }
 
+static bool bootsel_pressed_safely(void)
+{
+    const uint CS_INDEX = 1;
+    uint32_t flags = save_and_disable_interrupts();
+
+    hw_write_masked(&ioqspi_hw->io[CS_INDEX].ctrl, GPIO_OVERRIDE_LOW << IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_LSB,
+                    IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_BITS);
+
+    for (volatile int i = 0; i < 1000; ++i)
+    {
+        tight_loop_contents();
+    }
+
+    bool pressed = !(sio_hw->gpio_hi_in & (1u << CS_INDEX));
+
+    hw_write_masked(&ioqspi_hw->io[CS_INDEX].ctrl, GPIO_OVERRIDE_NORMAL << IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_LSB,
+                    IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_BITS);
+
+    restore_interrupts(flags);
+
+    return pressed;
+}
+
+static void boot_press(void)
+{
+    int x = 0;
+    for (int i = 0; i < 500; i++)
+    {
+        if (bootsel_pressed_safely())
+        {
+            x++;
+        }
+    }
+
+    if (x > 90)
+    {
+        /*
+        printf("Bootsel pressed!\r\n");
+        blink_led(5);
+        */
+        reset_usb_boot(0, 0);
+    }
+}
+
 int main(void)
 {
+    boot_press();
+
     /*
       Setting the RP clock to 120 MHz is crucial for USB sniffing.
       This clock speed ensures that the PIO (Programmable Input/Output)

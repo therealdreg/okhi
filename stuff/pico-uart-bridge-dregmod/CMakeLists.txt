@@ -6,6 +6,7 @@ include(pico-sdk/pico_sdk_init.cmake)
 
 project(pico_uart_bridge)
 
+
 pico_sdk_init()
 
 add_executable(uart_bridge uart-bridge.c usb-descriptors.c)
@@ -21,3 +22,5 @@ target_link_libraries(uart_bridge
 	tinyusb_device)
 
 pico_add_extra_outputs(uart_bridge)
+
+pico_set_binary_type(uart_bridge copy_to_ram)

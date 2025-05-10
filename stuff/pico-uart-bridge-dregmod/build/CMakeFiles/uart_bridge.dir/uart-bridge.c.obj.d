@@ -80,4 +80,7 @@ CMakeFiles/uart_bridge.dir/uart-bridge.c.obj: \
  /home/dreg/pico-uart-bridge/pico-sdk/lib/tinyusb/src/class/hid/hid.h \
  /home/dreg/pico-uart-bridge/pico-sdk/lib/tinyusb/src/device/usbd.h \
  /home/dreg/pico-uart-bridge/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.h \
- /home/dreg/pico-uart-bridge/pico-sdk/lib/tinyusb/src/class/cdc/cdc.h
+ /home/dreg/pico-uart-bridge/pico-sdk/lib/tinyusb/src/class/cdc/cdc.h \
+ /home/dreg/pico-uart-bridge/pico-sdk/src/rp2040/hardware_regs/include/hardware/regs/io_qspi.h \
+ /home/dreg/pico-uart-bridge/pico-sdk/src/rp2040/hardware_structs/include/hardware/structs/ioqspi.h \
+ /home/dreg/pico-uart-bridge/pico-sdk/src/rp2_common/pico_bootrom/include/pico/bootrom.h

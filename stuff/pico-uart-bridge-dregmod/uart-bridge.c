@@ -15,7 +15,7 @@
 #define MIN(a, b) ((a > b) ? b : a)
 #endif /* MIN */
 
-#define LED_PIN 25
+#define LED_PIN 26
 
 #define BUFFER_SIZE 2560
 
@@ -297,8 +297,64 @@ void init_uart_data(uint8_t itf)
 	uart_set_irq_enables(ui->inst, true, false);
 }
 
+
+
+// mod by Dreg for okhi 
+#include "hardware/regs/io_qspi.h"
+#include "hardware/structs/ioqspi.h"
+#include "hardware/structs/sio.h"
+#include "hardware/sync.h"
+#include "pico/bootrom.h"
+
+static bool bootsel_pressed_safely(void)
+{
+    const uint CS_INDEX = 1;
+    uint32_t flags = save_and_disable_interrupts();
+
+    hw_write_masked(&ioqspi_hw->io[CS_INDEX].ctrl, GPIO_OVERRIDE_LOW << IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_LSB,
+                    IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_BITS);
+
+    for (volatile int i = 0; i < 1000; ++i)
+    {
+        tight_loop_contents();
+    }
+
+    bool pressed = !(sio_hw->gpio_hi_in & (1u << CS_INDEX));
+
+    hw_write_masked(&ioqspi_hw->io[CS_INDEX].ctrl, GPIO_OVERRIDE_NORMAL << IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_LSB,
+                    IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_BITS);
+
+    restore_interrupts(flags);
+
+    return pressed;
+}
+
+static void boot_press(void)
+{
+    int x = 0;
+    for (int i = 0; i < 100; i++)
+    {
+        if (bootsel_pressed_safely())
+        {
+            x++;
+        }
+    }
+
+    if (x > 90)
+    {
+        /*
+        printf("Bootsel pressed!\r\n");
+        blink_led(5);
+        */
+        reset_usb_boot(0, 0);
+    }
+}
+
+
 int main(void)
 {
+	boot_press();
+		
 	int itf;
 
 	usbd_serial_init();
@@ -311,7 +367,7 @@ int main(void)
 
 	multicore_launch_core1(core1_entry);
 
-
+	
 	// mod by Dreg for OKHI - Open Keylogger Hardware Implant
 
 #define ELOG_PI15_ES8 15
@@ -345,6 +401,7 @@ int main(void)
 	*/
 
 	// end
+
 
 	while (1) {
 		for (itf = 0; itf < CFG_TUD_CDC; itf++) {

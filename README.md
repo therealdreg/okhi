@@ -4,6 +4,9 @@
 
 okhi is an implant that can be utilized to log keystrokes from a USB/PS2 keyboard. The implant is designed to be  easily concealable within a keyboard, laptop, or tower case. It is powered by the keyboard cable itself. The implant can be accessed via WiFi and enables real-time viewing of keystrokes.
 
+## You can now buy it at [https://www.rootkit.es ![](stuff/boardstobuy.png)](https://www.rootkit.es/)
+
+
 It is based on the RP2040 + ESP chip. The RP2040 is responsible for sniffing & parsing the keyboard data, while the ESP chip is used to transmit the data over WiFi.
 
 The **RP2040** features a dual-core Arm Cortex-M0+ processor, making it highly efficient for handling multiple tasks simultaneously (PIO rlz!).
@@ -59,11 +62,7 @@ Check size before buying, maybe it is too big for your target. Or maybe you need
 - Open Source (MIT License)
 - Community support
 
-# Where to buy
-
-Early Stage project, so you can purchase it directly from me. Please send an email to dreg@rootkit.es for further inquiries.
-
-In a few weeks, I will provide a public link to buy it.
+# Project files
 
 Gerber, Pick and Place files and BOM will be available soon.
 
@@ -206,6 +205,16 @@ Note: Some adapters use purple for the keyboard, others use green for the keyboa
 # NEVER BUY THIS PS2<->USB
 
 ![](stuff/images/neverbuy.png)
+
+# Reporting issues
+
+If you have a PS2-USB adapter that doesn't work with the sniffer, please send me some captures of the device using a logic analyzer or the pico-ps2-diagnostic-tool. This tool is designed to capture and replay signals on a PS/2 interface, specifically targeting the DATA and CLOCK lines:
+
+https://github.com/therealdreg/pico-ps2-diagnostic-tool
+
+![](stuff/images/originalvsre.png)
+
+ A short pulse was captured on the original CLOCK signal, and the replayed signal successfully reproduced it.
 
 # Developers setup
 
@@ -499,6 +508,48 @@ Hard resetting via RTS pin...
  *  Terminal will be reused by tasks, press any key to close it.
 ```
 
+# PS2 Captures 
+
+Using the Saleae logic software, PulseView, and the pico-ps2-diagnostic-tool, I captured data from a variety of USB-to-PS2 adapters and real motherboards. This data illustrates the differences among these devices, showing that the PIO code must be compatible with them all. The diagnostic tool also allows you to replay the data to the implant to verify its functionality.
+
+All captures are stored in the **stuff/ps2caps** folder. Each capture contains the following keystroke events:
+
+drg[Caps Lock]
+
+Additionally, by pressing [Caps Lock from another keyboard], the PS2 keyboard receives the LED SET event.
+
+## ASUS 970 PRO GAMING/AURA ACPI BIOS Revision 1001
+
+[Download Captures: ASUS 970 PRO GAMING/AURA ACPI BIOS Revision 1001](stuff/ps2caps/asus_970_pro_gaming_aura_acpi_bios_revision_1001.zip)
+
+This board features dual PS2 ports, supporting both a PS2 keyboard and a PS2 mouse:
+
+![](stuff/images/ps2conn.jpeg)
+
+## Adapter from Hell (AMAZON)
+
+[Download Captures: Adapter from Hell](stuff/ps2caps/adapter_from_hell.zip)
+
+This adapter is notoriously difficult to work with due to its erratic behavior. The PIO code and main firmware must be carefully designed to accommodate its quirks.
+
+![](stuff/images/hellpsadapter.png)
+
+## Adapter 2 from Aliexpress
+
+[Download Captures: Adapter 2 from Aliexpress](stuff/ps2caps/adapter2_aliexpress.zip)
+
+Although this adapter is somewhat easier to parse, it still presents challenges. Saleae’s Logic software PS2 parser may struggle to decode certain events.
+
+![](stuff/images/ps2adapter2.png)
+
+## Adapter 5 from Aliexpress
+
+[Download Captures: Adapter 5 from Aliexpress](stuff/ps2caps/adapter5_aliexpress.zip)
+
+This adapter is one of the most reliable, as it is the easiest to parse. Saleae’s Logic software successfully decodes all events.
+
+![](stuff/images/ps2adapter5.png)
+
 # Developers doc
 
 - https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf
@@ -532,6 +583,8 @@ Take a look at the [stuff](stuff) folder, there are some useful documents.
 - https://github.com/therealdreg/pico-usb-sniffer-lite
 
 - https://github.com/therealdreg/pico-ps2-sniffer
+
+- https://github.com/therealdreg/pico-ps2-diagnostic-tool
 
 # Schematic
 

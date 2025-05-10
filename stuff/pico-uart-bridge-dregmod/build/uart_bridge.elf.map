@@ -1269,9 +1269,9 @@ Discarded input sections
  .comment       0x00000000       0x27 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.obj
  .ARM.attributes
                 0x00000000       0x2c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.obj
- .text          0x00000000        0x0 /tmp/ccLB38N9.o
- .data          0x00000000        0x0 /tmp/ccLB38N9.o
- .bss           0x00000000        0x0 /tmp/ccLB38N9.o
+ .text          0x00000000        0x0 /tmp/ccoqAfYg.o
+ .data          0x00000000        0x0 /tmp/ccoqAfYg.o
+ .bss           0x00000000        0x0 /tmp/ccoqAfYg.o
  .data          0x00000000        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
  .bss           0x00000000        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
  .data          0x00000000        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memmove.o)
@@ -1669,11 +1669,11 @@ LOAD /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nof
 .boot2          0x10000000      0x100
                 0x10000000                        __boot2_start__ = .
  *(.boot2)
- .boot2         0x10000000      0x100 /tmp/ccLB38N9.o
+ .boot2         0x10000000      0x100 /tmp/ccoqAfYg.o
                 0x10000100                        __boot2_end__ = .
                 0x00000001                        ASSERT (((__boot2_end__ - __boot2_start__) == 0x100), ERROR: Pico second stage bootloader must be 256 bytes in size)
 
-.text           0x10000100     0x6dd8
+.flashtext      0x10000100      0x1d8
                 0x10000100                        __logical_binary_start = .
  *(.vectors)
  .vectors       0x10000100       0xd4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
@@ -1726,557 +1726,605 @@ LOAD /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nof
                 0x100001d4       0x14 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
                 0x100001e8                        __binary_info_header_end = .
  *(.reset)
- .reset         0x100001e8       0xa0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
+ .reset         0x100001e8       0xac CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
                 0x100001e8                _entry_point
- .reset         0x10000288       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ *fill*         0x10000294        0x4 
+ .reset.__stub  0x10000298       0x10 linker stubs
+ .reset         0x100002a8       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+
+.rodata         0x100002d8        0x0
+ *(SORT_BY_ALIGNMENT(SORT_BY_NAME(.flashdata*)))
+                0x100002d8                        . = ALIGN (0x4)
+
+.ARM.extab
+ *(.ARM.extab* .gnu.linkonce.armextab.*)
+                0x100002d8                        __exidx_start = .
+
+.ARM.exidx
+ *(.ARM.exidx* .gnu.linkonce.armexidx.*)
+                0x100002d8                        __exidx_end = .
+                0x100002d8                        . = ALIGN (0x4)
+                0x100002d8                        __binary_info_start = .
+
+.binary_info    0x100002d8       0x1c
+ *(.binary_info.keep.*)
+ .binary_info.keep.__bi_ptr81
+                0x100002d8        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ .binary_info.keep.__bi_ptr75
+                0x100002dc        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ .binary_info.keep.__bi_ptr50
+                0x100002e0        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ .binary_info.keep.__bi_ptr44
+                0x100002e4        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ .binary_info.keep.__bi_ptr38
+                0x100002e8        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ .binary_info.keep.__bi_ptr30
+                0x100002ec        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ .binary_info.keep.__bi_ptr22
+                0x100002f0        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ *(.binary_info.*)
+                0x100002f4                        __binary_info_end = .
+                0x100002f4                        . = ALIGN (0x4)
+
+.ram_vector_table
+                0x20000000       0xc0
+ *(.ram_vector_table)
+ .ram_vector_table
+                0x20000000       0xc0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+                0x20000000                ram_vector_table
+
+.text           0x200000c0     0x6be4 load address 0x100002f4
+                0x200000c0                        __ram_text_start__ = .
  *(.init)
- .init          0x100002b8        0x4 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crti.o
-                0x100002b8                _init
- *(EXCLUDE_FILE(*libm.a: *libc.a:*lib_a-mem*.o *libgcc.a:) .text*)
- .text          0x100002bc       0x98 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
+ .init          0x200000c0        0x4 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crti.o
+                0x200000c0                _init
+ *(.text*)
+ .text          0x200000c4       0x98 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
  .text.uart1_irq_fn
-                0x10000354       0x6c CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
-                0x10000354                uart1_irq_fn
+                0x2000015c       0x6c CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
+                0x2000015c                uart1_irq_fn
  .text.uart0_irq_fn
-                0x100003c0       0x68 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
-                0x100003c0                uart0_irq_fn
+                0x200001c8       0x68 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
+                0x200001c8                uart0_irq_fn
  .text.update_uart_cfg
-                0x10000428       0xd4 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
-                0x10000428                update_uart_cfg
+                0x20000230       0xd4 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
+                0x20000230                update_uart_cfg
  .text.usb_write_bytes
-                0x100004fc       0x9c CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
-                0x100004fc                usb_write_bytes
+                0x20000304       0x9c CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
+                0x20000304                usb_write_bytes
  .text.core1_entry
-                0x10000598      0x10c CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
-                0x10000598                core1_entry
+                0x200003a0      0x10c CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
+                0x200003a0                core1_entry
  .text.uart_write_bytes
-                0x100006a4       0xe0 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
-                0x100006a4                uart_write_bytes
+                0x200004ac       0xe0 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
+                0x200004ac                uart_write_bytes
  .text.init_uart_data
-                0x10000784      0x134 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
-                0x10000784                init_uart_data
+                0x2000058c      0x134 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
+                0x2000058c                init_uart_data
  .text.startup.main
-                0x100008b8       0x84 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
-                0x100008b8                main
+                0x200006c0      0x114 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
+                0x200006c0                main
  .text.tud_descriptor_device_cb
-                0x1000093c        0x8 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
-                0x1000093c                tud_descriptor_device_cb
+                0x200007d4        0x8 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
+                0x200007d4                tud_descriptor_device_cb
  .text.tud_descriptor_configuration_cb
-                0x10000944        0x8 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
-                0x10000944                tud_descriptor_configuration_cb
+                0x200007dc        0x8 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
+                0x200007dc                tud_descriptor_configuration_cb
  .text.tud_descriptor_string_cb
-                0x1000094c       0x60 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
-                0x1000094c                tud_descriptor_string_cb
+                0x200007e4       0x60 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
+                0x200007e4                tud_descriptor_string_cb
  .text.usbd_serial_init
-                0x100009ac       0x40 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
-                0x100009ac                usbd_serial_init
+                0x20000844       0x40 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
+                0x20000844                usbd_serial_init
  .text.flash_get_unique_id
-                0x100009ec       0x3c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
-                0x100009ec                flash_get_unique_id
+                0x20000884       0x3c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
+                0x20000884                flash_get_unique_id
  .text.running_on_fpga
-                0x10000a28       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_platform/platform.c.obj
-                0x10000a28                running_on_fpga
+                0x200008c0       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_platform/platform.c.obj
+                0x200008c0                running_on_fpga
  .text.hw_claim_or_assert
-                0x10000a38       0x44 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
-                0x10000a38                hw_claim_or_assert
+                0x200008d0       0x44 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
+                0x200008d0                hw_claim_or_assert
  .text.hw_claim_unused_from_range
-                0x10000a7c       0x9c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
-                0x10000a7c                hw_claim_unused_from_range
+                0x20000914       0x9c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
+                0x20000914                hw_claim_unused_from_range
  .text.spin_locks_reset
-                0x10000b18       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
-                0x10000b18                spin_locks_reset
+                0x200009b0       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
+                0x200009b0                spin_locks_reset
  .text.next_striped_spin_lock_num
-                0x10000b34       0x18 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
-                0x10000b34                next_striped_spin_lock_num
+                0x200009cc       0x18 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
+                0x200009cc                next_striped_spin_lock_num
  .text.spin_lock_claim_unused
-                0x10000b4c       0x24 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
-                0x10000b4c                spin_lock_claim_unused
+                0x200009e4       0x24 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
+                0x200009e4                spin_lock_claim_unused
  .text.rom_func_lookup
-                0x10000b70       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
-                0x10000b70                rom_func_lookup
+                0x20000a08       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
+                0x20000a08                rom_func_lookup
  .text.rom_data_lookup
-                0x10000b80       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
-                0x10000b80                rom_data_lookup
+                0x20000a18       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
+                0x20000a18                rom_data_lookup
  .text.rom_funcs_lookup
-                0x10000b90       0x44 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
-                0x10000b90                rom_funcs_lookup
+                0x20000a28       0x44 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
+                0x20000a28                rom_funcs_lookup
  .text.core1_trampoline
-                0x10000bd4        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+                0x20000a6c        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
  .text.core1_wrapper
-                0x10000bd8        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
-                0x10000bd8                core1_wrapper
+                0x20000a70        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+                0x20000a70                core1_wrapper
  .text.multicore_launch_core1_raw
-                0x10000be4       0x84 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
-                0x10000be4                multicore_launch_core1_raw
+                0x20000a7c       0x84 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+                0x20000a7c                multicore_launch_core1_raw
  .text.multicore_launch_core1
-                0x10000c68       0x58 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
-                0x10000c68                multicore_launch_core1
+                0x20000b00       0x58 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+                0x20000b00                multicore_launch_core1
  .text.lock_init
-                0x10000cc0       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/lock_core.c.obj
-                0x10000cc0                lock_init
+                0x20000b58       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/lock_core.c.obj
+                0x20000b58                lock_init
  .text.mutex_init
-                0x10000cd0       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/mutex.c.obj
-                0x10000cd0                mutex_init
+                0x20000b68       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/mutex.c.obj
+                0x20000b68                mutex_init
  .text.recursive_mutex_init
-                0x10000cec       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/mutex.c.obj
-                0x10000cec                recursive_mutex_init
+                0x20000b84       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/mutex.c.obj
+                0x20000b84                recursive_mutex_init
  .text.critical_section_init
-                0x10000d08       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/critical_section.c.obj
-                0x10000d08                critical_section_init
+                0x20000ba0       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/critical_section.c.obj
+                0x20000ba0                critical_section_init
  .text.timer_pool_entry_comparator
-                0x10000d24       0x34 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
-                0x10000d24                timer_pool_entry_comparator
+                0x20000bbc       0x34 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+                0x20000bbc                timer_pool_entry_comparator
  .text.sleep_until_callback
-                0x10000d58       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+                0x20000bf0       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
  .text.add_alarm_under_lock.isra.0
-                0x10000d88      0x100 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+                0x20000c20      0x100 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
  .text.alarm_pool_alarm_callback
-                0x10000e88      0x1c0 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+                0x20000d20      0x1c0 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
  .text.alarm_pool_init_default
-                0x10001048       0x6c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
-                0x10001048                alarm_pool_init_default
+                0x20000ee0       0x6c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+                0x20000ee0                alarm_pool_init_default
  .text.alarm_pool_add_alarm_at
-                0x100010b4      0x17c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
-                0x100010b4                alarm_pool_add_alarm_at
+                0x20000f4c      0x17c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+                0x20000f4c                alarm_pool_add_alarm_at
  .text.sleep_until
-                0x10001230       0xc4 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
-                0x10001230                sleep_until
+                0x200010c8       0xc4 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+                0x200010c8                sleep_until
  .text.sleep_ms
-                0x100012f4       0x38 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
-                0x100012f4                sleep_ms
+                0x2000118c       0x38 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+                0x2000118c                sleep_ms
  .text.best_effort_wfe_or_timeout
-                0x1000132c       0xcc CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
-                0x1000132c                best_effort_wfe_or_timeout
+                0x200011c4       0xcc CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+                0x200011c4                best_effort_wfe_or_timeout
  .text.hardware_alarm_irq_handler
-                0x100013f8       0xbc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x20001290       0xbc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
  .text.hardware_alarm_claim
-                0x100014b4       0x18 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
-                0x100014b4                hardware_alarm_claim
+                0x2000134c       0x18 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x2000134c                hardware_alarm_claim
  .text.time_us_64
-                0x100014cc       0x14 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
-                0x100014cc                time_us_64
+                0x20001364       0x14 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x20001364                time_us_64
  .text.busy_wait_us
-                0x100014e0       0x68 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
-                0x100014e0                busy_wait_us
+                0x20001378       0x68 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x20001378                busy_wait_us
  .text.busy_wait_until
-                0x10001548       0x20 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
-                0x10001548                busy_wait_until
+                0x200013e0       0x20 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x200013e0                busy_wait_until
  .text.hardware_alarm_set_callback
-                0x10001568       0x8c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
-                0x10001568                hardware_alarm_set_callback
+                0x20001400       0x8c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x20001400                hardware_alarm_set_callback
  .text.hardware_alarm_set_target
-                0x100015f4       0xd0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
-                0x100015f4                hardware_alarm_set_target
+                0x2000148c       0xd0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x2000148c                hardware_alarm_set_target
  .text.hardware_alarm_cancel
-                0x100016c4       0x3c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
-                0x100016c4                hardware_alarm_cancel
+                0x2000155c       0x3c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x2000155c                hardware_alarm_cancel
  .text.irq_set_enabled
-                0x10001700       0x24 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x10001700                irq_set_enabled
+                0x20001598       0x24 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20001598                irq_set_enabled
  .text.irq_is_enabled
-                0x10001724       0x18 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x10001724                irq_is_enabled
+                0x200015bc       0x18 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x200015bc                irq_is_enabled
  .text.irq_get_vtable_handler
-                0x1000173c       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x1000173c                irq_get_vtable_handler
+                0x200015d4       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x200015d4                irq_get_vtable_handler
  .text.irq_set_exclusive_handler
-                0x1000174c       0x54 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x1000174c                irq_set_exclusive_handler
+                0x200015e4       0x54 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x200015e4                irq_set_exclusive_handler
  .text.irq_add_shared_handler
-                0x100017a0      0x1f4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x100017a0                irq_add_shared_handler
+                0x20001638      0x1f4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20001638                irq_add_shared_handler
  .text.irq_remove_handler
-                0x10001994      0x1c4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x10001994                irq_remove_handler
+                0x2000182c      0x1c4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x2000182c                irq_remove_handler
  .text.irq_add_tail_to_free_list
-                0x10001b58       0xb4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x10001b58                irq_add_tail_to_free_list
+                0x200019f0       0xb4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x200019f0                irq_add_tail_to_free_list
  .text.irq_init_priorities
-                0x10001c0c       0x24 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x10001c0c                irq_init_priorities
+                0x20001aa4       0x24 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20001aa4                irq_init_priorities
  .text.ph_merge_nodes
-                0x10001c30       0x58 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_util/pheap.c.obj
+                0x20001ac8       0x58 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_util/pheap.c.obj
  .text.ph_post_alloc_init
-                0x10001c88       0x3c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_util/pheap.c.obj
-                0x10001c88                ph_post_alloc_init
+                0x20001b20       0x3c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_util/pheap.c.obj
+                0x20001b20                ph_post_alloc_init
  .text.ph_merge_two_pass
-                0x10001cc4       0x8c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_util/pheap.c.obj
-                0x10001cc4                ph_merge_two_pass
+                0x20001b5c       0x8c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_util/pheap.c.obj
+                0x20001b5c                ph_merge_two_pass
  .text.ph_remove_any_head
-                0x10001d50      0x100 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_util/pheap.c.obj
+                0x20001be8      0x100 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_util/pheap.c.obj
  .text.ph_remove_head
-                0x10001e50      0x104 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_util/pheap.c.obj
-                0x10001e50                ph_remove_head
+                0x20001ce8      0x104 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_util/pheap.c.obj
+                0x20001ce8                ph_remove_head
  .text.ph_remove_and_free_node
-                0x10001f54       0x78 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_util/pheap.c.obj
-                0x10001f54                ph_remove_and_free_node
+                0x20001dec       0x78 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_util/pheap.c.obj
+                0x20001dec                ph_remove_and_free_node
  .text.gpio_set_function
-                0x10001fcc       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x10001fcc                gpio_set_function
+                0x20001e64       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x20001e64                gpio_set_function
  .text.gpio_init
-                0x10001ffc       0x3c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x10001ffc                gpio_init
+                0x20001e94       0x3c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x20001e94                gpio_init
  .text.uart_init
-                0x10002038      0x18c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
-                0x10002038                uart_init
+                0x20001ed0      0x18c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+                0x20001ed0                uart_init
  .text.uart_set_baudrate
-                0x100021c4       0xb8 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
-                0x100021c4                uart_set_baudrate
+                0x2000205c       0xb8 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+                0x2000205c                uart_set_baudrate
  .text.uart_set_format
-                0x1000227c       0x7c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
-                0x1000227c                uart_set_format
+                0x20002114       0x7c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+                0x20002114                uart_set_format
  .text.uart_set_fifo_enabled
-                0x100022f8       0x60 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
-                0x100022f8                uart_set_fifo_enabled
+                0x20002190       0x60 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+                0x20002190                uart_set_fifo_enabled
  .text.clocks_init
-                0x10002358      0x2c8 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
-                0x10002358                clocks_init
+                0x200021f0      0x2c8 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
+                0x200021f0                clocks_init
  .text.clock_get_hz
-                0x10002620        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
-                0x10002620                clock_get_hz
+                0x200024b8        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
+                0x200024b8                clock_get_hz
  .text.pll_init
-                0x1000262c       0xa4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_pll/pll.c.obj
-                0x1000262c                pll_init
+                0x200024c4       0xa4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_pll/pll.c.obj
+                0x200024c4                pll_init
  .text.watchdog_start_tick
-                0x100026d0       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
-                0x100026d0                watchdog_start_tick
+                0x20002568       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
+                0x20002568                watchdog_start_tick
  .text.xosc_init
-                0x100026e0       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.obj
-                0x100026e0                xosc_init
+                0x20002578       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.obj
+                0x20002578                xosc_init
  .text.runtime_init
-                0x10002708       0xf0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
-                0x10002708                runtime_init
- .text._exit    0x100027f8        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
-                0x100027f8                _exit
- .text.exit     0x100027fc        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
-                0x100027fc                exit
- .text.panic    0x10002804       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
-                0x10002804                panic
+                0x200025a0       0xf0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+                0x200025a0                runtime_init
+ .text._exit    0x20002690        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+                0x20002690                _exit
+ .text.exit     0x20002694        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+                0x20002694                exit
+ .text.panic    0x2000269c       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+                0x2000269c                panic
  .text.hard_assertion_failure
-                0x10002834        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
-                0x10002834                hard_assertion_failure
+                0x200026cc        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+                0x200026cc                hard_assertion_failure
  .text._out_buffer
-                0x10002840        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x200026d8        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .text._out_null
-                0x10002848        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x200026e0        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .text._out_rev
-                0x1000284c       0xac CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x200026e4       0xac CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .text._ntoa_format
-                0x100028f8      0x250 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x20002790      0x250 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .text._out_char
-                0x10002b48       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
- .text._etoa    0x10002b58      0x464 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
- .text._ftoa    0x10002fbc      0x3c0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x200029e0       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+ .text._etoa    0x200029f0      0x464 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+ .text._ftoa    0x20002e54      0x3c0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .text._vsnprintf
-                0x1000337c      0xbc8 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x20003214      0xbc8 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .text.__wrap_snprintf
-                0x10003f44       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
-                0x10003f44                __wrap_snprintf
+                0x20003ddc       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x20003ddc                __wrap_snprintf
  .text.weak_raw_vprintf
-                0x10003f6c       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
-                0x10003f6c                weak_raw_vprintf
- .text          0x10003f9c       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
+                0x20003e04       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x20003e04                weak_raw_vprintf
+ .text          0x20003e34       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
  .text.__wrap___aeabi_idiv
-                0x10003fac       0x50 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
-                0x10003fac                __wrap___aeabi_idivmod
-                0x10003fac                divmod_s32s32
-                0x10003fac                div_s32s32
-                0x10003fac                __wrap___aeabi_idiv
-                0x10003fb4                divmod_s32s32_unsafe
-                0x10003fe0                divmod_s32s32_savestate
+                0x20003e44       0x50 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
+                0x20003e44                __wrap___aeabi_idivmod
+                0x20003e44                divmod_s32s32
+                0x20003e44                div_s32s32
+                0x20003e44                __wrap___aeabi_idiv
+                0x20003e4c                divmod_s32s32_unsafe
+                0x20003e78                divmod_s32s32_savestate
  .text.__wrap___aeabi_uidiv
-                0x10003ffc       0x4c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
-                0x10003ffc                __wrap___aeabi_uidiv
-                0x10003ffc                __wrap___aeabi_uidivmod
-                0x10003ffc                div_u32u32
-                0x10003ffc                divmod_u32u32
-                0x10004004                divmod_u32u32_unsafe
-                0x1000402c                divmod_u32u32_savestate
+                0x20003e94       0x4c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
+                0x20003e94                __wrap___aeabi_uidiv
+                0x20003e94                __wrap___aeabi_uidivmod
+                0x20003e94                div_u32u32
+                0x20003e94                divmod_u32u32
+                0x20003e9c                divmod_u32u32_unsafe
+                0x20003ec4                divmod_u32u32_savestate
  .text.__wrap___aeabi_ldiv
-                0x10004048      0x424 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
-                0x10004048                div_s64s64
-                0x10004048                divmod_s64s64
-                0x10004048                __wrap___aeabi_ldivmod
-                0x10004078                div_u64u64
-                0x10004078                divmod_u64u64
-                0x10004078                __wrap___aeabi_uldivmod
-                0x10004088                divmod_u64u64_savestate
-                0x100040a8                divmod_s64s64_unsafe
-                0x10004130                divmod_u64u64_unsafe
+                0x20003ee0      0x424 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
+                0x20003ee0                div_s64s64
+                0x20003ee0                divmod_s64s64
+                0x20003ee0                __wrap___aeabi_ldivmod
+                0x20003f10                div_u64u64
+                0x20003f10                divmod_u64u64
+                0x20003f10                __wrap___aeabi_uldivmod
+                0x20003f20                divmod_u64u64_savestate
+                0x20003f40                divmod_s64s64_unsafe
+                0x20003fc8                divmod_u64u64_unsafe
  .text.__wrap___aeabi_darithmetic
-                0x1000446c       0x80 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x1000446c                __wrap___aeabi_drsub
-                0x10004472                __wrap___aeabi_dsub
-                0x10004484                __wrap___aeabi_dadd
-                0x10004496                __wrap___aeabi_ddiv
-                0x100044d2                __wrap___aeabi_dmul
+                0x20004304       0x80 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x20004304                __wrap___aeabi_drsub
+                0x2000430a                __wrap___aeabi_dsub
+                0x2000431c                __wrap___aeabi_dadd
+                0x2000432e                __wrap___aeabi_ddiv
+                0x2000436a                __wrap___aeabi_dmul
  .text.__wrap___aeabi_cdcmple
-                0x100044ec       0x6c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x100044ec                __wrap___aeabi_cdrcmple
-                0x100044fc                __wrap___aeabi_cdcmple
-                0x100044fc                __wrap___aeabi_cdcmpeq
+                0x20004384       0x6c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x20004384                __wrap___aeabi_cdrcmple
+                0x20004394                __wrap___aeabi_cdcmple
+                0x20004394                __wrap___aeabi_cdcmpeq
  .text.__wrap___aeabi_dcmplt
-                0x10004558        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x10004558                __wrap___aeabi_dcmplt
+                0x200043f0        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x200043f0                __wrap___aeabi_dcmplt
  .text.__wrap___aeabi_dcmpge
-                0x10004564       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x10004564                __wrap___aeabi_dcmpge
+                0x200043fc       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x200043fc                __wrap___aeabi_dcmpge
  .text.__wrap___aeabi_dcmpgt
-                0x10004574        0xa CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x10004574                __wrap___aeabi_dcmpgt
+                0x2000440c        0xa CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x2000440c                __wrap___aeabi_dcmpgt
  .text.__wrap___aeabi_dcmpun
-                0x1000457e       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x1000457e                __wrap___aeabi_dcmpun
- *fill*         0x1000459a        0x2 
+                0x20004416       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x20004416                __wrap___aeabi_dcmpun
+ *fill*         0x20004432        0x2 
  .text.__wrap___aeabi_i2d
-                0x1000459c       0x38 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x1000459c                __wrap___aeabi_ui2d
-                0x100045a4                __wrap___aeabi_i2d
+                0x20004434       0x38 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x20004434                __wrap___aeabi_ui2d
+                0x2000443c                __wrap___aeabi_i2d
  .text.__wrap___aeabi_d2iz
-                0x100045d4       0x48 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x100045d4                __wrap___aeabi_d2iz
-                0x100045d4                double2int_z
+                0x2000446c       0x48 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x2000446c                __wrap___aeabi_d2iz
+                0x2000446c                double2int_z
  .text.__wrap___aeabi_d2uiz
-                0x1000461c       0x18 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x1000461c                double2uint
-                0x1000461c                __wrap___aeabi_d2uiz
+                0x200044b4       0x18 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x200044b4                double2uint
+                0x200044b4                __wrap___aeabi_d2uiz
  .text.__aeabi_double_init
-                0x10004634       0x98 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
-                0x10004634                __aeabi_double_init
+                0x200044cc       0x98 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
+                0x200044cc                __aeabi_double_init
  .text.double_table_shim_on_use_helper
-                0x100046cc       0x2c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x100046cc                double_table_shim_on_use_helper
+                0x20004564       0x2c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x20004564                double_table_shim_on_use_helper
  .text.__wrap___aeabi_dsub
-                0x100046f8       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x100046f8                drsub_shim
-                0x100046fe                dsub_shim
+                0x20004590       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x20004590                drsub_shim
+                0x20004596                dsub_shim
  .text.dadd_shim
-                0x10004708      0x15c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x10004708                dadd_shim
+                0x200045a0      0x15c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x200045a0                dadd_shim
  .text.dmul_shim
-                0x10004864      0x15c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x10004864                dmul_shim
+                0x200046fc      0x15c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x200046fc                dmul_shim
  .text.ddiv_shim
-                0x100049c0      0x1b0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x100049c0                ddiv_shim
+                0x20004858      0x1b0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x20004858                ddiv_shim
  .text.double2uint_shim
-                0x10004b70        0xe CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x10004b70                double2uint_shim
-                0x10004b72                double2ufix_shim
- *fill*         0x10004b7e        0x2 
+                0x20004a08        0xe CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x20004a08                double2uint_shim
+                0x20004a0a                double2ufix_shim
+ *fill*         0x20004a16        0x2 
  .text.double2uint64_shim
-                0x10004b80       0x70 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x10004b80                double2uint64_shim
-                0x10004b82                double2ufix64_shim
-                0x10004ba2                d2fix_a
+                0x20004a18       0x70 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x20004a18                double2uint64_shim
+                0x20004a1a                double2ufix64_shim
+                0x20004a3a                d2fix_a
  .text.dunpacks
-                0x10004bf0       0x3c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x10004bf0                dunpacks
+                0x20004a88       0x3c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x20004a88                dunpacks
  .text.__aeabi_lmul
-                0x10004c2c       0x32 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
-                0x10004c2c                __wrap___aeabi_lmul
- *fill*         0x10004c5e        0x2 
+                0x20004ac4       0x32 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
+                0x20004ac4                __wrap___aeabi_lmul
+ *fill*         0x20004af6        0x2 
  .text.__aeabi_float_init
-                0x10004c60       0x64 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
-                0x10004c60                __aeabi_float_init
+                0x20004af8       0x64 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
+                0x20004af8                __aeabi_float_init
  .text.float_table_shim_on_use_helper
-                0x10004cc4       0x2c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_float/float_v1_rom_shim.S.obj
-                0x10004cc4                float_table_shim_on_use_helper
- .text          0x10004cf0       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
-                0x10004cf0                __aeabi_mem_init
- .text.memset   0x10004d00        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
-                0x10004d00                __wrap_memset
- .text.memcpy   0x10004d0c        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
-                0x10004d0c                __wrap___aeabi_memcpy
-                0x10004d0c                __wrap_memcpy
+                0x20004b5c       0x2c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_float/float_v1_rom_shim.S.obj
+                0x20004b5c                float_table_shim_on_use_helper
+ .text          0x20004b88       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+                0x20004b88                __aeabi_mem_init
+ .text.memset   0x20004b98        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+                0x20004b98                __wrap_memset
+ .text.memcpy   0x20004ba4        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+                0x20004ba4                __wrap___aeabi_memcpy
+                0x20004ba4                __wrap_memcpy
  .text.stdio_out_chars_crlf
-                0x10004d18       0x94 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x20004bb0       0x94 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
  .text.__wrap_putchar
-                0x10004dac       0x98 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x10004dac                __wrap_putchar
+                0x20004c44       0x98 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x20004c44                __wrap_putchar
  .text.__wrap_puts
-                0x10004e44       0xe0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x10004e44                __wrap_puts
+                0x20004cdc       0xe0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x20004cdc                __wrap_puts
  .text.dcd_int_enable
-                0x10004f24        0xc CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
-                0x10004f24                dcd_int_enable
+                0x20004dbc        0xc CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x20004dbc                dcd_int_enable
  .text.dcd_set_address
-                0x10004f30       0x14 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
-                0x10004f30                dcd_set_address
+                0x20004dc8       0x14 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x20004dc8                dcd_set_address
  .text.dcd_connect
-                0x10004f44       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
-                0x10004f44                dcd_connect
+                0x20004ddc       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x20004ddc                dcd_connect
  .text.dcd_init
-                0x10004f54       0x98 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
-                0x10004f54                dcd_init
+                0x20004dec       0x98 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x20004dec                dcd_init
  .text.dcd_edpt0_status_complete
-                0x10004fec       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
-                0x10004fec                dcd_edpt0_status_complete
+                0x20004e84       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x20004e84                dcd_edpt0_status_complete
  .text.dcd_edpt_open
-                0x10005008      0x108 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
-                0x10005008                dcd_edpt_open
+                0x20004ea0      0x108 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x20004ea0                dcd_edpt_open
  .text.dcd_edpt_close_all
-                0x10005110        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
-                0x10005110                dcd_edpt_close_all
+                0x20004fa8        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x20004fa8                dcd_edpt_close_all
  .text.dcd_edpt_xfer
-                0x10005118       0x24 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
-                0x10005118                dcd_edpt_xfer
+                0x20004fb0       0x24 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x20004fb0                dcd_edpt_xfer
  .text.dcd_edpt_stall
-                0x1000513c       0x34 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
-                0x1000513c                dcd_edpt_stall
+                0x20004fd4       0x34 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x20004fd4                dcd_edpt_stall
  .text.dcd_edpt_clear_stall
-                0x10005170       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
-                0x10005170                dcd_edpt_clear_stall
+                0x20005008       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x20005008                dcd_edpt_clear_stall
  .text.rp2040_usb_init
-                0x100051a0       0x4c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
-                0x100051a0                rp2040_usb_init
+                0x20005038       0x4c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x20005038                rp2040_usb_init
  .text.hw_endpoint_xfer_start
-                0x100051ec       0x40 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
-                0x100051ec                hw_endpoint_xfer_start
+                0x20005084       0x40 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x20005084                hw_endpoint_xfer_start
  .text.tud_mounted
-                0x1000522c       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x1000522c                tud_mounted
+                0x200050c4       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x200050c4                tud_mounted
  .text.tud_suspended
-                0x1000523c       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x1000523c                tud_suspended
+                0x200050d4       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x200050d4                tud_suspended
  .text.tud_inited
-                0x1000524c       0x14 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x1000524c                tud_inited
+                0x200050e4       0x14 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x200050e4                tud_inited
  .text.tud_init
-                0x10005260       0xdc CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x10005260                tud_init
+                0x200050f8       0xdc CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x200050f8                tud_init
  .text.tud_task_ext
-                0x1000533c      0x850 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x1000533c                tud_task_ext
+                0x200051d4      0x850 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x200051d4                tud_task_ext
  .text.usbd_open_edpt_pair
-                0x10005b8c       0x9c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x10005b8c                usbd_open_edpt_pair
+                0x20005a24       0x9c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x20005a24                usbd_open_edpt_pair
  .text.usbd_edpt_open
-                0x10005c28       0x34 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x10005c28                usbd_edpt_open
+                0x20005ac0       0x34 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x20005ac0                usbd_edpt_open
  .text.usbd_edpt_claim
-                0x10005c5c       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x10005c5c                usbd_edpt_claim
+                0x20005af4       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x20005af4                usbd_edpt_claim
  .text.usbd_edpt_release
-                0x10005c84       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x10005c84                usbd_edpt_release
+                0x20005b1c       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x20005b1c                usbd_edpt_release
  .text.usbd_edpt_xfer
-                0x10005cac       0x4c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x10005cac                usbd_edpt_xfer
+                0x20005b44       0x4c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x20005b44                usbd_edpt_xfer
  .text.tud_control_status
-                0x10005cf8       0x2c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
-                0x10005cf8                tud_control_status
+                0x20005b90       0x2c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
+                0x20005b90                tud_control_status
  .text.tud_control_xfer
-                0x10005d24       0xac CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
-                0x10005d24                tud_control_xfer
+                0x20005bbc       0xac CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
+                0x20005bbc                tud_control_xfer
  .text.usbd_control_reset
-                0x10005dd0       0x14 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
-                0x10005dd0                usbd_control_reset
+                0x20005c68       0x14 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
+                0x20005c68                usbd_control_reset
  .text.usbd_control_set_complete_callback
-                0x10005de4        0xc CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
-                0x10005de4                usbd_control_set_complete_callback
+                0x20005c7c        0xc CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
+                0x20005c7c                usbd_control_set_complete_callback
  .text.usbd_control_set_request
-                0x10005df0       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
-                0x10005df0                usbd_control_set_request
+                0x20005c88       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
+                0x20005c88                usbd_control_set_request
  .text.usbd_control_xfer_cb
-                0x10005e0c       0xf4 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
-                0x10005e0c                usbd_control_xfer_cb
+                0x20005ca4       0xf4 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
+                0x20005ca4                usbd_control_xfer_cb
  .text.tud_cdc_n_connected
-                0x10005f00       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
-                0x10005f00                tud_cdc_n_connected
+                0x20005d98       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
+                0x20005d98                tud_cdc_n_connected
  .text.tud_cdc_n_get_line_coding
-                0x10005f30       0x20 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
-                0x10005f30                tud_cdc_n_get_line_coding
+                0x20005dc8       0x20 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
+                0x20005dc8                tud_cdc_n_get_line_coding
  .text.tud_cdc_n_available
-                0x10005f50       0x18 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
-                0x10005f50                tud_cdc_n_available
+                0x20005de8       0x18 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
+                0x20005de8                tud_cdc_n_available
  .text.tud_cdc_n_read
-                0x10005f68       0x74 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
-                0x10005f68                tud_cdc_n_read
+                0x20005e00       0x74 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
+                0x20005e00                tud_cdc_n_read
  .text.tud_cdc_n_write_flush
-                0x10005fdc       0x7c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
-                0x10005fdc                tud_cdc_n_write_flush
+                0x20005e74       0x7c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
+                0x20005e74                tud_cdc_n_write_flush
  .text.tud_cdc_n_write
-                0x10006058       0x34 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
-                0x10006058                tud_cdc_n_write
+                0x20005ef0       0x34 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
+                0x20005ef0                tud_cdc_n_write
  .text.cdcd_init
-                0x1000608c      0x134 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
-                0x1000608c                cdcd_init
+                0x20005f24      0x134 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
+                0x20005f24                cdcd_init
  .text.cdcd_reset
-                0x100061c0       0x64 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
-                0x100061c0                cdcd_reset
+                0x20006058       0x64 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
+                0x20006058                cdcd_reset
  .text.cdcd_open
-                0x10006224      0x144 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
-                0x10006224                cdcd_open
+                0x200060bc      0x144 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
+                0x200060bc                cdcd_open
  .text.cdcd_control_xfer_cb
-                0x10006368       0xfc CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
-                0x10006368                cdcd_control_xfer_cb
+                0x20006200       0xfc CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
+                0x20006200                cdcd_control_xfer_cb
  .text.cdcd_xfer_cb
-                0x10006464      0x180 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
-                0x10006464                cdcd_xfer_cb
+                0x200062fc      0x180 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
+                0x200062fc                cdcd_xfer_cb
  .text.tusb_init
-                0x100065e4        0xc CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/tusb.c.obj
-                0x100065e4                tusb_init
+                0x2000647c        0xc CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/tusb.c.obj
+                0x2000647c                tusb_init
  .text.tusb_inited
-                0x100065f0        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/tusb.c.obj
-                0x100065f0                tusb_inited
+                0x20006488        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/tusb.c.obj
+                0x20006488                tusb_inited
  .text.tu_edpt_claim
-                0x100065f8       0x50 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/tusb.c.obj
-                0x100065f8                tu_edpt_claim
+                0x20006490       0x50 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/tusb.c.obj
+                0x20006490                tu_edpt_claim
  .text.tu_edpt_release
-                0x10006648       0x38 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/tusb.c.obj
-                0x10006648                tu_edpt_release
+                0x200064e0       0x38 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/tusb.c.obj
+                0x200064e0                tu_edpt_release
  .text.tu_edpt_validate
-                0x10006680       0x7c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/tusb.c.obj
-                0x10006680                tu_edpt_validate
+                0x20006518       0x7c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/tusb.c.obj
+                0x20006518                tu_edpt_validate
  .text.tu_edpt_bind_driver
-                0x100066fc       0x34 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/tusb.c.obj
-                0x100066fc                tu_edpt_bind_driver
+                0x20006594       0x34 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/tusb.c.obj
+                0x20006594                tu_edpt_bind_driver
  .text.tu_fifo_config
-                0x10006730       0x6c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
-                0x10006730                tu_fifo_config
+                0x200065c8       0x6c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
+                0x200065c8                tu_fifo_config
  .text.tu_fifo_count
-                0x1000679c       0x2c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
-                0x1000679c                tu_fifo_count
+                0x20006634       0x2c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
+                0x20006634                tu_fifo_count
  .text.tu_fifo_empty
-                0x100067c8       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
-                0x100067c8                tu_fifo_empty
+                0x20006660       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
+                0x20006660                tu_fifo_empty
  .text.tu_fifo_remaining
-                0x100067d8       0x2c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
-                0x100067d8                tu_fifo_remaining
+                0x20006670       0x2c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
+                0x20006670                tu_fifo_remaining
  .text.tu_fifo_read
-                0x10006804       0x9c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
-                0x10006804                tu_fifo_read
+                0x2000669c       0x9c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
+                0x2000669c                tu_fifo_read
  .text.tu_fifo_read_n
-                0x100068a0       0xe8 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
-                0x100068a0                tu_fifo_read_n
+                0x20006738       0xe8 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
+                0x20006738                tu_fifo_read_n
  .text.tu_fifo_write
-                0x10006988       0xa8 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
-                0x10006988                tu_fifo_write
+                0x20006820       0xa8 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
+                0x20006820                tu_fifo_write
  .text.tu_fifo_write_n
-                0x10006a30      0x178 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
-                0x10006a30                tu_fifo_write_n
+                0x200068c8      0x178 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
+                0x200068c8                tu_fifo_write_n
  .text.tu_fifo_clear
-                0x10006ba8       0x40 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
-                0x10006ba8                tu_fifo_clear
+                0x20006a40       0x40 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
+                0x20006a40                tu_fifo_clear
  .text.tu_fifo_set_overwritable
-                0x10006be8       0x48 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
-                0x10006be8                tu_fifo_set_overwritable
- .text          0x10006c30       0xb0 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memmove.o)
-                0x10006c30                memmove
- .text          0x10006ce0       0x10 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-atexit.o)
-                0x10006ce0                atexit
- .text          0x10006cf0       0x5c /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strlen-stub.o)
-                0x10006cf0                strlen
- .text          0x10006d4c       0x28 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-fini.o)
-                0x10006d4c                __libc_fini_array
- .text          0x10006d74       0x78 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-__atexit.o)
-                0x10006d74                __register_exitproc
- .text.startup  0x10006dec       0x18 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-__call_atexit.o)
+                0x20006a80       0x48 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
+                0x20006a80                tu_fifo_set_overwritable
+ .text          0x20006ac8        0x4 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+                0x20006ac8                __aeabi_ldiv0
+                0x20006ac8                __aeabi_idiv0
+ .text          0x20006acc       0xb0 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-memmove.o)
+                0x20006acc                memmove
+ .text          0x20006b7c       0x10 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-atexit.o)
+                0x20006b7c                atexit
+ .text          0x20006b8c       0x5c /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-strlen-stub.o)
+                0x20006b8c                strlen
+ .text          0x20006be8       0x28 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-fini.o)
+                0x20006be8                __libc_fini_array
+ .text          0x20006c10       0x78 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-__atexit.o)
+                0x20006c10                __register_exitproc
+ .text.startup  0x20006c88       0x18 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-__call_atexit.o)
  *(.fini)
- .fini          0x10006e04        0x4 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crti.o
-                0x10006e04                _fini
- .fini.__stub   0x10006e08       0xd0 linker stubs
+ .fini          0x20006ca0        0x4 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crti.o
+                0x20006ca0                _fini
  *crtbegin.o(.ctors)
  *crtbegin?.o(.ctors)
  *(EXCLUDE_FILE(*crtend.o *crtend?.o) .ctors)
@@ -2288,383 +2336,337 @@ LOAD /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nof
  *(SORT_BY_NAME(.dtors.*))
  *(.dtors)
  *(.eh_frame*)
- .eh_frame      0x10006ed8        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
-                0x10006ed8                        . = ALIGN (0x4)
+ .eh_frame      0x20006ca4        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
+                0x20006ca4                        . = ALIGN (0x4)
+                0x20006ca4                        __ram_text_end__ = .
+                0x100002f4                        __ram_text_source__ = LOADADDR (.text)
 
-.glue_7         0x10006ed8        0x0
- .glue_7        0x10006ed8        0x0 linker stubs
+.glue_7         0x20006ca4        0x0 load address 0x10006ed8
+ .glue_7        0x20006ca4        0x0 linker stubs
 
-.glue_7t        0x10006ed8        0x0
- .glue_7t       0x10006ed8        0x0 linker stubs
+.glue_7t        0x20006ca4        0x0 load address 0x10006ed8
+ .glue_7t       0x20006ca4        0x0 linker stubs
 
-.vfp11_veneer   0x10006ed8        0x0
- .vfp11_veneer  0x10006ed8        0x0 linker stubs
+.vfp11_veneer   0x20006ca4        0x0 load address 0x10006ed8
+ .vfp11_veneer  0x20006ca4        0x0 linker stubs
 
-.v4_bx          0x10006ed8        0x0
- .v4_bx         0x10006ed8        0x0 linker stubs
+.v4_bx          0x20006ca4        0x0 load address 0x10006ed8
+ .v4_bx         0x20006ca4        0x0 linker stubs
 
-.iplt           0x10006ed8        0x0
- .iplt          0x10006ed8        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
+.iplt           0x20006ca4        0x0 load address 0x10006ed8
+ .iplt          0x20006ca4        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
 
-.rodata         0x10006ed8      0x4fc
- *(EXCLUDE_FILE(*libm.a: *libc.a:*lib_a-mem*.o *libgcc.a:) .rodata*)
- .rodata.UART_ID
-                0x10006ed8       0x20 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
-                0x10006ed8                UART_ID
- .rodata.usbd_serial_init.str1.4
-                0x10006ef8      0x167 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
-                                 0x21 (size before relaxing)
- .rodata.str1.4
-                0x1000705f       0x22 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
- *fill*         0x1000705f        0x1 
- .rodata.usbd_desc_str
-                0x10007060       0x14 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
- .rodata.usbd_desc_cfg
-                0x10007074       0x8d CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
- *fill*         0x10007101        0x3 
- .rodata.usbd_desc_device
-                0x10007104       0x12 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
- .rodata.spin_lock_claim_unused.str1.4
-                0x10007116       0x1b CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
- .rodata.hardware_alarm_claim.str1.4
-                0x10007116       0x22 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
- .rodata.panic.str1.4
-                0x10007116       0x12 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
- .rodata.hard_assertion_failure.str1.4
-                0x10007116        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
- .rodata._ftoa.str1.4
-                0x10007116       0x15 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
- *fill*         0x10007116        0x2 
- .rodata._vsnprintf
-                0x10007118      0x19c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
- *fill*         0x100072b4        0x4 
- .rodata.pow10.0
-                0x100072b8       0x50 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
- .rodata.str1.4
-                0x10007308       0x40 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- .rodata.__bi_81
-                0x10007308        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- .rodata.__bi_75
-                0x10007314        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- .rodata.__bi_44
-                0x10007320        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- .rodata.crlf_str.0
-                0x1000732c        0x2 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
- .rodata.str1.4
-                0x1000732e       0x14 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
- .rodata.str1.4
-                0x1000732e       0x53 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
- *fill*         0x1000732e        0x2 
- .rodata.tud_task_ext
-                0x10007330       0x8c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
- .rodata._usbd_driver
-                0x100073bc       0x18 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x100073d4                        . = ALIGN (0x4)
- *(SORT_BY_ALIGNMENT(SORT_BY_NAME(.flashdata*)))
-                0x100073d4                        . = ALIGN (0x4)
+.rel.dyn        0x20006ca4        0x0 load address 0x10006ed8
+ .rel.iplt      0x20006ca4        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
+                0x20006ca4                        . = ALIGN (0x4)
 
-.ARM.extab
- *(.ARM.extab* .gnu.linkonce.armextab.*)
-                0x100073d4                        __exidx_start = .
-
-.ARM.exidx
- *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-                0x100073d4                        __exidx_end = .
-                0x100073d4                        . = ALIGN (0x4)
-                0x100073d4                        __binary_info_start = .
-
-.binary_info    0x100073d4       0x1c
- *(.binary_info.keep.*)
- .binary_info.keep.__bi_ptr81
-                0x100073d4        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- .binary_info.keep.__bi_ptr75
-                0x100073d8        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- .binary_info.keep.__bi_ptr50
-                0x100073dc        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- .binary_info.keep.__bi_ptr44
-                0x100073e0        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- .binary_info.keep.__bi_ptr38
-                0x100073e4        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- .binary_info.keep.__bi_ptr30
-                0x100073e8        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- .binary_info.keep.__bi_ptr22
-                0x100073ec        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- *(.binary_info.*)
-                0x100073f0                        __binary_info_end = .
-
-.rel.dyn        0x100073f0        0x0
- .rel.iplt      0x100073f0        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
-                0x100073f0                        . = ALIGN (0x4)
-
-.ram_vector_table
-                0x20000000       0xc0
- *(.ram_vector_table)
- .ram_vector_table
-                0x20000000       0xc0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
-                0x20000000                ram_vector_table
-
-.data           0x200000c0      0xe70 load address 0x100073f0
-                0x200000c0                        __data_start__ = .
+.data           0x20006cb0     0x12f0 load address 0x10006ed8
+                0x20006cb0                        __data_start__ = .
  *(vtable)
  *(.time_critical*)
  .time_critical.flash_init_boot2_copyout
-                0x200000c0       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
+                0x20006cb0       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
  .time_critical.flash_enable_xip_via_boot2
-                0x200000f0        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
+                0x20006ce0        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
  .time_critical.flash_cs_force
-                0x200000fc       0x38 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
+                0x20006cec       0x38 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
  .time_critical.flash_do_cmd
-                0x20000134       0xc0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
-                0x20000134                flash_do_cmd
+                0x20006d24       0xc0 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
+                0x20006d24                flash_do_cmd
  .time_critical.mutex_enter_blocking
-                0x200001f4       0x48 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/mutex.c.obj
-                0x200001f4                mutex_enter_blocking
+                0x20006de4       0x48 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/mutex.c.obj
+                0x20006de4                mutex_enter_blocking
  .time_critical.mutex_try_enter
-                0x2000023c       0x40 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/mutex.c.obj
-                0x2000023c                mutex_try_enter
+                0x20006e2c       0x40 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/mutex.c.obj
+                0x20006e2c                mutex_try_enter
  .time_critical.mutex_try_enter_block_until
-                0x2000027c       0x9c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/mutex.c.obj
-                0x2000027c                mutex_try_enter_block_until
+                0x20006e6c       0x9c CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/mutex.c.obj
+                0x20006e6c                mutex_try_enter_block_until
  .time_critical.mutex_enter_timeout_ms
-                0x20000318       0x90 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/mutex.c.obj
-                0x20000318                mutex_enter_timeout_ms
+                0x20006f08       0x90 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/mutex.c.obj
+                0x20006f08                mutex_enter_timeout_ms
  .time_critical.mutex_exit
-                0x200003a8       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/mutex.c.obj
-                0x200003a8                mutex_exit
+                0x20006f98       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_sync/mutex.c.obj
+                0x20006f98                mutex_exit
  .time_critical.reset_non_control_endpoints
-                0x200003d0       0x68 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x20006fc0       0x68 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
  .time_critical.hw_handle_buff_status
-                0x20000438       0xb0 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x20007028       0xb0 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
  .time_critical.dcd_rp2040_irq
-                0x200004e8      0x510 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x200070d8      0x510 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
  .time_critical.e15_is_bulkin_ep
-                0x200009f8       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x200075e8       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
  .time_critical.e15_is_critical_frame_period
-                0x20000a20       0x34 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x20007610       0x34 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
  .time_critical.prepare_ep_buffer
-                0x20000a54       0x6c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x20007644       0x6c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
  .time_critical.sync_ep_buffer
-                0x20000ac0       0x48 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x200076b0       0x48 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
  .time_critical._hw_endpoint_xfer_sync
-                0x20000b08       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x200076f8       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
  .time_critical.hw_endpoint_reset_transfer
-                0x20000b30        0xc CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
-                0x20000b30                hw_endpoint_reset_transfer
+                0x20007720        0xc CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x20007720                hw_endpoint_reset_transfer
  .time_critical._hw_endpoint_buffer_control_update32
-                0x20000b3c       0x58 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
-                0x20000b3c                _hw_endpoint_buffer_control_update32
+                0x2000772c       0x58 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x2000772c                _hw_endpoint_buffer_control_update32
  .time_critical.hw_endpoint_start_next_buffer
-                0x20000b94       0x6c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
-                0x20000b94                hw_endpoint_start_next_buffer
+                0x20007784       0x6c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x20007784                hw_endpoint_start_next_buffer
  .time_critical.hw_endpoint_xfer_continue
-                0x20000c00       0x50 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
-                0x20000c00                hw_endpoint_xfer_continue
+                0x200077f0       0x50 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x200077f0                hw_endpoint_xfer_continue
  .time_critical.tinyusb
-                0x20000c50      0x16c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x20000c50                dcd_event_handler
- *(.text*)
- .text          0x20000dbc        0x4 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
-                0x20000dbc                __aeabi_ldiv0
-                0x20000dbc                __aeabi_idiv0
- .text.__stub   0x20000dc0       0x70 linker stubs
-                0x20000e30                        . = ALIGN (0x4)
+                0x20007840      0x16c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x20007840                dcd_event_handler
+                0x200079ac                        . = ALIGN (0x4)
  *(.rodata*)
-                0x20000e30                        . = ALIGN (0x4)
+ .rodata.UART_ID
+                0x200079ac       0x20 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
+                0x200079ac                UART_ID
+ .rodata.usbd_serial_init.str1.4
+                0x200079cc      0x167 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
+                                 0x21 (size before relaxing)
+ .rodata.str1.4
+                0x20007b33       0x22 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
+ *fill*         0x20007b33        0x1 
+ .rodata.usbd_desc_str
+                0x20007b34       0x14 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
+ .rodata.usbd_desc_cfg
+                0x20007b48       0x8d CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
+ *fill*         0x20007bd5        0x3 
+ .rodata.usbd_desc_device
+                0x20007bd8       0x12 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
+ .rodata.spin_lock_claim_unused.str1.4
+                0x20007bea       0x1b CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
+ .rodata.hardware_alarm_claim.str1.4
+                0x20007bea       0x22 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+ .rodata.panic.str1.4
+                0x20007bea       0x12 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+ .rodata.hard_assertion_failure.str1.4
+                0x20007bea        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+ .rodata._ftoa.str1.4
+                0x20007bea       0x15 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+ *fill*         0x20007bea        0x2 
+ .rodata._vsnprintf
+                0x20007bec      0x19c CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+ .rodata.pow10.0
+                0x20007d88       0x50 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+ .rodata.str1.4
+                0x20007dd8       0x40 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ .rodata.__bi_81
+                0x20007dd8        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ .rodata.__bi_75
+                0x20007de4        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ .rodata.__bi_44
+                0x20007df0        0xc CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ .rodata.crlf_str.0
+                0x20007dfc        0x2 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+ .rodata.str1.4
+                0x20007dfe       0x14 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+ .rodata.str1.4
+                0x20007dfe       0x53 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+ *fill*         0x20007dfe        0x2 
+ .rodata.tud_task_ext
+                0x20007e00       0x8c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+ .rodata._usbd_driver
+                0x20007e8c       0x18 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x20007ea4                        . = ALIGN (0x4)
  *(.data*)
  .data.usbd_serial
-                0x20000e30       0x11 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
+                0x20007ea4       0x11 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
  .data.striped_spin_lock_num
-                0x20000e41        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
- *fill*         0x20000e42        0x2 
+                0x20007eb5        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
+ *fill*         0x20007eb6        0x2 
  .data.default_alarm_pool
-                0x20000e44       0x18 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+                0x20007eb8       0x18 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
  .data.default_alarm_pool_heap
-                0x20000e5c       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
- .data          0x20000e6c       0x48 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.obj
-                0x20000e6c                irq_handler_chain_slots
-                0x20000e9c                irq_handler_chain_first_slot
-                0x20000ea6                irq_handler_chain_remove_tail
- *fill*         0x20000eb4        0xc 
+                0x20007ed0       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+ .data          0x20007ee0       0x48 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.obj
+                0x20007ee0                irq_handler_chain_slots
+                0x20007f10                irq_handler_chain_first_slot
+                0x20007f1a                irq_handler_chain_remove_tail
+ *fill*         0x20007f28        0x8 
  .data.aeabi_bits_funcs
-                0x20000ec0       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
-                0x20000ec0                aeabi_bits_funcs
-                0x20000ed0                aeabi_bits_funcs_end
+                0x20007f30       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
+                0x20007f30                aeabi_bits_funcs
+                0x20007f40                aeabi_bits_funcs_end
  .data.aeabi_mem_funcs
-                0x20000ed0       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
-                0x20000ed0                aeabi_mem_funcs
-                0x20000ee0                aeabi_mem_funcs_end
+                0x20007f40       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+                0x20007f40                aeabi_mem_funcs
+                0x20007f50                aeabi_mem_funcs_end
  .data.ep_dir_string
-                0x20000ee0        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
-                0x20000ee0                ep_dir_string
+                0x20007f50        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x20007f50                ep_dir_string
  .data._usbd_qdef
-                0x20000ee8       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x20000ee8                _usbd_qdef
+                0x20007f58       0x1c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x20007f58                _usbd_qdef
  .data._usbd_rhport
-                0x20000f04        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x20000f08                        . = ALIGN (0x4)
- *fill*         0x20000f05        0x3 
+                0x20007f74        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x20007f78                        . = ALIGN (0x4)
+ *fill*         0x20007f75        0x3 
  *(.after_data.*)
-                0x20000f08                        . = ALIGN (0x4)
-                0x20000f08                        PROVIDE (__mutex_array_start = .)
+                0x20007f78                        . = ALIGN (0x4)
+                0x20007f78                        PROVIDE (__mutex_array_start = .)
  *(SORT_BY_NAME(.mutex_array.*))
  *(.mutex_array)
- .mutex_array   0x20000f08        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_malloc/pico_malloc.c.obj
- .mutex_array   0x20000f10        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x20000f18                        PROVIDE (__mutex_array_end = .)
-                0x20000f18                        . = ALIGN (0x4)
-                0x20000f18                        PROVIDE (__preinit_array_start = .)
+ .mutex_array   0x20007f78        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_malloc/pico_malloc.c.obj
+ .mutex_array   0x20007f80        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x20007f88                        PROVIDE (__mutex_array_end = .)
+                0x20007f88                        . = ALIGN (0x4)
+                0x20007f88                        PROVIDE (__preinit_array_start = .)
  *(SORT_BY_NAME(.preinit_array.*))
  .preinit_array.00001
-                0x20000f18        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+                0x20007f88        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
  .preinit_array.00010
-                0x20000f1c        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
+                0x20007f8c        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
  .preinit_array.00020
-                0x20000f20        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x20007f90        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
  .preinit_array.00020
-                0x20000f24        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
+                0x20007f94        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
  *(.preinit_array)
-                0x20000f28                        PROVIDE (__preinit_array_end = .)
-                0x20000f28                        . = ALIGN (0x4)
-                0x20000f28                        PROVIDE (__init_array_start = .)
+                0x20007f98                        PROVIDE (__preinit_array_end = .)
+                0x20007f98                        . = ALIGN (0x4)
+                0x20007f98                        PROVIDE (__init_array_start = .)
  *(SORT_BY_NAME(.init_array.*))
  .init_array.00000
-                0x20000f28        0x4 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-__call_atexit.o)
+                0x20007f98        0x4 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-__call_atexit.o)
  *(.init_array)
- .init_array    0x20000f2c        0x4 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
-                0x20000f30                        PROVIDE (__init_array_end = .)
-                0x20000f30                        . = ALIGN (0x4)
-                0x20000f30                        PROVIDE (__fini_array_start = .)
+ .init_array    0x20007f9c        0x4 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
+                0x20007fa0                        PROVIDE (__init_array_end = .)
+                0x20007fa0                        . = ALIGN (0x4)
+                0x20007fa0                        PROVIDE (__fini_array_start = .)
  *(SORT_BY_NAME(.fini_array.*))
  *(.fini_array)
-                0x20000f30                        PROVIDE (__fini_array_end = .)
+                0x20007fa0                        PROVIDE (__fini_array_end = .)
  *(.jcr)
-                0x20000f30                        . = ALIGN (0x4)
-                0x20000f30                        __data_end__ = .
-                0x100073f0                        __etext = LOADADDR (.data)
+                0x20007fa0                        . = ALIGN (0x4)
+                0x20007fa0                        __data_end__ = .
+                0x10006ed8                        __etext = LOADADDR (.data)
 
 .tm_clone_table
-                0x20000f30        0x0 load address 0x10008260
+                0x20007fa0        0x0 load address 0x100081c8
  .tm_clone_table
-                0x20000f30        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
+                0x20007fa0        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
  .tm_clone_table
-                0x20000f30        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtend.o
+                0x20007fa0        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtend.o
 
-.igot.plt       0x20000f30        0x0 load address 0x10008260
- .igot.plt      0x20000f30        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
+.igot.plt       0x20007fa0        0x0 load address 0x100081c8
+ .igot.plt      0x20007fa0        0x0 /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
 
 .uninitialized_data
-                0x20000f30        0x0 load address 0x10008260
-                0x20000f30                        . = ALIGN (0x4)
+                0x20007fa0        0x0 load address 0x100081c8
+                0x20007fa0                        . = ALIGN (0x4)
  *(.uninitialized_data*)
 
-.scratch_x      0x20040000        0x0 load address 0x10008260
+.scratch_x      0x20040000        0x0 load address 0x100081c8
                 0x20040000                        __scratch_x_start__ = .
  *(.scratch_x.*)
                 0x20040000                        . = ALIGN (0x4)
                 0x20040000                        __scratch_x_end__ = .
-                0x10008260                        __scratch_x_source__ = LOADADDR (.scratch_x)
+                0x100081c8                        __scratch_x_source__ = LOADADDR (.scratch_x)
 
-.scratch_y      0x20041000        0x0 load address 0x10008260
+.scratch_y      0x20041000        0x0 load address 0x100081c8
                 0x20041000                        __scratch_y_start__ = .
  *(.scratch_y.*)
                 0x20041000                        . = ALIGN (0x4)
                 0x20041000                        __scratch_y_end__ = .
-                0x10008260                        __scratch_y_source__ = LOADADDR (.scratch_y)
+                0x100081c8                        __scratch_y_source__ = LOADADDR (.scratch_y)
 
-.bss            0x20000f30     0x4608
-                0x20000f30                        . = ALIGN (0x4)
-                0x20000f30                        __bss_start__ = .
+.bss            0x20007fa0     0x4608
+                0x20007fa0                        . = ALIGN (0x4)
+                0x20007fa0                        __bss_start__ = .
  *(SORT_BY_ALIGNMENT(SORT_BY_NAME(.bss*)))
  .bss.configured_freq
-                0x20000f30       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
+                0x20007fa0       0x28 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
  .bss.default_alarm_pool_entries
-                0x20000f58      0x100 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
- .bss.sd_table  0x20001058      0x100 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
-                0x20001058                sd_table
- .bss.sf_table  0x20001158      0x100 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
-                0x20001158                sf_table
- .bss           0x20001258       0x1c /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
- .bss           0x20001274      0x190 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-__atexit.o)
-                0x20001274                __atexit0
- .bss           0x20001404        0x4 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-__call_atexit.o)
-                0x20001404                __atexit
+                0x20007fc8      0x100 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+ .bss.sd_table  0x200080c8      0x100 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
+                0x200080c8                sd_table
+ .bss.sf_table  0x200081c8      0x100 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
+                0x200081c8                sf_table
+ .bss           0x200082c8       0x1c /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/crtbegin.o
+ .bss           0x200082e4      0x190 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-__atexit.o)
+                0x200082e4                __atexit0
+ .bss           0x20008474        0x4 /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a(libc_a-__call_atexit.o)
+                0x20008474                __atexit
  .bss.UART_DATA
-                0x20001408     0x2860 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
-                0x20001408                UART_DATA
+                0x20008478     0x2860 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
+                0x20008478                UART_DATA
  .bss._app_driver
-                0x20003c68        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x2000acd8        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
  .bss._cdcd_itf
-                0x20003c6c     0x1190 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
+                0x2000acdc     0x1190 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
  .bss._ctrl_xfer
-                0x20004dfc       0x14 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
+                0x2000be6c       0x14 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
  .bss._ubsd_mutexdef
-                0x20004e10        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x2000be80        0x8 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
  .bss._usbd_ctrl_buf
-                0x20004e18       0x40 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
+                0x2000be88       0x40 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
  .bss._usbd_dev
-                0x20004e58       0x53 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
- *fill*         0x20004eab        0x1 
+                0x2000bec8       0x53 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+ *fill*         0x2000bf1b        0x1 
  .bss._usbd_mutex
-                0x20004eac        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
- .bss._usbd_q   0x20004eb0        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x2000bf1c        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+ .bss._usbd_q   0x2000bf20        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
  .bss._usbd_qdef_buf
-                0x20004eb4       0xc0 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
-                0x20004eb4                _usbd_qdef_buf
+                0x2000bf24       0xc0 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x2000bf24                _usbd_qdef_buf
  .bss.alarm_callbacks
-                0x20004f74       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x2000bfe4       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
  .bss.boot2_copyout
-                0x20004f84      0x100 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
- .bss.claimed   0x20005084        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
+                0x2000bff4      0x100 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
+ .bss.claimed   0x2000c0f4        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
  .bss.default_alarm_pool_entry_ids_high
-                0x20005088       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+                0x2000c0f8       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
  .bss.default_alarm_pool_heap_nodes
-                0x20005098       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+                0x2000c108       0x30 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
  .bss.desc_str.0
-                0x200050c8       0x28 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
- .bss.drivers   0x200050f0        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x2000c138       0x28 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
+ .bss.drivers   0x2000c160        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
  .bss.e15_last_sof
-                0x200050f4        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
-                0x200050f4                e15_last_sof
- .bss.filter    0x200050f8        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x2000c164        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+                0x2000c164                e15_last_sof
+ .bss.filter    0x2000c168        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
  .bss.hw_endpoints
-                0x200050fc      0x400 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x2000c16c      0x400 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
  .bss.lazy_vsnprintf
-                0x200054fc        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x2000c56c        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .bss.next_buffer_ptr
-                0x20005500        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
- .bss.pools     0x20005504       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+                0x2000c570        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+ .bss.pools     0x2000c574       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
  .bss.sf_clz_func
-                0x20005514        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
-                0x20005514                sf_clz_func
+                0x2000c584        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
+                0x2000c584                sf_clz_func
  .bss.sleep_notifier
-                0x20005518        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
+                0x2000c588        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/common/pico_time/time.c.obj
  .bss.target_hi
-                0x2000551c       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x2000c58c       0x10 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
  .bss.uart_char_to_line_feed
-                0x2000552c        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
-                0x2000552c                uart_char_to_line_feed
+                0x2000c59c        0x4 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+                0x2000c59c                uart_char_to_line_feed
  .bss._app_driver_count
-                0x20005530        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+                0x2000c5a0        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
  .bss._sof_enable
-                0x20005531        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+                0x2000c5a1        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
  .bss.boot2_copyout_valid
-                0x20005532        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
- .bss.claimed   0x20005533        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x2000c5a2        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
+ .bss.claimed   0x2000c5a3        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
  .bss.irq_hander_chain_free_slot_head
-                0x20005534        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x2000c5a4        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
  .bss.timer_callbacks_pending
-                0x20005535        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x2000c5a5        0x1 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
  *(COMMON)
-                0x20005538                        . = ALIGN (0x4)
- *fill*         0x20005536        0x2 
-                0x20005538                        __bss_end__ = .
+                0x2000c5a8                        . = ALIGN (0x4)
+ *fill*         0x2000c5a6        0x2 
+                0x2000c5a8                        __bss_end__ = .
 
-.heap           0x20005538      0x800
-                0x20005538                        __end__ = .
-                0x20005538                        end = __end__
+.heap           0x2000c5a8      0x800
+                0x2000c5a8                        __end__ = .
+                0x2000c5a8                        end = __end__
  *(.heap*)
- .heap          0x20005538      0x800 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
-                0x20005d38                        __HeapLimit = .
+ .heap          0x2000c5a8      0x800 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
+                0x2000cda8                        __HeapLimit = .
 
 .stack1_dummy   0x20040000      0x800
  *(.stack1*)
@@ -2674,8 +2676,8 @@ LOAD /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nof
  *(.stack*)
  .stack         0x20041000      0x800 CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
 
-.flash_end      0x10008260        0x0
-                0x10008260                        PROVIDE (__flash_binary_end = .)
+.flash_end      0x100081c8        0x0
+                0x100081c8                        __flash_binary_end = .
                 0x20040000                        __StackLimit = (ORIGIN (RAM) + LENGTH (RAM))
                 0x20041000                        __StackOneTop = (ORIGIN (SCRATCH_X) + LENGTH (SCRATCH_X))
                 0x20042000                        __StackTop = (ORIGIN (SCRATCH_Y) + LENGTH (SCRATCH_Y))
@@ -2753,7 +2755,7 @@ LOAD CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/portable/raspberrypi/pi
 LOAD CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/tusb.c.obj
 LOAD CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
 LOAD CMakeFiles/uart_bridge.dir/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.obj
-LOAD /tmp/ccLB38N9.o
+LOAD /tmp/ccoqAfYg.o
 LOAD /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libstdc++.a
 LOAD /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nofp/libm.a
 START GROUP
@@ -2867,7 +2869,7 @@ LOAD linker stubs
  .ARM.attributes
                 0x00000776       0x2c CMakeFiles/uart_bridge.dir/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
  .ARM.attributes
-                0x000007a2       0x22 /tmp/ccLB38N9.o
+                0x000007a2       0x22 /tmp/ccoqAfYg.o
  .ARM.attributes
                 0x000007c4       0x1e /usr/lib/gcc/arm-none-eabi/13.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
  .ARM.attributes
