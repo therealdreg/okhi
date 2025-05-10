@@ -41,9 +41,13 @@ WARNING: BULLSHIT CODE X-)
 #include "hardware/irq.h"
 #include "hardware/pio.h"
 #include "hardware/pll.h"
+#include "hardware/regs/io_qspi.h"
 #include "hardware/spi.h"
 #include "hardware/structs/clocks.h"
+#include "hardware/structs/ioqspi.h"
 #include "hardware/structs/pll.h"
+#include "hardware/structs/sio.h"
+#include "hardware/sync.h"
 #include "hardware/timer.h"
 #include "hardware/uart.h"
 #include "hardware/watchdog.h"
@@ -538,8 +542,54 @@ static void pio_destroy(void)
     pio_clear_instruction_memory(pio1);
 }
 
+static bool bootsel_pressed_safely(void)
+{
+    const uint CS_INDEX = 1;
+    uint32_t flags = save_and_disable_interrupts();
+
+    hw_write_masked(&ioqspi_hw->io[CS_INDEX].ctrl, GPIO_OVERRIDE_LOW << IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_LSB,
+                    IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_BITS);
+
+    for (volatile int i = 0; i < 1000; ++i)
+    {
+        tight_loop_contents();
+    }
+
+    bool pressed = !(sio_hw->gpio_hi_in & (1u << CS_INDEX));
+
+    hw_write_masked(&ioqspi_hw->io[CS_INDEX].ctrl, GPIO_OVERRIDE_NORMAL << IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_LSB,
+                    IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_BITS);
+
+    restore_interrupts(flags);
+
+    return pressed;
+}
+
+static void boot_press(void)
+{
+    int x = 0;
+    for (int i = 0; i < 100; i++)
+    {
+        if (bootsel_pressed_safely())
+        {
+            x++;
+        }
+    }
+
+    if (x > 90)
+    {
+        /*
+        printf("Bootsel pressed!\r\n");
+        blink_led(5);
+        */
+        reset_usb_boot(0, 0);
+    }
+}
+
 int main(void)
 {
+    boot_press();
+
     if (wait_20 == 0x69699696)
     {
         stdio_init_all();

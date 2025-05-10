@@ -4,6 +4,9 @@
 
 okhi is an implant that can be utilized to log keystrokes from a USB/PS2 keyboard. The implant is designed to be  easily concealable within a keyboard, laptop, or tower case. It is powered by the keyboard cable itself. The implant can be accessed via WiFi and enables real-time viewing of keystrokes.
 
+## You can now buy it at [https://www.rootkit.es ![](stuff/boardstobuy.png)](https://www.rootkit.es/)
+
+
 It is based on the RP2040 + ESP chip. The RP2040 is responsible for sniffing & parsing the keyboard data, while the ESP chip is used to transmit the data over WiFi.
 
 The **RP2040** features a dual-core Arm Cortex-M0+ processor, making it highly efficient for handling multiple tasks simultaneously (PIO rlz!).
@@ -59,11 +62,7 @@ Check size before buying, maybe it is too big for your target. Or maybe you need
 - Open Source (MIT License)
 - Community support
 
-# Where to buy
-
-Early Stage project, so you can purchase it directly from me. Please send an email to dreg@rootkit.es for further inquiries.
-
-In a few weeks, I will provide a public link to buy it.
+# Project files
 
 Gerber, Pick and Place files and BOM will be available soon.
 
