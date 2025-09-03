@@ -40,6 +40,11 @@
       "python": true
   },
   "files.associations": {
-    "bootrom.h": "c"
+    "*.embeddedhtml": "html",
+    "*.php": "html",
+    "bootrom.h": "c",
+    "com_rp.h": "c",
+    "last_firmv.h": "c",
+    "com.h": "c"
   }
 }

@@ -1,7 +1,36 @@
 {
-    "files.associations": {
-        "*.txt": "cpp"
-    },
+  "C_Cpp.intelliSenseEngine": "default",
+  "idf.espIdfPathWin": "C:\\Users\\regue\\esp\\v5.5\\esp-idf",
+  "idf.pythonInstallPath": "C:\\Users\\regue\\.espressif\\tools\\idf-python\\3.11.2\\python.exe",
+  "idf.openOcdConfigs": [
+    "board/esp32c2-ftdi.cfg"
+  ],
+  "idf.portWin": "COM19",
+  "idf.toolsPathWin": "C:\\Users\\regue\\.espressif",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32c2"
+  },
+  "clangd.path": "C:\\Users\\regue\\.espressif\\tools\\esp-clang\\esp-19.1.2_20250312\\esp-clang\\bin\\clangd.exe",
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=C:\\Users\\regue\\.espressif\\tools\\xtensa-esp-elf\\esp-14.2.0_20241119\\xtensa-esp-elf\\bin\\xtensa-esp32-elf-gcc.exe",
+    "--compile-commands-dir=c:\\Users\\regue\\Desktop\\okhi\\build"
+  ],
+  "idf.flashType": "UART",
+  "idf.monitorPort": "COM19",
+  "files.associations": {
+    "*.embeddedhtml": "html",
+    "*.php": "html",
+    "stdio.h": "c",
+    "stddef.h": "c",
+    "string.h": "c",
+    "esp_log.h": "c",
+    "gpio.h": "c",
+    "cstdlib": "c",
+    "errno.h": "c",
+    "last_firmv.h": "c",
+    "com_esp.h": "c"
+  },
   "files.trimTrailingWhitespace": true,
   "editor.insertSpaces": true,
   "editor.tabSize": 4,

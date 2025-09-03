@@ -41,9 +41,6 @@ https://github.com/ataradov/usb-sniffer-lite by Alex Taradov
 
 // This project assumes that copy_to_ram is enabled, so ALL code is running from RAM
 
-#include "../../../../last_firmv.h"
-#include "../../com.c"
-#include "../com_usb.c"
 #include "hardware/adc.h"
 #include "hardware/clocks.h"
 #include "hardware/flash.h"
@@ -67,13 +64,19 @@ https://github.com/ataradov/usb-sniffer-lite by Alex Taradov
 #include <stdio.h>
 #include <string.h>
 
+#include "../../../../last_firmv.h"
+
+#include "../../com/com.h"
+
+#include "../../com/com_rp.h"
+
 uint32_t __scratch_x("my_group_nameX") fooX = 23;
 uint32_t __scratch_y("my_group_nameY") fooY = 23;
 #define __core1_func(x) __scratch_y(__STRING(x)) x
 #define __core2_func(x) __scratch_x(__STRING(x)) x
 
 // uncomment to enable dev build
-#define DEV_BUILD 1 // NOT USED YET
+// #define DEV_BUILD 1 // NOT USED YET
 
 // for UART debugging on devboard & HW version detection
 #define GPIO_A 4
@@ -111,7 +114,6 @@ uint32_t __scratch_y("my_group_nameY") fooY = 23;
 #define SPI_MISO_PIN 12
 #define SPI_CS_PIN 13
 
-#define RP_LED_GPIO 26 // From PCB v5
 #define RP_ADC_GPIO 27 // From PCB v5
 
 #define EBOOT_MASTERDATAREADY_GPIO 14
@@ -611,7 +613,7 @@ void gpio_callback(uint gpio, uint32_t events)
         gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
 
         wait_20 = 0x69699696;
-        puts("\r\nexternal ESP-RESET detected!\r\nrebooting in 20 secs!!!\r\n");
+        puts("\r\nexternal ESP-RESET detected!\r\nrebooting in 50 secs!!!\r\n");
         watchdog_reboot(0, 0, 0);
     }
 }
@@ -1238,26 +1240,14 @@ void core1_main()
     }
 }
 
-static void blink_led(int n)
-{
-    for (int i = 0; i < n; i++)
-    {
-        gpio_put(RP_LED_GPIO, 1);
-        sleep_ms(200);
-        gpio_put(RP_LED_GPIO, 0);
-        sleep_ms(200);
-    }
-    gpio_put(RP_LED_GPIO, 0);
-}
-
 static void init_seq(void)
 {
     if (wait_20 == 0x69699696)
     {
         stdio_init_all();
-        puts("\r\nwaiting 20 secs...\r\n");
+        puts("\r\nwaiting 50 secs...\r\n");
         wait_20 = 0;
-        sleep_ms(20000);
+        sleep_ms(50000);
     }
 
     gpio_init(ESP_RESET_GPIO);
@@ -1276,11 +1266,6 @@ static void init_seq(void)
     gpio_init(USOE_PIN);
     gpio_set_dir(USOE_PIN, GPIO_OUT);
     gpio_put(USOE_PIN, true);
-
-    // INIT RP_LED_GPIO
-    gpio_init(RP_LED_GPIO);
-    gpio_set_dir(RP_LED_GPIO, GPIO_OUT);
-    gpio_put(RP_LED_GPIO, 0);
 
     init_ver();
 
@@ -1375,6 +1360,7 @@ static void boot_press(void)
 int main(void)
 {
     boot_press();
+    blink_led(2);
 
     /*
       Setting the RP clock to 120 MHz is crucial for USB sniffing.

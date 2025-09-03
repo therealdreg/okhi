@@ -21,17 +21,15 @@
 #define USBD_MAX_POWER_MA 500
 
 #define USBD_ITF_CDC_0 0
-#define USBD_ITF_CDC_1 2
-#define USBD_ITF_MAX 4
+// Dreg: USBD_ITF_MAX set to 2 because a single CDC function uses two interfaces (control + data).
+#define USBD_ITF_MAX 2
 
 #define USBD_CDC_0_EP_CMD 0x81
-#define USBD_CDC_1_EP_CMD 0x83
+// Dreg: Only one CDC endpoint set is defined (IN/OUT/COMMAND) because we expose a single COM port.
 
 #define USBD_CDC_0_EP_OUT 0x01
-#define USBD_CDC_1_EP_OUT 0x03
 
 #define USBD_CDC_0_EP_IN 0x82
-#define USBD_CDC_1_EP_IN 0x84
 
 #define USBD_CDC_CMD_MAX_SIZE 8
 #define USBD_CDC_IN_OUT_MAX_SIZE 64
@@ -64,12 +62,9 @@ static const uint8_t usbd_desc_cfg[USBD_DESC_LEN] = {
 	TUD_CONFIG_DESCRIPTOR(1, USBD_ITF_MAX, USBD_STR_0, USBD_DESC_LEN,
 		TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, USBD_MAX_POWER_MA),
 
+	// Dreg: Single CDC descriptor present to match CFG_TUD_CDC = 1 (expose only one virtual COM port).
 	TUD_CDC_DESCRIPTOR(USBD_ITF_CDC_0, USBD_STR_CDC, USBD_CDC_0_EP_CMD,
 		USBD_CDC_CMD_MAX_SIZE, USBD_CDC_0_EP_OUT, USBD_CDC_0_EP_IN,
-		USBD_CDC_IN_OUT_MAX_SIZE),
-
-	TUD_CDC_DESCRIPTOR(USBD_ITF_CDC_1, USBD_STR_CDC, USBD_CDC_1_EP_CMD,
-		USBD_CDC_CMD_MAX_SIZE, USBD_CDC_1_EP_OUT, USBD_CDC_1_EP_IN,
 		USBD_CDC_IN_OUT_MAX_SIZE),
 };
 

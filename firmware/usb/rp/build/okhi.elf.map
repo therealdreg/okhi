@@ -1184,9 +1184,9 @@ Discarded input sections
  .text          0x00000000        0x0 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
  .data          0x00000000        0x0 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
  .bss           0x00000000        0x0 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
- .text          0x00000000        0x0 C:\Users\regue\AppData\Local\Temp\cceO5n0W.o
- .data          0x00000000        0x0 C:\Users\regue\AppData\Local\Temp\cceO5n0W.o
- .bss           0x00000000        0x0 C:\Users\regue\AppData\Local\Temp\cceO5n0W.o
+ .text          0x00000000        0x0 C:\Users\regue\AppData\Local\Temp\ccmiptrY.o
+ .data          0x00000000        0x0 C:\Users\regue\AppData\Local\Temp\ccmiptrY.o
+ .bss           0x00000000        0x0 C:\Users\regue\AppData\Local\Temp\ccmiptrY.o
  .data          0x00000000        0x0 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_dvmd_tls.o)
  .bss           0x00000000        0x0 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_dvmd_tls.o)
  .text          0x00000000        0x0 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-calloc.o)
@@ -1391,7 +1391,7 @@ LOAD c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.
 .boot2          0x10000000      0x100
                 0x10000000                __boot2_start__ = .
  *(.boot2)
- .boot2         0x10000000      0x100 C:\Users\regue\AppData\Local\Temp\cceO5n0W.o
+ .boot2         0x10000000      0x100 C:\Users\regue\AppData\Local\Temp\ccmiptrY.o
                 0x10000100                __boot2_end__ = .
                 0x00000001                ASSERT (((__boot2_end__ - __boot2_start__) == 0x100), ERROR: Pico second stage bootloader must be 256 bytes in size)
 
@@ -1503,7 +1503,7 @@ LOAD c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.
                 0x20000000       0xc0 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
                 0x20000000                ram_vector_table
 
-.text           0x200000c0     0x7304 load address 0x10000304
+.text           0x200000c0     0x7310 load address 0x10000304
                 0x200000c0                __ram_text_start__ = .
  *(.init)
  .init          0x200000c0        0x4 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp/crti.o
@@ -1565,665 +1565,664 @@ LOAD c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.
  .text.reinit_dbuff
                 0x20000e84       0x20 CMakeFiles/okhi.dir/okhi.c.obj
  .text.blink_led
-                0x20000ea4       0x3a CMakeFiles/okhi.dir/okhi.c.obj
- *fill*         0x20000ede        0x2 
+                0x20000ea4       0x50 CMakeFiles/okhi.dir/okhi.c.obj
  .text.boot_press
-                0x20000ee0       0x38 CMakeFiles/okhi.dir/okhi.c.obj
+                0x20000ef4       0x38 CMakeFiles/okhi.dir/okhi.c.obj
  .text.get_pin_state
-                0x20000f18       0x64 CMakeFiles/okhi.dir/okhi.c.obj
+                0x20000f2c       0x64 CMakeFiles/okhi.dir/okhi.c.obj
  .text.detect_hw_version
-                0x20000f7c       0x86 CMakeFiles/okhi.dir/okhi.c.obj
- *fill*         0x20001002        0x2 
+                0x20000f90       0x86 CMakeFiles/okhi.dir/okhi.c.obj
+ *fill*         0x20001016        0x2 
  .text.init_ver
-                0x20001004       0xe8 CMakeFiles/okhi.dir/okhi.c.obj
+                0x20001018       0xe8 CMakeFiles/okhi.dir/okhi.c.obj
  .text.free_all_pio_state_machines
-                0x200010ec       0x26 CMakeFiles/okhi.dir/okhi.c.obj
- *fill*         0x20001112        0x2 
+                0x20001100       0x26 CMakeFiles/okhi.dir/okhi.c.obj
+ *fill*         0x20001126        0x2 
  .text.pio_destroy
-                0x20001114       0x28 CMakeFiles/okhi.dir/okhi.c.obj
+                0x20001128       0x28 CMakeFiles/okhi.dir/okhi.c.obj
  .text.init_seq
-                0x2000113c      0x224 CMakeFiles/okhi.dir/okhi.c.obj
- .text.main     0x20001360      0x4dc CMakeFiles/okhi.dir/okhi.c.obj
-                0x20001360                main
+                0x20001150      0x218 CMakeFiles/okhi.dir/okhi.c.obj
+ .text.main     0x20001368      0x4e0 CMakeFiles/okhi.dir/okhi.c.obj
+                0x20001368                main
  .text.set_sys_clock_pll
-                0x2000183c       0x78 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.obj
-                0x2000183c                set_sys_clock_pll
+                0x20001848       0x78 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.obj
+                0x20001848                set_sys_clock_pll
  .text.check_sys_clock_khz
-                0x200018b4       0xa4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.obj
-                0x200018b4                check_sys_clock_khz
+                0x200018c0       0xa4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.obj
+                0x200018c0                check_sys_clock_khz
  .text.gpio_set_function
-                0x20001958       0x30 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x20001958                gpio_set_function
+                0x20001964       0x30 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x20001964                gpio_set_function
  .text.gpio_set_pulls
-                0x20001988       0x34 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x20001988                gpio_set_pulls
+                0x20001994       0x34 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x20001994                gpio_set_pulls
  .text.gpio_set_irq_callback
-                0x200019bc       0x48 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x200019bc                gpio_set_irq_callback
+                0x200019c8       0x48 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x200019c8                gpio_set_irq_callback
  .text.gpio_acknowledge_irq
-                0x20001a04       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x20001a04                gpio_acknowledge_irq
+                0x20001a10       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x20001a10                gpio_acknowledge_irq
  .text._gpio_set_irq_enabled
-                0x20001a1c       0x34 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x20001a28       0x34 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
  .text.gpio_set_irq_enabled
-                0x20001a50       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x20001a50                gpio_set_irq_enabled
+                0x20001a5c       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x20001a5c                gpio_set_irq_enabled
  .text.gpio_set_irq_enabled_with_callback
-                0x20001a70       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x20001a70                gpio_set_irq_enabled_with_callback
+                0x20001a7c       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x20001a7c                gpio_set_irq_enabled_with_callback
  .text.gpio_default_irq_handler
-                0x20001a90       0x98 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x20001a9c       0x98 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
  .text.gpio_set_input_enabled
-                0x20001b28       0x30 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x20001b28                gpio_set_input_enabled
+                0x20001b34       0x30 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x20001b34                gpio_set_input_enabled
  .text.gpio_init
-                0x20001b58       0x16 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x20001b58                gpio_init
+                0x20001b64       0x16 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x20001b64                gpio_init
  .text.gpio_deinit
-                0x20001b6e        0xa CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x20001b6e                gpio_deinit
+                0x20001b7a        0xa CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x20001b7a                gpio_deinit
  .text.running_on_fpga
-                0x20001b78       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_platform/platform.c.obj
-                0x20001b78                running_on_fpga
+                0x20001b84       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_platform/platform.c.obj
+                0x20001b84                running_on_fpga
  .text.hw_claim_lock
-                0x20001b8c       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
-                0x20001b8c                hw_claim_lock
+                0x20001b98       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
+                0x20001b98                hw_claim_lock
  .text.hw_claim_unlock
-                0x20001ba4       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
-                0x20001ba4                hw_claim_unlock
+                0x20001bb0       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
+                0x20001bb0                hw_claim_unlock
  .text.hw_is_claimed
-                0x20001bb8       0x16 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
-                0x20001bb8                hw_is_claimed
+                0x20001bc4       0x16 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
+                0x20001bc4                hw_is_claimed
  .text.hw_claim_or_assert
-                0x20001bce       0x32 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
-                0x20001bce                hw_claim_or_assert
+                0x20001bda       0x32 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
+                0x20001bda                hw_claim_or_assert
  .text.hw_claim_unused_from_range
-                0x20001c00       0x50 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
-                0x20001c00                hw_claim_unused_from_range
+                0x20001c0c       0x50 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
+                0x20001c0c                hw_claim_unused_from_range
  .text.hw_claim_clear
-                0x20001c50       0x40 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
-                0x20001c50                hw_claim_clear
+                0x20001c5c       0x40 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
+                0x20001c5c                hw_claim_clear
  .text.spin_locks_reset
-                0x20001c90       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
-                0x20001c90                spin_locks_reset
+                0x20001c9c       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
+                0x20001c9c                spin_locks_reset
  .text.next_striped_spin_lock_num
-                0x20001cb0       0x1c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
-                0x20001cb0                next_striped_spin_lock_num
+                0x20001cbc       0x1c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
+                0x20001cbc                next_striped_spin_lock_num
  .text.set_raw_irq_handler_and_unlock
-                0x20001ccc       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20001cd8       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
  .text.make_branch
-                0x20001cf4       0x48 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20001d00       0x48 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
  .text.insert_branch_and_link
-                0x20001d3c       0x40 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20001d48       0x40 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
  .text.irq_is_enabled
-                0x20001d7c       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x20001d7c                irq_is_enabled
+                0x20001d88       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20001d88                irq_is_enabled
  .text.irq_set_mask_enabled
-                0x20001d94       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x20001d94                irq_set_mask_enabled
+                0x20001da0       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20001da0                irq_set_mask_enabled
  .text.irq_set_enabled
-                0x20001db4        0xe CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x20001db4                irq_set_enabled
- *fill*         0x20001dc2        0x2 
+                0x20001dc0        0xe CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20001dc0                irq_set_enabled
+ *fill*         0x20001dce        0x2 
  .text.irq_get_vtable_handler
-                0x20001dc4       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x20001dc4                irq_get_vtable_handler
+                0x20001dd0       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20001dd0                irq_get_vtable_handler
  .text.irq_set_exclusive_handler
-                0x20001dd4       0x54 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x20001dd4                irq_set_exclusive_handler
+                0x20001de0       0x54 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20001de0                irq_set_exclusive_handler
  .text.irq_add_shared_handler
-                0x20001e28      0x234 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x20001e28                irq_add_shared_handler
+                0x20001e34      0x234 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20001e34                irq_add_shared_handler
  .text.irq_remove_handler
-                0x2000205c      0x1ac CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x2000205c                irq_remove_handler
+                0x20002068      0x1ac CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20002068                irq_remove_handler
  .text.irq_add_tail_to_free_list
-                0x20002208       0xf0 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x20002208                irq_add_tail_to_free_list
+                0x20002214       0xf0 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20002214                irq_add_tail_to_free_list
  .text.irq_init_priorities
-                0x200022f8       0x1c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
-                0x200022f8                irq_init_priorities
+                0x20002304       0x1c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+                0x20002304                irq_init_priorities
  .text.lock_init
-                0x20002314       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/lock_core.c.obj
-                0x20002314                lock_init
+                0x20002320       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/lock_core.c.obj
+                0x20002320                lock_init
  .text.mutex_init
-                0x20002324       0x1a CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/mutex.c.obj
-                0x20002324                mutex_init
+                0x20002330       0x1a CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/mutex.c.obj
+                0x20002330                mutex_init
  .text.recursive_mutex_init
-                0x2000233e       0x1e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/mutex.c.obj
-                0x2000233e                recursive_mutex_init
+                0x2000234a       0x1e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/mutex.c.obj
+                0x2000234a                recursive_mutex_init
  .text.alarm_pool_post_alloc_init
-                0x2000235c       0x40 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+                0x20002368       0x40 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
  .text.sleep_until_callback
-                0x2000239c       0x30 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+                0x200023a8       0x30 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
  .text.timer_pool_entry_comparator
-                0x200023cc       0x7c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
-                0x200023cc                timer_pool_entry_comparator
+                0x200023d8       0x7c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+                0x200023d8                timer_pool_entry_comparator
  .text.ph_add_child_node
-                0x20002448       0xa4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+                0x20002454       0xa4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
  .text.ph_merge_nodes
-                0x200024ec       0x3e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
- *fill*         0x2000252a        0x2 
+                0x200024f8       0x3e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+ *fill*         0x20002536        0x2 
  .text.add_alarm_under_lock
-                0x2000252c      0x174 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+                0x20002538      0x174 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
  .text.alarm_pool_alarm_callback
-                0x200026a0      0x33c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+                0x200026ac      0x33c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
  .text.alarm_pool_init_default
-                0x200029dc       0x40 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
-                0x200029dc                alarm_pool_init_default
+                0x200029e8       0x40 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+                0x200029e8                alarm_pool_init_default
  .text.alarm_pool_get_default
-                0x20002a1c       0x2c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
-                0x20002a1c                alarm_pool_get_default
+                0x20002a28       0x2c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+                0x20002a28                alarm_pool_get_default
  .text.alarm_pool_add_alarm_at
-                0x20002a48      0x168 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
-                0x20002a48                alarm_pool_add_alarm_at
+                0x20002a54      0x168 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+                0x20002a54                alarm_pool_add_alarm_at
  .text.alarm_pool_cancel_alarm
-                0x20002bb0       0xf8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
-                0x20002bb0                alarm_pool_cancel_alarm
+                0x20002bbc       0xf8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+                0x20002bbc                alarm_pool_cancel_alarm
  .text.sleep_until
-                0x20002ca8       0xfc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
-                0x20002ca8                sleep_until
+                0x20002cb4       0xfc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+                0x20002cb4                sleep_until
  .text.sleep_us
-                0x20002da4       0x58 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
-                0x20002da4                sleep_us
+                0x20002db0       0x58 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+                0x20002db0                sleep_us
  .text.sleep_ms
-                0x20002dfc       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
-                0x20002dfc                sleep_ms
+                0x20002e08       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+                0x20002e08                sleep_ms
  .text.best_effort_wfe_or_timeout
-                0x20002e10       0xac CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
-                0x20002e10                best_effort_wfe_or_timeout
+                0x20002e1c       0xac CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+                0x20002e1c                best_effort_wfe_or_timeout
  .text.hardware_alarm_irq_handler
-                0x20002ebc       0x90 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x20002ec8       0x90 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
  .text.hardware_alarm_claim
-                0x20002f4c       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
-                0x20002f4c                hardware_alarm_claim
+                0x20002f58       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x20002f58                hardware_alarm_claim
  .text.time_us_64
-                0x20002f64       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
-                0x20002f64                time_us_64
+                0x20002f70       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x20002f70                time_us_64
  .text.busy_wait_until
-                0x20002f7c       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
-                0x20002f7c                busy_wait_until
+                0x20002f88       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x20002f88                busy_wait_until
  .text.busy_wait_us
-                0x20002fa4       0x48 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
-                0x20002fa4                busy_wait_us
+                0x20002fb0       0x48 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x20002fb0                busy_wait_us
  .text.hardware_alarm_set_callback
-                0x20002fec       0x90 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
-                0x20002fec                hardware_alarm_set_callback
+                0x20002ff8       0x90 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x20002ff8                hardware_alarm_set_callback
  .text.hardware_alarm_set_target
-                0x2000307c       0xe8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
-                0x2000307c                hardware_alarm_set_target
+                0x20003088       0xe8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x20003088                hardware_alarm_set_target
  .text.hardware_alarm_cancel
-                0x20003164       0x40 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
-                0x20003164                hardware_alarm_cancel
+                0x20003170       0x40 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+                0x20003170                hardware_alarm_cancel
  .text.ph_add_child_node
-                0x200031a4       0xa4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
+                0x200031b0       0xa4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
  .text.ph_merge_nodes
-                0x20003248       0x3e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
- *fill*         0x20003286        0x2 
+                0x20003254       0x3e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
+ *fill*         0x20003292        0x2 
  .text.ph_clear
-                0x20003288       0x70 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
-                0x20003288                ph_clear
+                0x20003294       0x70 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
+                0x20003294                ph_clear
  .text.ph_post_alloc_init
-                0x200032f8        0xe CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
-                0x200032f8                ph_post_alloc_init
- *fill*         0x20003306        0x2 
+                0x20003304        0xe CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
+                0x20003304                ph_post_alloc_init
+ *fill*         0x20003312        0x2 
  .text.ph_merge_two_pass
-                0x20003308       0xa8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
-                0x20003308                ph_merge_two_pass
+                0x20003314       0xa8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
+                0x20003314                ph_merge_two_pass
  .text.ph_remove_any_head
-                0x200033b0      0x128 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
+                0x200033bc      0x128 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
  .text.ph_remove_head
-                0x200034d8       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
-                0x200034d8                ph_remove_head
+                0x200034e4       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
+                0x200034e4                ph_remove_head
  .text.ph_remove_and_free_node
-                0x200034ec       0xf8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
-                0x200034ec                ph_remove_and_free_node
+                0x200034f8       0xf8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
+                0x200034f8                ph_remove_and_free_node
  .text.uart_disable_before_lcr_write
-                0x200035e4       0x48 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+                0x200035f0       0x48 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
  .text.uart_write_lcr_bits_masked
-                0x2000362c       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
- *fill*         0x2000364e        0x2 
+                0x20003638       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+ *fill*         0x2000365a        0x2 
  .text.uart_set_baudrate
-                0x20003650       0x5c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
-                0x20003650                uart_set_baudrate
+                0x2000365c       0x5c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+                0x2000365c                uart_set_baudrate
  .text.uart_set_format
-                0x200036ac       0x2c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
-                0x200036ac                uart_set_format
+                0x200036b8       0x2c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+                0x200036b8                uart_set_format
  .text.uart_set_fifo_enabled
-                0x200036d8       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
-                0x200036d8                uart_set_fifo_enabled
+                0x200036e4       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+                0x200036e4                uart_set_fifo_enabled
  .text.uart_set_translate_crlf
-                0x200036e8       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
-                0x200036e8                uart_set_translate_crlf
+                0x200036f4       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+                0x200036f4                uart_set_translate_crlf
  .text.uart_init
-                0x20003710       0x80 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
-                0x20003710                uart_init
+                0x2000371c       0x80 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+                0x2000371c                uart_init
  .text.clock_configure
-                0x20003790      0x108 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
-                0x20003790                clock_configure
+                0x2000379c      0x108 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
+                0x2000379c                clock_configure
  .text.clocks_init
-                0x20003898      0x100 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
-                0x20003898                clocks_init
+                0x200038a4      0x100 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
+                0x200038a4                clocks_init
  .text.clock_get_hz
-                0x20003998        0xc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
-                0x20003998                clock_get_hz
+                0x200039a4        0xc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
+                0x200039a4                clock_get_hz
  .text.pll_init
-                0x200039a4      0x120 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pll/pll.c.obj
-                0x200039a4                pll_init
+                0x200039b0      0x120 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pll/pll.c.obj
+                0x200039b0                pll_init
  .text.watchdog_start_tick
-                0x20003ac4       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
-                0x20003ac4                watchdog_start_tick
+                0x20003ad0       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
+                0x20003ad0                watchdog_start_tick
  .text.watchdog_update
-                0x20003ad4       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
-                0x20003ad4                watchdog_update
+                0x20003ae0       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
+                0x20003ae0                watchdog_update
  .text._watchdog_enable
-                0x20003ae8       0x78 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
-                0x20003ae8                _watchdog_enable
+                0x20003af4       0x78 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
+                0x20003af4                _watchdog_enable
  .text.watchdog_enable
-                0x20003b60       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
-                0x20003b60                watchdog_enable
+                0x20003b6c       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
+                0x20003b6c                watchdog_enable
  .text.watchdog_reboot
-                0x20003b78       0x48 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
-                0x20003b78                watchdog_reboot
+                0x20003b84       0x48 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
+                0x20003b84                watchdog_reboot
  .text.watchdog_caused_reboot
-                0x20003bc0       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
-                0x20003bc0                watchdog_caused_reboot
+                0x20003bcc       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
+                0x20003bcc                watchdog_caused_reboot
  .text.xosc_init
-                0x20003bd0       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.obj
-                0x20003bd0                xosc_init
- .text._exit    0x20003bf8        0x4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
-                0x20003bf8                _exit
- .text._sbrk    0x20003bfc       0x38 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
-                0x20003bfc                _sbrk
- .text.exit     0x20003c34        0x6 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
-                0x20003c34                exit
- *fill*         0x20003c3a        0x2 
+                0x20003bdc       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.obj
+                0x20003bdc                xosc_init
+ .text._exit    0x20003c04        0x4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+                0x20003c04                _exit
+ .text._sbrk    0x20003c08       0x38 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+                0x20003c08                _sbrk
+ .text.exit     0x20003c40        0x6 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+                0x20003c40                exit
+ *fill*         0x20003c46        0x2 
  .text.__assert_func
-                0x20003c3c       0x3c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
-                0x20003c3c                __assert_func
+                0x20003c48       0x3c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+                0x20003c48                __assert_func
  .text.runtime_init
-                0x20003c78       0xf8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
-                0x20003c78                runtime_init
- .text.panic    0x20003d70       0x30 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
-                0x20003d70                panic
+                0x20003c84       0xf8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+                0x20003c84                runtime_init
+ .text.panic    0x20003d7c       0x30 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+                0x20003d7c                panic
  .text._out_buffer
-                0x20003da0        0x8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x20003dac        0x8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .text._out_null
-                0x20003da8        0x2 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x20003db4        0x2 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .text._out_fct
-                0x20003daa        0xe CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
- .text._atoi    0x20003db8       0x24 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x20003db6        0xe CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+ .text._atoi    0x20003dc4       0x24 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .text._out_rev
-                0x20003ddc       0xae CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x20003de8       0xae CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .text._ntoa_format
-                0x20003e8a      0x112 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x20003e96      0x112 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .text._ntoa_long
-                0x20003f9c       0xbc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x20003fa8       0xbc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .text._ntoa_long_long
-                0x20004058       0xe2 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
- *fill*         0x2000413a        0x2 
- .text._etoa    0x2000413c      0x414 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
- .text._ftoa    0x20004550      0x354 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x20004064       0xe2 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+ *fill*         0x20004146        0x2 
+ .text._etoa    0x20004148      0x414 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+ .text._ftoa    0x2000455c      0x354 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .text._vsnprintf
-                0x200048a4      0x624 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x200048b0      0x624 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
  .text.__wrap_sprintf
-                0x20004ec8       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
-                0x20004ec8                __wrap_sprintf
+                0x20004ed4       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x20004ed4                __wrap_sprintf
  .text.vfctprintf
-                0x20004ef0       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
-                0x20004ef0                vfctprintf
- .text          0x20004f10       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
+                0x20004efc       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+                0x20004efc                vfctprintf
+ .text          0x20004f1c       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
  .text.rom_func_lookup
-                0x20004f20       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
-                0x20004f20                rom_func_lookup
+                0x20004f2c       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
+                0x20004f2c                rom_func_lookup
  .text.rom_data_lookup
-                0x20004f30       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
-                0x20004f30                rom_data_lookup
+                0x20004f3c       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
+                0x20004f3c                rom_data_lookup
  .text.rom_funcs_lookup
-                0x20004f40       0x36 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
-                0x20004f40                rom_funcs_lookup
- *fill*         0x20004f76        0x2 
+                0x20004f4c       0x36 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
+                0x20004f4c                rom_funcs_lookup
+ *fill*         0x20004f82        0x2 
  .text.__wrap___aeabi_idiv
-                0x20004f78       0x50 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
-                0x20004f78                __wrap___aeabi_idivmod
-                0x20004f78                divmod_s32s32
-                0x20004f78                div_s32s32
-                0x20004f78                __wrap___aeabi_idiv
-                0x20004f80                divmod_s32s32_unsafe
-                0x20004fac                divmod_s32s32_savestate
+                0x20004f84       0x50 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
+                0x20004f84                __wrap___aeabi_idivmod
+                0x20004f84                divmod_s32s32
+                0x20004f84                div_s32s32
+                0x20004f84                __wrap___aeabi_idiv
+                0x20004f8c                divmod_s32s32_unsafe
+                0x20004fb8                divmod_s32s32_savestate
  .text.__wrap___aeabi_uidiv
-                0x20004fc8       0x4c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
-                0x20004fc8                __wrap___aeabi_uidiv
-                0x20004fc8                __wrap___aeabi_uidivmod
-                0x20004fc8                div_u32u32
-                0x20004fc8                divmod_u32u32
-                0x20004fd0                divmod_u32u32_unsafe
-                0x20004ff8                divmod_u32u32_savestate
+                0x20004fd4       0x4c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
+                0x20004fd4                __wrap___aeabi_uidiv
+                0x20004fd4                __wrap___aeabi_uidivmod
+                0x20004fd4                div_u32u32
+                0x20004fd4                divmod_u32u32
+                0x20004fdc                divmod_u32u32_unsafe
+                0x20005004                divmod_u32u32_savestate
  .text.__wrap___aeabi_ldiv
-                0x20005014      0x424 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
-                0x20005014                div_s64s64
-                0x20005014                divmod_s64s64
-                0x20005014                __wrap___aeabi_ldivmod
-                0x20005044                divmod_u64u64
-                0x20005044                div_u64u64
-                0x20005044                __wrap___aeabi_uldivmod
-                0x20005054                divmod_u64u64_savestate
-                0x20005074                divmod_s64s64_unsafe
-                0x200050fc                divmod_u64u64_unsafe
+                0x20005020      0x424 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
+                0x20005020                div_s64s64
+                0x20005020                divmod_s64s64
+                0x20005020                __wrap___aeabi_ldivmod
+                0x20005050                divmod_u64u64
+                0x20005050                div_u64u64
+                0x20005050                __wrap___aeabi_uldivmod
+                0x20005060                divmod_u64u64_savestate
+                0x20005080                divmod_s64s64_unsafe
+                0x20005108                divmod_u64u64_unsafe
  .text.__wrap___aeabi_darithmetic
-                0x20005438       0x80 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x20005438                __wrap___aeabi_drsub
-                0x2000543e                __wrap___aeabi_dsub
-                0x20005450                __wrap___aeabi_dadd
-                0x20005462                __wrap___aeabi_ddiv
-                0x2000549e                __wrap___aeabi_dmul
+                0x20005444       0x80 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x20005444                __wrap___aeabi_drsub
+                0x2000544a                __wrap___aeabi_dsub
+                0x2000545c                __wrap___aeabi_dadd
+                0x2000546e                __wrap___aeabi_ddiv
+                0x200054aa                __wrap___aeabi_dmul
  .text.__wrap___aeabi_cdcmple
-                0x200054b8       0x6c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x200054b8                __wrap___aeabi_cdrcmple
-                0x200054c8                __wrap___aeabi_cdcmpeq
-                0x200054c8                __wrap___aeabi_cdcmple
+                0x200054c4       0x6c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x200054c4                __wrap___aeabi_cdrcmple
+                0x200054d4                __wrap___aeabi_cdcmpeq
+                0x200054d4                __wrap___aeabi_cdcmple
  .text.__wrap___aeabi_dcmplt
-                0x20005524        0xc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x20005524                __wrap___aeabi_dcmplt
+                0x20005530        0xc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x20005530                __wrap___aeabi_dcmplt
  .text.__wrap___aeabi_dcmple
-                0x20005530       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x20005530                __wrap___aeabi_dcmple
+                0x2000553c       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x2000553c                __wrap___aeabi_dcmple
  .text.__wrap___aeabi_dcmpge
-                0x20005540       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x20005540                __wrap___aeabi_dcmpge
+                0x2000554c       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x2000554c                __wrap___aeabi_dcmpge
  .text.__wrap___aeabi_dcmpgt
-                0x20005550        0xa CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x20005550                __wrap___aeabi_dcmpgt
+                0x2000555c        0xa CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x2000555c                __wrap___aeabi_dcmpgt
  .text.__wrap___aeabi_dcmpun
-                0x2000555a       0x1c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x2000555a                __wrap___aeabi_dcmpun
- *fill*         0x20005576        0x2 
+                0x20005566       0x1c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x20005566                __wrap___aeabi_dcmpun
+ *fill*         0x20005582        0x2 
  .text.__wrap___aeabi_i2d
-                0x20005578       0x38 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x20005578                __wrap___aeabi_ui2d
-                0x20005580                __wrap___aeabi_i2d
+                0x20005584       0x38 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x20005584                __wrap___aeabi_ui2d
+                0x2000558c                __wrap___aeabi_i2d
  .text.__wrap___aeabi_d2iz
-                0x200055b0       0x48 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x200055b0                double2int_z
-                0x200055b0                __wrap___aeabi_d2iz
+                0x200055bc       0x48 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x200055bc                double2int_z
+                0x200055bc                __wrap___aeabi_d2iz
  .text.__wrap___aeabi_d2uiz
-                0x200055f8       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
-                0x200055f8                __wrap___aeabi_d2uiz
-                0x200055f8                double2uint
+                0x20005604       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+                0x20005604                __wrap___aeabi_d2uiz
+                0x20005604                double2uint
  .text.__aeabi_double_init
-                0x20005610       0xc8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
-                0x20005610                __aeabi_double_init
+                0x2000561c       0xc8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
+                0x2000561c                __aeabi_double_init
  .text.double_table_shim_on_use_helper
-                0x200056d8       0x34 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x200056d8                double_table_shim_on_use_helper
+                0x200056e4       0x34 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x200056e4                double_table_shim_on_use_helper
  .text.__wrap___aeabi_dsub
-                0x2000570c       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x2000570c                drsub_shim
-                0x20005712                dsub_shim
+                0x20005718       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x20005718                drsub_shim
+                0x2000571e                dsub_shim
  .text.dadd_shim
-                0x2000571c      0x15c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x2000571c                dadd_shim
+                0x20005728      0x15c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x20005728                dadd_shim
  .text.dmul_shim
-                0x20005878      0x15c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x20005878                dmul_shim
+                0x20005884      0x15c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x20005884                dmul_shim
  .text.ddiv_shim
-                0x200059d4      0x1b0 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x200059d4                ddiv_shim
+                0x200059e0      0x1b0 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x200059e0                ddiv_shim
  .text.double2uint_shim
-                0x20005b84        0xe CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x20005b84                double2uint_shim
-                0x20005b86                double2ufix_shim
- *fill*         0x20005b92        0x2 
+                0x20005b90        0xe CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x20005b90                double2uint_shim
+                0x20005b92                double2ufix_shim
+ *fill*         0x20005b9e        0x2 
  .text.double2uint64_shim
-                0x20005b94       0x70 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x20005b94                double2uint64_shim
-                0x20005b96                double2ufix64_shim
-                0x20005bb6                d2fix_a
+                0x20005ba0       0x70 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x20005ba0                double2uint64_shim
+                0x20005ba2                double2ufix64_shim
+                0x20005bc2                d2fix_a
  .text.dunpacks
-                0x20005c04       0x3c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
-                0x20005c04                dunpacks
+                0x20005c10       0x3c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+                0x20005c10                dunpacks
  .text.__aeabi_lmul
-                0x20005c40       0x32 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
-                0x20005c40                __wrap___aeabi_lmul
- *fill*         0x20005c72        0x2 
+                0x20005c4c       0x32 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
+                0x20005c4c                __wrap___aeabi_lmul
+ *fill*         0x20005c7e        0x2 
  .text.__wrap___aeabi_farithmetic
-                0x20005c74       0x58 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
-                0x20005c74                __wrap___aeabi_frsub
-                0x20005c7a                __wrap___aeabi_fsub
-                0x20005c84                __wrap___aeabi_fadd
-                0x20005c8e                __wrap___aeabi_fdiv
-                0x20005cba                __wrap___aeabi_fmul
+                0x20005c80       0x58 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
+                0x20005c80                __wrap___aeabi_frsub
+                0x20005c86                __wrap___aeabi_fsub
+                0x20005c90                __wrap___aeabi_fadd
+                0x20005c9a                __wrap___aeabi_fdiv
+                0x20005cc6                __wrap___aeabi_fmul
  .text.__wrap___aeabi_ui2f
-                0x20005ccc        0xa CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
-                0x20005ccc                __wrap___aeabi_ui2f
- *fill*         0x20005cd6        0x2 
+                0x20005cd8        0xa CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
+                0x20005cd8                __wrap___aeabi_ui2f
+ *fill*         0x20005ce2        0x2 
  .text.__wrap___aeabi_i2f
-                0x20005cd8       0x44 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
-                0x20005cd8                __wrap___aeabi_i2f
+                0x20005ce4       0x44 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
+                0x20005ce4                __wrap___aeabi_i2f
  .text.__wrap___aeabi_f2uiz
-                0x20005d1c       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
-                0x20005d1c                __wrap___aeabi_f2uiz
+                0x20005d28       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
+                0x20005d28                __wrap___aeabi_f2uiz
  .text.__wrap___aeabi_f2d
-                0x20005d2c       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
-                0x20005d2c                __wrap___aeabi_f2d
+                0x20005d38       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
+                0x20005d38                __wrap___aeabi_f2d
  .text.__aeabi_float_init
-                0x20005d40       0xfc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
-                0x20005d40                __aeabi_float_init
+                0x20005d4c       0xfc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
+                0x20005d4c                __aeabi_float_init
  .text.float_table_shim_on_use_helper
-                0x20005e3c       0x34 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_v1_rom_shim.S.obj
-                0x20005e3c                float_table_shim_on_use_helper
+                0x20005e48       0x34 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_v1_rom_shim.S.obj
+                0x20005e48                float_table_shim_on_use_helper
  .text.float2double_shim
-                0x20005e70       0x30 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_v1_rom_shim.S.obj
-                0x20005e70                float2double_shim
- .text          0x20005ea0       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
-                0x20005ea0                __aeabi_mem_init
- .text.memset   0x20005eb0        0xc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
-                0x20005eb0                __wrap_memset
- .text.memcpy   0x20005ebc        0xc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
-                0x20005ebc                __wrap_memcpy
-                0x20005ebc                __wrap___aeabi_memcpy
+                0x20005e7c       0x30 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_v1_rom_shim.S.obj
+                0x20005e7c                float2double_shim
+ .text          0x20005eac       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+                0x20005eac                __aeabi_mem_init
+ .text.memset   0x20005ebc        0xc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+                0x20005ebc                __wrap_memset
+ .text.memcpy   0x20005ec8        0xc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+                0x20005ec8                __wrap_memcpy
+                0x20005ec8                __wrap___aeabi_memcpy
  .text.stdio_out_chars_no_crlf
-                0x20005ec8        0xe CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
- *fill*         0x20005ed6        0x2 
+                0x20005ed4        0xe CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+ *fill*         0x20005ee2        0x2 
  .text.stdio_out_chars_crlf
-                0x20005ed8       0x80 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x20005ee4       0x80 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
  .text.stdio_stack_buffer_flush
-                0x20005f58       0x44 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x20005f64       0x44 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
  .text.stdio_buffered_printer
-                0x20005f9c       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x20005fa8       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
  .text.stdio_get_until
-                0x20005fbc       0x80 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x20005fc8       0x80 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
  .text.stdout_serialize_begin
-                0x2000603c       0x5c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x2000603c                stdout_serialize_begin
+                0x20006048       0x5c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x20006048                stdout_serialize_begin
  .text.stdout_serialize_end
-                0x20006098       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x20006098                stdout_serialize_end
+                0x200060a4       0x10 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x200060a4                stdout_serialize_end
  .text.stdio_put_string
-                0x200060a8       0x98 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
- .text._read    0x20006140       0x24 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x20006140                _read
- .text._write   0x20006164       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x20006164                _write
- .text._close   0x20006186        0x6 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x20006186                _close
- .text._lseek   0x2000618c        0x6 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x2000618c                _lseek
- *fill*         0x20006192        0x2 
+                0x200060b4       0x98 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+ .text._read    0x2000614c       0x24 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x2000614c                _read
+ .text._write   0x20006170       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x20006170                _write
+ .text._close   0x20006192        0x6 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x20006192                _close
+ .text._lseek   0x20006198        0x6 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x20006198                _lseek
+ *fill*         0x2000619e        0x2 
  .text.stdio_set_driver_enabled
-                0x20006194       0x2c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x20006194                stdio_set_driver_enabled
+                0x200061a0       0x2c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x200061a0                stdio_set_driver_enabled
  .text.stdio_flush
-                0x200061c0       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x200061c0                stdio_flush
+                0x200061cc       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x200061cc                stdio_flush
  .text.__wrap_puts
-                0x200061e0       0x1e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x200061e0                __wrap_puts
- *fill*         0x200061fe        0x2 
+                0x200061ec       0x1e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x200061ec                __wrap_puts
+ *fill*         0x2000620a        0x2 
  .text.__wrap_vprintf
-                0x20006200       0x40 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x20006200                __wrap_vprintf
+                0x2000620c       0x40 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x2000620c                __wrap_vprintf
  .text.__wrap_printf
-                0x20006240       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x20006240                __wrap_printf
+                0x2000624c       0x18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x2000624c                __wrap_printf
  .text.stdio_init_all
-                0x20006258        0xa CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
-                0x20006258                stdio_init_all
- *fill*         0x20006262        0x2 
+                0x20006264        0xa CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+                0x20006264                stdio_init_all
+ *fill*         0x2000626e        0x2 
  .text.stdio_uart_out_chars
-                0x20006264       0x74 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
+                0x20006270       0x74 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
  .text.stdio_uart_in_chars
-                0x200062d8       0x80 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
-                0x200062d8                stdio_uart_in_chars
+                0x200062e4       0x80 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
+                0x200062e4                stdio_uart_in_chars
  .text.on_uart_rx
-                0x20006358       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
+                0x20006364       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
  .text.stdio_uart_set_chars_available_callback
-                0x20006380       0x8c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
+                0x2000638c       0x8c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
  .text.stdio_uart_init_full
-                0x2000640c       0x44 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
-                0x2000640c                stdio_uart_init_full
+                0x20006418       0x44 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
+                0x20006418                stdio_uart_init_full
  .text.stdio_uart_init
-                0x20006450       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
-                0x20006450                stdio_uart_init
+                0x2000645c       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
+                0x2000645c                stdio_uart_init
  .text.core1_trampoline
-                0x20006478        0x2 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+                0x20006484        0x2 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
  .text.core1_wrapper
-                0x2000647a        0xc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
-                0x2000647a                core1_wrapper
+                0x20006486        0xc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+                0x20006486                core1_wrapper
  .text.multicore_fifo_push_blocking
-                0x20006486       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
-                0x20006486                multicore_fifo_push_blocking
+                0x20006492       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+                0x20006492                multicore_fifo_push_blocking
  .text.multicore_fifo_pop_blocking
-                0x2000649a       0x16 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
-                0x2000649a                multicore_fifo_pop_blocking
+                0x200064a6       0x16 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+                0x200064a6                multicore_fifo_pop_blocking
  .text.multicore_reset_core1
-                0x200064b0       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
-                0x200064b0                multicore_reset_core1
+                0x200064bc       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+                0x200064bc                multicore_reset_core1
  .text.multicore_launch_core1_raw
-                0x200064d8       0x6e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
-                0x200064d8                multicore_launch_core1_raw
- *fill*         0x20006546        0x2 
+                0x200064e4       0x6e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+                0x200064e4                multicore_launch_core1_raw
+ *fill*         0x20006552        0x2 
  .text.multicore_launch_core1_with_stack
-                0x20006548       0x50 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
-                0x20006548                multicore_launch_core1_with_stack
+                0x20006554       0x50 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+                0x20006554                multicore_launch_core1_with_stack
  .text.multicore_launch_core1
-                0x20006598       0x24 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
-                0x20006598                multicore_launch_core1
+                0x200065a4       0x24 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+                0x200065a4                multicore_launch_core1
  .text._pio_can_add_program_at_offset
-                0x200065bc       0x3c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
+                0x200065c8       0x3c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
  .text._pio_find_offset_for_program
-                0x200065f8       0x7c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
+                0x20006604       0x7c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
  .text._pio_add_program_at_offset
-                0x20006674       0x78 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
+                0x20006680       0x78 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
  .text.pio_sm_unclaim
-                0x200066ec       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
-                0x200066ec                pio_sm_unclaim
+                0x200066f8       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
+                0x200066f8                pio_sm_unclaim
  .text.pio_claim_unused_sm
-                0x2000670c       0x3c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
-                0x2000670c                pio_claim_unused_sm
+                0x20006718       0x3c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
+                0x20006718                pio_claim_unused_sm
  .text.pio_sm_is_claimed
-                0x20006748       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
-                0x20006748                pio_sm_is_claimed
+                0x20006754       0x20 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
+                0x20006754                pio_sm_is_claimed
  .text.pio_add_program
-                0x20006768       0x38 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
-                0x20006768                pio_add_program
+                0x20006774       0x38 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
+                0x20006774                pio_add_program
  .text.pio_clear_instruction_memory
-                0x200067a0       0x3c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
-                0x200067a0                pio_clear_instruction_memory
+                0x200067ac       0x3c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
+                0x200067ac                pio_clear_instruction_memory
  .text.pio_sm_set_consecutive_pindirs
-                0x200067dc       0xa4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
-                0x200067dc                pio_sm_set_consecutive_pindirs
+                0x200067e8       0xa4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
+                0x200067e8                pio_sm_set_consecutive_pindirs
  .text.pio_sm_init
-                0x20006880       0xe4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
-                0x20006880                pio_sm_init
+                0x2000688c       0xe4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
+                0x2000688c                pio_sm_init
  .text.spi_set_baudrate
-                0x20006964       0xcc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
-                0x20006964                spi_set_baudrate
+                0x20006970       0xcc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
+                0x20006970                spi_set_baudrate
  .text.spi_init
-                0x20006a30       0x74 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
-                0x20006a30                spi_init
+                0x20006a3c       0x74 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
+                0x20006a3c                spi_init
  .text.adc_init
-                0x20006aa4       0x34 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
-                0x20006aa4                adc_init
- .text          0x20006ad8        0x4 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_dvmd_tls.o)
-                0x20006ad8                __aeabi_idiv0
-                0x20006ad8                __aeabi_ldiv0
+                0x20006ab0       0x34 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
+                0x20006ab0                adc_init
+ .text          0x20006ae4        0x4 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_dvmd_tls.o)
+                0x20006ae4                __aeabi_idiv0
+                0x20006ae4                __aeabi_ldiv0
  .text.__sflush_r
-                0x20006adc      0x140 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-fflush.o)
-                0x20006adc                __sflush_r
+                0x20006ae8      0x140 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-fflush.o)
+                0x20006ae8                __sflush_r
  .text._fflush_r
-                0x20006c1c       0x6c c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-fflush.o)
-                0x20006c1c                _fflush_r
- .text.fflush   0x20006c88       0x78 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-fflush.o)
-                0x20006c88                fflush
+                0x20006c28       0x6c c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-fflush.o)
+                0x20006c28                _fflush_r
+ .text.fflush   0x20006c94       0x78 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-fflush.o)
+                0x20006c94                fflush
  .text._cleanup_r
-                0x20006d00       0x10 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-findfp.o)
-                0x20006d00                _cleanup_r
- .text.__sinit  0x20006d10      0x120 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-findfp.o)
-                0x20006d10                __sinit
+                0x20006d0c       0x10 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-findfp.o)
+                0x20006d0c                _cleanup_r
+ .text.__sinit  0x20006d1c      0x120 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-findfp.o)
+                0x20006d1c                __sinit
  .text.__sfp_lock_acquire
-                0x20006e30       0x10 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-findfp.o)
-                0x20006e30                __sfp_lock_acquire
+                0x20006e3c       0x10 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-findfp.o)
+                0x20006e3c                __sfp_lock_acquire
  .text.__sfp_lock_release
-                0x20006e40       0x10 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-findfp.o)
-                0x20006e40                __sfp_lock_release
+                0x20006e4c       0x10 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-findfp.o)
+                0x20006e4c                __sfp_lock_release
  .text._malloc_trim_r
-                0x20006e50       0x9c c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-freer.o)
-                0x20006e50                _malloc_trim_r
- .text._free_r  0x20006eec      0x1c4 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-freer.o)
-                0x20006eec                _free_r
+                0x20006e5c       0x9c c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-freer.o)
+                0x20006e5c                _malloc_trim_r
+ .text._free_r  0x20006ef8      0x1c4 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-freer.o)
+                0x20006ef8                _free_r
  .text._fwalk_reent
-                0x200070b0       0x48 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-fwalk.o)
-                0x200070b0                _fwalk_reent
+                0x200070bc       0x48 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-fwalk.o)
+                0x200070bc                _fwalk_reent
  .text.__retarget_lock_init_recursive
-                0x200070f8        0x4 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-lock.o)
-                0x200070f8                __retarget_lock_init_recursive
- .text.__retarget_lock_close_recursive
-                0x200070fc        0x4 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-lock.o)
-                0x200070fc                __retarget_lock_close_recursive
- .text.__retarget_lock_acquire_recursive
-                0x20007100        0x4 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-lock.o)
-                0x20007100                __retarget_lock_acquire_recursive
- .text.__retarget_lock_release_recursive
                 0x20007104        0x4 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-lock.o)
-                0x20007104                __retarget_lock_release_recursive
+                0x20007104                __retarget_lock_init_recursive
+ .text.__retarget_lock_close_recursive
+                0x20007108        0x4 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-lock.o)
+                0x20007108                __retarget_lock_close_recursive
+ .text.__retarget_lock_acquire_recursive
+                0x2000710c        0x4 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-lock.o)
+                0x2000710c                __retarget_lock_acquire_recursive
+ .text.__retarget_lock_release_recursive
+                0x20007110        0x4 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-lock.o)
+                0x20007110                __retarget_lock_release_recursive
  .text.__malloc_lock
-                0x20007108       0x10 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-mlock.o)
-                0x20007108                __malloc_lock
+                0x20007114       0x10 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-mlock.o)
+                0x20007114                __malloc_lock
  .text.__malloc_unlock
-                0x20007118       0x10 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-mlock.o)
-                0x20007118                __malloc_unlock
- .text._sbrk_r  0x20007128       0x24 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-sbrkr.o)
-                0x20007128                _sbrk_r
- .text.__sread  0x2000714c       0x28 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-stdio.o)
-                0x2000714c                __sread
+                0x20007124       0x10 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-mlock.o)
+                0x20007124                __malloc_unlock
+ .text._sbrk_r  0x20007134       0x24 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-sbrkr.o)
+                0x20007134                _sbrk_r
+ .text.__sread  0x20007158       0x28 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-stdio.o)
+                0x20007158                __sread
  .text.__swrite
-                0x20007174       0x40 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-stdio.o)
-                0x20007174                __swrite
- .text.__sseek  0x200071b4       0x2c c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-stdio.o)
-                0x200071b4                __sseek
+                0x20007180       0x40 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-stdio.o)
+                0x20007180                __swrite
+ .text.__sseek  0x200071c0       0x2c c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-stdio.o)
+                0x200071c0                __sseek
  .text.__sclose
-                0x200071e0        0xc c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-stdio.o)
-                0x200071e0                __sclose
- .text.strlen   0x200071ec       0x5c c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-strlen-stub.o)
-                0x200071ec                strlen
+                0x200071ec        0xc c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-stdio.o)
+                0x200071ec                __sclose
+ .text.strlen   0x200071f8       0x5c c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-strlen-stub.o)
+                0x200071f8                strlen
  .text._write_r
-                0x20007248       0x28 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-writer.o)
-                0x20007248                _write_r
+                0x20007254       0x28 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-writer.o)
+                0x20007254                _write_r
  .text._close_r
-                0x20007270       0x24 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-closer.o)
-                0x20007270                _close_r
+                0x2000727c       0x24 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-closer.o)
+                0x2000727c                _close_r
  .text._fclose_r
-                0x20007294       0xdc c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-fclose.o)
-                0x20007294                _fclose_r
+                0x200072a0       0xdc c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-fclose.o)
+                0x200072a0                _fclose_r
  .text._lseek_r
-                0x20007370       0x28 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-lseekr.o)
-                0x20007370                _lseek_r
- .text._read_r  0x20007398       0x28 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-readr.o)
-                0x20007398                _read_r
+                0x2000737c       0x28 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-lseekr.o)
+                0x2000737c                _lseek_r
+ .text._read_r  0x200073a4       0x28 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libg.a(lib_a-readr.o)
+                0x200073a4                _read_r
  *(.fini)
- .fini          0x200073c0        0x4 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp/crti.o
-                0x200073c0                _fini
+ .fini          0x200073cc        0x4 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp/crti.o
+                0x200073cc                _fini
  *crtbegin.o(.ctors)
  *crtbegin?.o(.ctors)
  *(EXCLUDE_FILE(*crtend.o *crtend?.o) .ctors)
@@ -2235,31 +2234,31 @@ LOAD c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.
  *(SORT_BY_NAME(.dtors.*))
  *(.dtors)
  *(.eh_frame*)
- .eh_frame      0x200073c4        0x0 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp/crtbegin.o
-                0x200073c4                . = ALIGN (0x4)
-                0x200073c4                __ram_text_end__ = .
+ .eh_frame      0x200073d0        0x0 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp/crtbegin.o
+                0x200073d0                . = ALIGN (0x4)
+                0x200073d0                __ram_text_end__ = .
                 0x10000304                __ram_text_source__ = LOADADDR (.text)
 
-.glue_7         0x200073c4        0x0 load address 0x10007608
- .glue_7        0x200073c4        0x0 linker stubs
+.glue_7         0x200073d0        0x0 load address 0x10007614
+ .glue_7        0x200073d0        0x0 linker stubs
 
-.glue_7t        0x200073c4        0x0 load address 0x10007608
- .glue_7t       0x200073c4        0x0 linker stubs
+.glue_7t        0x200073d0        0x0 load address 0x10007614
+ .glue_7t       0x200073d0        0x0 linker stubs
 
-.vfp11_veneer   0x200073c4        0x0 load address 0x10007608
- .vfp11_veneer  0x200073c4        0x0 linker stubs
+.vfp11_veneer   0x200073d0        0x0 load address 0x10007614
+ .vfp11_veneer  0x200073d0        0x0 linker stubs
 
-.v4_bx          0x200073c4        0x0 load address 0x10007608
- .v4_bx         0x200073c4        0x0 linker stubs
+.v4_bx          0x200073d0        0x0 load address 0x10007614
+ .v4_bx         0x200073d0        0x0 linker stubs
 
-.iplt           0x200073c4        0x0 load address 0x10007608
- .iplt          0x200073c4        0x0 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp/crtbegin.o
+.iplt           0x200073d0        0x0 load address 0x10007614
+ .iplt          0x200073d0        0x0 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp/crtbegin.o
 
-.rel.dyn        0x200073c4        0x0 load address 0x10007608
- .rel.iplt      0x200073c4        0x0 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp/crtbegin.o
-                0x200073c4                . = ALIGN (0x4)
+.rel.dyn        0x200073d0        0x0 load address 0x10007614
+ .rel.iplt      0x200073d0        0x0 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp/crtbegin.o
+                0x200073d0                . = ALIGN (0x4)
 
-.data           0x200073d0     0x271c load address 0x10007608
+.data           0x200073d0     0x271c load address 0x10007614
                 0x200073d0                __data_start__ = .
  *(vtable)
  *(.time_critical*)
@@ -2614,32 +2613,32 @@ LOAD c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.
  *(.jcr)
                 0x20009aec                . = ALIGN (0x4)
                 0x20009aec                __data_end__ = .
-                0x10007608                __etext = LOADADDR (.data)
+                0x10007614                __etext = LOADADDR (.data)
 
-.igot.plt       0x20009aec        0x0 load address 0x10009d24
+.igot.plt       0x20009aec        0x0 load address 0x10009d30
  .igot.plt      0x20009aec        0x0 c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp/crtbegin.o
 
 .uninitialized_data
-                0x20009aec        0x4 load address 0x10009d24
+                0x20009aec        0x4 load address 0x10009d30
                 0x20009aec                . = ALIGN (0x4)
  *(.uninitialized_data*)
  .uninitialized_data
                 0x20009aec        0x4 CMakeFiles/okhi.dir/okhi.c.obj
                 0x20009aec                wait_20
 
-.scratch_x      0x20040000        0x0 load address 0x10009d24
+.scratch_x      0x20040000        0x0 load address 0x10009d30
                 0x20040000                __scratch_x_start__ = .
  *(.scratch_x.*)
                 0x20040000                . = ALIGN (0x4)
                 0x20040000                __scratch_x_end__ = .
-                0x10009d24                __scratch_x_source__ = LOADADDR (.scratch_x)
+                0x10009d30                __scratch_x_source__ = LOADADDR (.scratch_x)
 
-.scratch_y      0x20041000        0x0 load address 0x10009d24
+.scratch_y      0x20041000        0x0 load address 0x10009d30
                 0x20041000                __scratch_y_start__ = .
  *(.scratch_y.*)
                 0x20041000                . = ALIGN (0x4)
                 0x20041000                __scratch_y_end__ = .
-                0x10009d24                __scratch_y_source__ = LOADADDR (.scratch_y)
+                0x10009d30                __scratch_y_source__ = LOADADDR (.scratch_y)
 
 .bss            0x20009af0    0x1f8c0
                 0x20009af0                . = ALIGN (0x4)
@@ -2767,8 +2766,8 @@ LOAD c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.
  *(.stack*)
  .stack         0x20041000      0x800 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
 
-.flash_end      0x10009d24        0x0
-                0x10009d24                __flash_binary_end = .
+.flash_end      0x10009d30        0x0
+                0x10009d30                __flash_binary_end = .
                 0x20040000                __StackLimit = (ORIGIN (RAM) + LENGTH (RAM))
                 0x20041000                __StackOneTop = (ORIGIN (SCRATCH_X) + LENGTH (SCRATCH_X))
                 0x20042000                __StackTop = (ORIGIN (SCRATCH_Y) + LENGTH (SCRATCH_Y))
@@ -2828,7 +2827,7 @@ LOAD CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/
 LOAD CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
 LOAD CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
 LOAD CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
-LOAD C:\Users\regue\AppData\Local\Temp\cceO5n0W.o
+LOAD C:\Users\regue\AppData\Local\Temp\ccmiptrY.o
 LOAD c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libstdc++.a
 LOAD c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libm.a
 START GROUP
@@ -2933,7 +2932,7 @@ LOAD linker stubs
  .ARM.attributes
                 0x0000069a       0x2c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
  .ARM.attributes
-                0x000006c6       0x22 C:\Users\regue\AppData\Local\Temp\cceO5n0W.o
+                0x000006c6       0x22 C:\Users\regue\AppData\Local\Temp\ccmiptrY.o
  .ARM.attributes
                 0x000006e8       0x1e c:/progra~1/raspbe~1/picosd~1.1/gcc-ar~1/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v6-m/nofp\libgcc.a(_dvmd_tls.o)
  .ARM.attributes
@@ -3004,118 +3003,118 @@ LOAD linker stubs
  .comment       0x00000049       0x4a CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
  .comment       0x00000049       0x4a CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
 
-.debug_info     0x00000000    0x217ef
- .debug_info    0x00000000     0x6498 CMakeFiles/okhi.dir/okhi.c.obj
- .debug_info    0x00006498      0x4b0 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.obj
- .debug_info    0x00006948     0x187e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
- .debug_info    0x000081c6      0x1e3 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_platform/platform.c.obj
- .debug_info    0x000083a9      0x6be CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
- .debug_info    0x00008a67      0x58e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
- .debug_info    0x00008ff5     0x1c9e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
- .debug_info    0x0000ac93      0x1a4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/lock_core.c.obj
- .debug_info    0x0000ae37     0x20d5 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/mutex.c.obj
- .debug_info    0x0000cf0c     0x4068 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
- .debug_info    0x00010f74     0x13f0 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
- .debug_info    0x00012364     0x123b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
- .debug_info    0x0001359f      0xdd2 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
- .debug_info    0x00014371      0xfcf CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
- .debug_info    0x00015340      0x51b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pll/pll.c.obj
- .debug_info    0x0001585b      0x4ee CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
- .debug_info    0x00015d49      0x1d8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.obj
- .debug_info    0x00015f21     0x1053 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
- .debug_info    0x00016f74     0x1a5f CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
- .debug_info    0x000189d3       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
- .debug_info    0x000189f5      0x27c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
- .debug_info    0x00018c71       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
- .debug_info    0x00018c93       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
- .debug_info    0x00018cb5      0x2d1 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
- .debug_info    0x00018f86       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
- .debug_info    0x00018fa8       0x26 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
- .debug_info    0x00018fce       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
- .debug_info    0x00018ff0      0x2eb CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
- .debug_info    0x000192db       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_v1_rom_shim.S.obj
- .debug_info    0x000192fd      0x4a6 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_malloc/pico_malloc.c.obj
- .debug_info    0x000197a3       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
- .debug_info    0x000197c5       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
- .debug_info    0x000197e7      0x35d CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- .debug_info    0x00019b44     0x1827 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_info    0x0001b36b     0x104f CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
- .debug_info    0x0001c3ba     0x1d18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
- .debug_info    0x0001e0d2     0x227f CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
- .debug_info    0x00020351     0x11c5 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
- .debug_info    0x00021516      0x2d9 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
+.debug_info     0x00000000    0x217a8
+ .debug_info    0x00000000     0x6451 CMakeFiles/okhi.dir/okhi.c.obj
+ .debug_info    0x00006451      0x4b0 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.obj
+ .debug_info    0x00006901     0x187e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+ .debug_info    0x0000817f      0x1e3 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_platform/platform.c.obj
+ .debug_info    0x00008362      0x6be CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
+ .debug_info    0x00008a20      0x58e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
+ .debug_info    0x00008fae     0x1c9e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+ .debug_info    0x0000ac4c      0x1a4 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/lock_core.c.obj
+ .debug_info    0x0000adf0     0x20d5 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/mutex.c.obj
+ .debug_info    0x0000cec5     0x4068 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+ .debug_info    0x00010f2d     0x13f0 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+ .debug_info    0x0001231d     0x123b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
+ .debug_info    0x00013558      0xdd2 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+ .debug_info    0x0001432a      0xfcf CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
+ .debug_info    0x000152f9      0x51b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pll/pll.c.obj
+ .debug_info    0x00015814      0x4ee CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
+ .debug_info    0x00015d02      0x1d8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.obj
+ .debug_info    0x00015eda     0x1053 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+ .debug_info    0x00016f2d     0x1a5f CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+ .debug_info    0x0001898c       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
+ .debug_info    0x000189ae      0x27c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
+ .debug_info    0x00018c2a       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
+ .debug_info    0x00018c4c       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+ .debug_info    0x00018c6e      0x2d1 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
+ .debug_info    0x00018f3f       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+ .debug_info    0x00018f61       0x26 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
+ .debug_info    0x00018f87       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
+ .debug_info    0x00018fa9      0x2eb CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
+ .debug_info    0x00019294       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_v1_rom_shim.S.obj
+ .debug_info    0x000192b6      0x4a6 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_malloc/pico_malloc.c.obj
+ .debug_info    0x0001975c       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+ .debug_info    0x0001977e       0x22 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
+ .debug_info    0x000197a0      0x35d CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ .debug_info    0x00019afd     0x1827 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+ .debug_info    0x0001b324     0x104f CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
+ .debug_info    0x0001c373     0x1d18 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+ .debug_info    0x0001e08b     0x227f CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
+ .debug_info    0x0002030a     0x11c5 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
+ .debug_info    0x000214cf      0x2d9 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
 
-.debug_abbrev   0x00000000     0x57a3
- .debug_abbrev  0x00000000      0x69d CMakeFiles/okhi.dir/okhi.c.obj
- .debug_abbrev  0x0000069d      0x19c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.obj
- .debug_abbrev  0x00000839      0x379 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
- .debug_abbrev  0x00000bb2       0xeb CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_platform/platform.c.obj
- .debug_abbrev  0x00000c9d      0x2e9 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
- .debug_abbrev  0x00000f86      0x21b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
- .debug_abbrev  0x000011a1      0x4e7 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
- .debug_abbrev  0x00001688      0x116 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/lock_core.c.obj
- .debug_abbrev  0x0000179e      0x397 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/mutex.c.obj
- .debug_abbrev  0x00001b35      0x571 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
- .debug_abbrev  0x000020a6      0x3b8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
- .debug_abbrev  0x0000245e      0x297 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
- .debug_abbrev  0x000026f5      0x31c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
- .debug_abbrev  0x00002a11      0x3c7 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
- .debug_abbrev  0x00002dd8      0x1ea CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pll/pll.c.obj
- .debug_abbrev  0x00002fc2      0x1a8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
- .debug_abbrev  0x0000316a      0x109 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.obj
- .debug_abbrev  0x00003273      0x4cb CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
- .debug_abbrev  0x0000373e      0x384 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
- .debug_abbrev  0x00003ac2       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
- .debug_abbrev  0x00003ad4      0x13b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
- .debug_abbrev  0x00003c0f       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
- .debug_abbrev  0x00003c21       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
- .debug_abbrev  0x00003c33      0x179 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
- .debug_abbrev  0x00003dac       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
- .debug_abbrev  0x00003dbe       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
- .debug_abbrev  0x00003dd2       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
- .debug_abbrev  0x00003de4      0x18c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
- .debug_abbrev  0x00003f70       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_v1_rom_shim.S.obj
- .debug_abbrev  0x00003f82      0x1cf CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_malloc/pico_malloc.c.obj
- .debug_abbrev  0x00004151       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
- .debug_abbrev  0x00004163       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
- .debug_abbrev  0x00004175       0xad CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- .debug_abbrev  0x00004222      0x4a5 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_abbrev  0x000046c7      0x3e8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
- .debug_abbrev  0x00004aaf      0x49f CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
- .debug_abbrev  0x00004f4e      0x483 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
- .debug_abbrev  0x000053d1      0x2ca CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
- .debug_abbrev  0x0000569b      0x108 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
+.debug_abbrev   0x00000000     0x57b7
+ .debug_abbrev  0x00000000      0x6b1 CMakeFiles/okhi.dir/okhi.c.obj
+ .debug_abbrev  0x000006b1      0x19c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.obj
+ .debug_abbrev  0x0000084d      0x379 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+ .debug_abbrev  0x00000bc6       0xeb CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_platform/platform.c.obj
+ .debug_abbrev  0x00000cb1      0x2e9 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
+ .debug_abbrev  0x00000f9a      0x21b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
+ .debug_abbrev  0x000011b5      0x4e7 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+ .debug_abbrev  0x0000169c      0x116 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/lock_core.c.obj
+ .debug_abbrev  0x000017b2      0x397 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/mutex.c.obj
+ .debug_abbrev  0x00001b49      0x571 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+ .debug_abbrev  0x000020ba      0x3b8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+ .debug_abbrev  0x00002472      0x297 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
+ .debug_abbrev  0x00002709      0x31c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+ .debug_abbrev  0x00002a25      0x3c7 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
+ .debug_abbrev  0x00002dec      0x1ea CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pll/pll.c.obj
+ .debug_abbrev  0x00002fd6      0x1a8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
+ .debug_abbrev  0x0000317e      0x109 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.obj
+ .debug_abbrev  0x00003287      0x4cb CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+ .debug_abbrev  0x00003752      0x384 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+ .debug_abbrev  0x00003ad6       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
+ .debug_abbrev  0x00003ae8      0x13b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
+ .debug_abbrev  0x00003c23       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
+ .debug_abbrev  0x00003c35       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+ .debug_abbrev  0x00003c47      0x179 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
+ .debug_abbrev  0x00003dc0       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+ .debug_abbrev  0x00003dd2       0x14 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
+ .debug_abbrev  0x00003de6       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
+ .debug_abbrev  0x00003df8      0x18c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
+ .debug_abbrev  0x00003f84       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_v1_rom_shim.S.obj
+ .debug_abbrev  0x00003f96      0x1cf CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_malloc/pico_malloc.c.obj
+ .debug_abbrev  0x00004165       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+ .debug_abbrev  0x00004177       0x12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
+ .debug_abbrev  0x00004189       0xad CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ .debug_abbrev  0x00004236      0x4a5 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+ .debug_abbrev  0x000046db      0x3e8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
+ .debug_abbrev  0x00004ac3      0x49f CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+ .debug_abbrev  0x00004f62      0x483 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
+ .debug_abbrev  0x000053e5      0x2ca CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
+ .debug_abbrev  0x000056af      0x108 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
 
-.debug_loc      0x00000000    0x15930
- .debug_loc     0x00000000     0x2fc0 CMakeFiles/okhi.dir/okhi.c.obj
- .debug_loc     0x00002fc0      0x296 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.obj
- .debug_loc     0x00003256     0x1237 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
- .debug_loc     0x0000448d       0xe9 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_platform/platform.c.obj
- .debug_loc     0x00004576      0x45f CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
- .debug_loc     0x000049d5      0x233 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
- .debug_loc     0x00004c08     0x13f5 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
- .debug_loc     0x00005ffd       0x60 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/lock_core.c.obj
- .debug_loc     0x0000605d     0x152e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/mutex.c.obj
- .debug_loc     0x0000758b     0x31e5 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
- .debug_loc     0x0000a770      0xacb CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
- .debug_loc     0x0000b23b     0x1446 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
- .debug_loc     0x0000c681      0x83b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
- .debug_loc     0x0000cebc      0x832 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
- .debug_loc     0x0000d6ee      0x310 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pll/pll.c.obj
- .debug_loc     0x0000d9fe      0x2ec CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
- .debug_loc     0x0000dcea       0x71 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.obj
- .debug_loc     0x0000dd5b      0x674 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
- .debug_loc     0x0000e3cf     0x2095 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
- .debug_loc     0x00010464      0x1a1 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
- .debug_loc     0x00010605       0x59 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
- .debug_loc     0x0001065e       0x73 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
- .debug_loc     0x000106d1      0x2dc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_malloc/pico_malloc.c.obj
- .debug_loc     0x000109ad      0xe23 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_loc     0x000117d0      0x888 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
- .debug_loc     0x00012058      0xf93 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
- .debug_loc     0x00012feb     0x1ca7 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
- .debug_loc     0x00014c92      0xc12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
- .debug_loc     0x000158a4       0x8c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
+.debug_loc      0x00000000    0x158d4
+ .debug_loc     0x00000000     0x2f64 CMakeFiles/okhi.dir/okhi.c.obj
+ .debug_loc     0x00002f64      0x296 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.obj
+ .debug_loc     0x000031fa     0x1237 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+ .debug_loc     0x00004431       0xe9 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_platform/platform.c.obj
+ .debug_loc     0x0000451a      0x45f CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
+ .debug_loc     0x00004979      0x233 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
+ .debug_loc     0x00004bac     0x13f5 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+ .debug_loc     0x00005fa1       0x60 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/lock_core.c.obj
+ .debug_loc     0x00006001     0x152e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/mutex.c.obj
+ .debug_loc     0x0000752f     0x31e5 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+ .debug_loc     0x0000a714      0xacb CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+ .debug_loc     0x0000b1df     0x1446 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
+ .debug_loc     0x0000c625      0x83b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+ .debug_loc     0x0000ce60      0x832 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
+ .debug_loc     0x0000d692      0x310 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pll/pll.c.obj
+ .debug_loc     0x0000d9a2      0x2ec CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
+ .debug_loc     0x0000dc8e       0x71 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.obj
+ .debug_loc     0x0000dcff      0x674 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+ .debug_loc     0x0000e373     0x2095 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+ .debug_loc     0x00010408      0x1a1 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
+ .debug_loc     0x000105a9       0x59 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
+ .debug_loc     0x00010602       0x73 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
+ .debug_loc     0x00010675      0x2dc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_malloc/pico_malloc.c.obj
+ .debug_loc     0x00010951      0xe23 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+ .debug_loc     0x00011774      0x888 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
+ .debug_loc     0x00011ffc      0xf93 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+ .debug_loc     0x00012f8f     0x1ca7 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
+ .debug_loc     0x00014c36      0xc12 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
+ .debug_loc     0x00015848       0x8c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
 
 .debug_aranges  0x00000000     0x11f0
  .debug_aranges
@@ -3236,46 +3235,46 @@ LOAD linker stubs
  .debug_ranges  0x00004258      0x288 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
  .debug_ranges  0x000044e0       0x28 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
 
-.debug_line     0x00000000    0x15c6c
- .debug_line    0x00000000     0x2c2e CMakeFiles/okhi.dir/okhi.c.obj
- .debug_line    0x00002c2e      0x5c3 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.obj
- .debug_line    0x000031f1      0xd98 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
- .debug_line    0x00003f89      0x2d6 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_platform/platform.c.obj
- .debug_line    0x0000425f      0x4e2 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
- .debug_line    0x00004741      0x4df CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
- .debug_line    0x00004c20     0x112d CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
- .debug_line    0x00005d4d      0x28e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/lock_core.c.obj
- .debug_line    0x00005fdb     0x116d CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/mutex.c.obj
- .debug_line    0x00007148     0x1cb7 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
- .debug_line    0x00008dff      0xd04 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
- .debug_line    0x00009b03      0x8e8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
- .debug_line    0x0000a3eb      0x9ba CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
- .debug_line    0x0000ada5      0xae6 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
- .debug_line    0x0000b88b      0x60c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pll/pll.c.obj
- .debug_line    0x0000be97      0x45b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
- .debug_line    0x0000c2f2      0x2ff CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.obj
- .debug_line    0x0000c5f1      0xc0b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
- .debug_line    0x0000d1fc     0x1254 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
- .debug_line    0x0000e450      0x163 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
- .debug_line    0x0000e5b3      0x26b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
- .debug_line    0x0000e81e      0x2ec CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
- .debug_line    0x0000eb0a      0x441 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
- .debug_line    0x0000ef4b      0x3bc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
- .debug_line    0x0000f307      0x6b9 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
- .debug_line    0x0000f9c0       0xb3 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
- .debug_line    0x0000fa73      0x3f7 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
- .debug_line    0x0000fe6a      0x3ae CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
- .debug_line    0x00010218      0x1e3 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_v1_rom_shim.S.obj
- .debug_line    0x000103fb      0x42c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_malloc/pico_malloc.c.obj
- .debug_line    0x00010827       0xdd CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
- .debug_line    0x00010904       0xeb CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
- .debug_line    0x000109ef      0x211 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- .debug_line    0x00010c00      0xfbd CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_line    0x00011bbd      0xbeb CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
- .debug_line    0x000127a8     0x10ff CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
- .debug_line    0x000138a7     0x1156 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
- .debug_line    0x000149fd      0xeee CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
- .debug_line    0x000158eb      0x381 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
+.debug_line     0x00000000    0x15c91
+ .debug_line    0x00000000     0x2c53 CMakeFiles/okhi.dir/okhi.c.obj
+ .debug_line    0x00002c53      0x5c3 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.obj
+ .debug_line    0x00003216      0xd98 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+ .debug_line    0x00003fae      0x2d6 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_platform/platform.c.obj
+ .debug_line    0x00004284      0x4e2 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
+ .debug_line    0x00004766      0x4df CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
+ .debug_line    0x00004c45     0x112d CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+ .debug_line    0x00005d72      0x28e CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/lock_core.c.obj
+ .debug_line    0x00006000     0x116d CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_sync/mutex.c.obj
+ .debug_line    0x0000716d     0x1cb7 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_time/time.c.obj
+ .debug_line    0x00008e24      0xd04 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+ .debug_line    0x00009b28      0x8e8 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/common/pico_util/pheap.c.obj
+ .debug_line    0x0000a410      0x9ba CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+ .debug_line    0x0000adca      0xae6 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
+ .debug_line    0x0000b8b0      0x60c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pll/pll.c.obj
+ .debug_line    0x0000bebc      0x45b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
+ .debug_line    0x0000c317      0x2ff CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.obj
+ .debug_line    0x0000c616      0xc0b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+ .debug_line    0x0000d221     0x1254 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+ .debug_line    0x0000e475      0x163 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
+ .debug_line    0x0000e5d8      0x26b CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
+ .debug_line    0x0000e843      0x2ec CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
+ .debug_line    0x0000eb2f      0x441 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+ .debug_line    0x0000ef70      0x3bc CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
+ .debug_line    0x0000f32c      0x6b9 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+ .debug_line    0x0000f9e5       0xb3 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
+ .debug_line    0x0000fa98      0x3f7 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
+ .debug_line    0x0000fe8f      0x3ae CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
+ .debug_line    0x0001023d      0x1e3 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_float/float_v1_rom_shim.S.obj
+ .debug_line    0x00010420      0x42c CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_malloc/pico_malloc.c.obj
+ .debug_line    0x0001084c       0xdd CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+ .debug_line    0x00010929       0xeb CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
+ .debug_line    0x00010a14      0x211 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ .debug_line    0x00010c25      0xfbd CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+ .debug_line    0x00011be2      0xbeb CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
+ .debug_line    0x000127cd     0x10ff CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/pico_multicore/multicore.c.obj
+ .debug_line    0x000138cc     0x1156 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_pio/pio.c.obj
+ .debug_line    0x00014a22      0xeee CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
+ .debug_line    0x00015910      0x381 CMakeFiles/okhi.dir/C_/Program_Files/Raspberry_Pi/Pico_SDK_v1.5.1/pico-sdk/src/rp2_common/hardware_adc/adc.c.obj
 
 .debug_str      0x00000000     0x5cda
  .debug_str     0x00000000     0x1ddb CMakeFiles/okhi.dir/okhi.c.obj
