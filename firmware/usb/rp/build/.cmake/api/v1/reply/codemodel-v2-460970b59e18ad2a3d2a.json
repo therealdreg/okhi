@@ -1140,7 +1140,7 @@
 				{
 					"directoryIndex" : 43,
 					"id" : "bs2_default::@bc554eaed616d198a22d",
-					"jsonFile" : "target-bs2_default-Debug-cdca67052f3f45d0253d.json",
+					"jsonFile" : "target-bs2_default-Debug-cfffbfa695bc15fa2b47.json",
 					"name" : "bs2_default",
 					"projectIndex" : 1
 				},
@@ -1168,7 +1168,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "okhi::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-okhi-Debug-96d7442957aff240bfa3.json",
+					"jsonFile" : "target-okhi-Debug-488f1292230202ad0540.json",
 					"name" : "okhi",
 					"projectIndex" : 0
 				},
@@ -1199,8 +1199,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/usb/rp/build",
-		"source" : "C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/usb/rp"
+		"build" : "C:/Users/regue/Desktop/stfu/okhi/github/okhi/firmware/usb/rp/build",
+		"source" : "C:/Users/regue/Desktop/stfu/okhi/github/okhi/firmware/usb/rp"
 	},
 	"version" : 
 	{
