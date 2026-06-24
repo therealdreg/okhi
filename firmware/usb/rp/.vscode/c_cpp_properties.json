@@ -4,8 +4,19 @@
       "name": "Pico",
       "includePath": [
         "${workspaceFolder}/**",
-        "${env:PICO_SDK_PATH}/**"
+        "${env:PICO_SDK_PATH}/**",
+        "${workspaceFolder}/../../com/**"
       ],
+      "forcedInclude": [
+        "${workspaceFolder}/../../com/com_rp.h",
+        "${workspaceFolder}/../../com/com.h"
+      ],
+      "browse": {
+        "path": [
+          "${workspaceFolder}/../../com/**"
+        ],
+        "limitSymbolsToIncludedHeaders": true
+      },
       "defines": [],
       "compilerPath": "${env:PICO_INSTALL_PATH}/gcc-arm-none-eabi/bin/arm-none-eabi-gcc.exe",
       "cStandard": "c11",

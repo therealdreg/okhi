@@ -1,0 +1,20 @@
+# Load esp32c2 ROM ELF symbols
+define target hookpost-remote
+set confirm off
+  # if $_streq((char *) 0x3ff47874, "Jan 27 2022")
+  if (*(int*) 0x3ff47874) == 0x206e614a && (*(int*) 0x3ff47878) == 0x32203732 && (*(int*) 0x3ff4787c) == 0x323230
+    add-symbol-file C:/Users/regue/.espressif/tools/esp-rom-elfs/20241011/esp32c2_rev100_rom.elf
+  else
+    echo Warning: Unknown esp32c2 ROM revision.\n
+  end
+set confirm on
+end
+
+
+# Load bootloader symbols
+set confirm off
+    # Bootloader elf was not found
+set confirm on
+
+# Load application symbols
+file C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/usb/esp/build/bootloader/bootloader.elf

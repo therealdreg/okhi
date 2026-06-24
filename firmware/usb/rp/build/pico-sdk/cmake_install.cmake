@@ -39,9 +39,9 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/usb/rp/build/pico-sdk/tools/cmake_install.cmake")
-  include("C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/usb/rp/build/pico-sdk/src/cmake_install.cmake")
-  include("C:/Users/regue/Desktop/bcks/okhi/github/okhi/firmware/usb/rp/build/pico-sdk/docs/cmake_install.cmake")
+  include("C:/Users/regue/Desktop/stfu/okhi/github/okhi/firmware/usb/rp/build/pico-sdk/tools/cmake_install.cmake")
+  include("C:/Users/regue/Desktop/stfu/okhi/github/okhi/firmware/usb/rp/build/pico-sdk/src/cmake_install.cmake")
+  include("C:/Users/regue/Desktop/stfu/okhi/github/okhi/firmware/usb/rp/build/pico-sdk/docs/cmake_install.cmake")
 
 endif()
 

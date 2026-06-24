@@ -33,9 +33,6 @@ WARNING: BULLSHIT CODE X-)
 
 // This project assumes that copy_to_ram is enabled, so ALL code is running from RAM
 
-#include "../../../../last_firmv.h"
-#include "../../com.c"
-#include "../com_ps2.c"
 #include "hardware/clocks.h"
 #include "hardware/flash.h"
 #include "hardware/irq.h"
@@ -58,8 +55,14 @@ WARNING: BULLSHIT CODE X-)
 #include <stdio.h>
 #include <string.h>
 
+#include "../../../../last_firmv.h"
+
+#include "../../com/com.h"
+
+#include "../../com/com_rp.h"
+
 // uncomment to enable dev build
-#define DEV_BUILD 1 // NOT USED YET
+// #define DEV_BUILD 1 // NOT USED YET
 
 // for UART debugging on devboard & HW version detection
 #define GPIO_A 4
@@ -450,7 +453,7 @@ void gpio_callback(uint gpio, uint32_t events)
         gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
 
         wait_20 = 0x69699696;
-        puts("\r\nexternal ESP-RESET detected!\r\nrebooting in 20 secs!!!\r\n");
+        puts("\r\nexternal ESP-RESET detected!\r\nrebooting in 50 secs!!!\r\n");
         watchdog_reboot(0, 0, 0);
     }
 }
@@ -589,13 +592,14 @@ static void boot_press(void)
 int main(void)
 {
     boot_press();
+    blink_led(2);
 
     if (wait_20 == 0x69699696)
     {
         stdio_init_all();
-        puts("\r\nwaiting 20 secs...\r\n");
+        puts("\r\nwaiting 50 secs...\r\n");
         wait_20 = 0;
-        sleep_ms(20000);
+        sleep_ms(50000);
     }
 
     gpio_init(ESP_RESET_GPIO);

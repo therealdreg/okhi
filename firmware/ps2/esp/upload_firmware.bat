@@ -2,14 +2,19 @@ echo "By Dreg"
 
 cd "%~dp0"
 
+echo uart_bridge.uf2 prior to firmware version v5 require using esptool version (v4.7.0) included in release package. Using other versions may cause issues^! Refer to this link for more details: https://github.com/espressif/esptool/issues/1119
+echo Starting from firmware version v5, uart_bridge.uf2 is compatible with the latest version of esptool without any issues.
+
 echo Available COM ports:
 for /F "tokens=2 delims==" %%A in ('wmic path Win32_SerialPort get DeviceID /value') do echo %%A
 
 :askCOM
-set /p COMPORT=Please enter the COM port (e.g., COM3): 
+set /p COMPORT=Please enter the COM port (including full name e.g., COM3): 
 if "%COMPORT%"=="" goto askCOM
 
 :loopez
-esptool.exe --chip esp32c2 --port "%COMPORT%" --baud 921600 --before no_reset --after no_reset write_flash -z --flash_mode dio --flash_freq 60m --flash_size detect 0x0000 .pio\build\esp32-c2-devkitm-1\bootloader.bin 0x8000 .pio\build\esp32-c2-devkitm-1\partitions.bin 0xe000 boot_app0.bin 0x10000 .pio\build\esp32-c2-devkitm-1\firmware.bin
+esptool.exe --port "%COMPORT%" --chip esp32c2 --baud 921600  write-flash -z --flash-mode dio --flash-freq 60m --flash-size 4MB 0x0000 bootloader.bin 0x8000 partition-table.bin 0x10000 okhi.bin 0x300000 storage.bin
 
 echo PRESS ENTER TO EXIT
+
+PAUSE
