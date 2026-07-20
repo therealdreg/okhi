@@ -1,26 +1,39 @@
-cmake_minimum_required(VERSION 3.12)
+# Generated Cmake Pico project file
 
-# Pull in SDK (must be before project)
-include(pico_sdk_import.cmake)
+cmake_minimum_required(VERSION 3.13)
 
-include(pico_extras_import_optional.cmake)
-
-project(pico_examples C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if (PICO_SDK_VERSION_STRING VERSION_LESS "1.5.1")
-    message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.5.1 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
+# Initialise pico_sdk from installed location
+# (note this can come from environment, CMake cache etc)
+
+# == DO NOT EDIT THE FOLLOWING LINES for the Raspberry Pi Pico VS Code Extension to work ==
+if(WIN32)
+    set(USERHOME $ENV{USERPROFILE})
+else()
+    set(USERHOME $ENV{HOME})
 endif()
+set(sdkVersion 2.3.0)
+set(toolchainVersion 15_2_Rel1)
+set(picotoolVersion 2.3.0)
+set(picoVscode ${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
+if (EXISTS ${picoVscode})
+    include(${picoVscode})
+endif()
+# ====================================================================================
+set(PICO_BOARD pico CACHE STRING "Board type")
 
-set(PICO_EXAMPLES_PATH ${PROJECT_SOURCE_DIR})
+# Pull in Raspberry Pi Pico SDK (must be before project)
+include(pico_sdk_import.cmake)
+
+project(okhi C CXX ASM)
 
 set(PICO_DEOPTIMIZED_DEBUG 1)
 
-# Initialize the SDK
+# Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
-
-include(example_auto_set_url.cmake)
 
 add_compile_options(-Wall
         -Wno-format          # int != int32_t as far as the compiler is concerned because gcc has int32_t as long int
@@ -30,12 +43,15 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-Wno-maybe-uninitialized)
 endif()
 
-add_executable(okhi
-        okhi.c
-        )
+# Add executable. Default name is the project name, version 0.1
 
-# pull in common dependencies
-target_link_libraries(okhi 
+if (TARGET tinyusb_device)
+    add_executable(okhi
+            okhi.c
+            )
+
+    # pull in common dependencies
+    target_link_libraries(okhi 
     pico_stdlib 
     pico_multicore 
     pico_stdio_uart
@@ -43,7 +59,8 @@ target_link_libraries(okhi
     hardware_pio 
     hardware_spi 
     hardware_flash 
-    hardware_sync)
+    hardware_sync
+    hardware_adc)
 
 pico_generate_pio_header(okhi ${CMAKE_CURRENT_LIST_DIR}/okhi.pio)
 
@@ -56,7 +73,7 @@ pico_enable_stdio_usb(okhi 0)
 pico_add_extra_outputs(okhi)
 
 # add url via pico_set_program_url
-example_auto_set_url(okhi)
+pico_set_program_url(okhi "https://github.com/therealdreg/okhi")
 
 string(APPEND CMAKE_EXE_LINKER_FLAGS "-Wl,--print-memory-usage")
 
@@ -68,3 +85,8 @@ target_compile_definitions(okhi PRIVATE
     PICO_FLASH_SIZE_BYTES=16777216
 	)
 
+
+    # add url via pico_set_program_url
+elseif(PICO_ON_DEVICE)
+    message("Skipping hello_usb because TinyUSB submodule is not initialized in the SDK")
+endif()

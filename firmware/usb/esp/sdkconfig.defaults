@@ -1,0 +1,22 @@
+# Permanent settings for the okhi project (ESP32-C2, 26 MHz crystal, 4 MB flash)
+# These values are applied whenever sdkconfig is regenerated, so they are not
+# lost again on ESP-IDF updates.
+
+# Target
+CONFIG_IDF_TARGET="esp32c2"
+
+# Board crystal: 26 MHz (not the default 40 MHz)
+CONFIG_XTAL_FREQ_26=y
+
+# 4 MB flash (the 'storage' partition lives at 0x300000)
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+# Custom partition table (includes 'storage' for SPIFFS)
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# Minimum supported chip revision = v1.0, so a single binary runs on ALL
+# ESP32-C2 revisions (v1.0, v1.1, v1.2 and v2.0). This gives up the ~20 KB
+# SRAM / ~100 KB flash savings exclusive to v2.0, in exchange for full
+# compatibility with every ESP32-C2 in the field (advisory AR2025-001).
+CONFIG_ESP32C2_REV_MIN_1=y

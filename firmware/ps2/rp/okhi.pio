@@ -36,513 +36,497 @@
 ; I want to avoid mental uncertainty when solving problems and knowing where things are,
 ; so ALL the programs in PIO0/1 are in the same place and order in each execution.
 
-; Ref: http://www.Computer-Engineering.org (Author: Adam Chapweske)
-; The Data and Clock lines are both open collector (pullup +5v).
-; Data sent from the device to the host is read on the falling edge of the clock signal;
-; data sent from the host to the device is read on the rising edge.
-; The clock frequency must be in the range 10 - 16.7 kHz.  This means clock must be
-; high for 30 - 50 microseconds and low for 30 - 50 microseconds
-; you should modify/sample the Data line in the middle of each cell.
-; I.e.  15 - 25 microseconds after the appropriate clock transition.
-; keyboard always generates the clock signal, but the host always has ultimate control over communication.
-; Data = high, Clock = high:  Idle state.
-; Data = high, Clock = low:  Communication Inhibited.
-; Data = low, Clock = high:  Host Request-to-Send
-; All data is transmitted one byte at a time and each byte is sent in a frame consisting of 11-12 bits.  These bits are:
-; 1 start bit.  This is always 0.
-; 8 data bits, least significant bit first.
-; 1 parity bit (odd parity).
-; 1 stop bit.  This is always 1.
-; 1 acknowledge bit (host-to-device communication only)
-; The clock frequency is 10-16.7 kHz.  The time from the rising edge of a clock pulse to a Data transition must be at
-; least 5 microseconds.  The time from a data transition to the falling edge of a clock pulse must be at least 5 microseconds
-; and no greater than 25 microseconds.
-; The host may inhibit communication at any time by pulling the Clock line low for at least 100 microseconds.
-; If a transmission is inhibited before the 11th clock pulse, the device must abort the current transmission and prepare
-; to retransmit the current "chunk" of data when host releases Clock.  A "chunk" of data could be a make code, break code,
-; device ID, mouse movement packet, etc.  For example, if a keyboard is interrupted while sending the second byte of a
-; two-byte break code, it will need to retransmit both bytes of that break code, not just the one that was interrupted.
-; If the host pulls clock low before the first high-to-low clock transition, or after the falling edge of the last clock pulse,
-; the keyboard/mouse does not need to retransmit any data.  However, if new data is created that needs to be transmitted,
-; it will have to be buffered until the host releases Clock.  Keyboards have a 16-byte buffer for this purpose.
-; If more than 16 bytes worth of keystrokes occur, further keystrokes will be ignored until there's room in the buffer.
-; PS/2 device always generates the clock signal.  If the host wants to send data, it must first put the Clock and Data
-; lines in a "Request-to-send" state as follows:
-; Inhibit communication by pulling Clock low for at least 100 microseconds.
-; Apply "Request-to-send" by pulling Data low, then release Clock.
-; The device should check for this state at intervals not to exceed 10 milliseconds.
-; host must follow to send data to a PS/2 device:
-; 1) Bring the Clock line low for at least 100 microseconds.
-; 2) Bring the Data line low.
-; 3) Release the Clock line.
-; 4) Wait for the device to bring the Clock line low.
-; 5) Set/reset the Data line to send the first data bit
-; 6) Wait for the device to bring Clock high.
-; 7) Wait for the device to bring Clock low.
-; 8) Repeat steps 5-7 for the other seven data bits and the parity bit
-; 9) Release the Data line.
-; 10) Wait for the device to bring Data low.
-; 11) Wait for the device to bring Clock  low.
-; 12) Wait for the device to release Data and Clock
+; =====================================================================================
+;  PS/2 PROTOCOL REFERENCE
+;  Ref: http://www.Computer-Engineering.org (Author: Adam Chapweske)
+; =====================================================================================
+; The Data and Clock lines are both open-collector with a pull-up to +5 V, so either side
+; can only ever pull a line LOW; releasing a line lets the pull-up float it back HIGH.
+;
+; Direction of travel and the edge on which each side samples:
+;   - Device -> Host: the host samples DATA on the FALLING edge of CLOCK (i.e. while CLOCK is LOW).
+;   - Host -> Device: the device samples DATA on the RISING edge of CLOCK (i.e. while CLOCK is HIGH).
+;
+; Clock timing:
+;   - CLOCK frequency must sit in the 10 - 16.7 kHz range, so CLOCK is HIGH for 30 - 50 us
+;     and LOW for 30 - 50 us. To read a bit safely you sample in the MIDDLE of its cell,
+;     i.e. roughly 15 - 25 us after the relevant clock transition.
+;   - The keyboard/mouse ALWAYS generates the clock, but the host ALWAYS has ultimate control
+;     over the bus and may inhibit it at any moment.
+;
+; The four bus states (decoded from the two line levels):
+;   - DATA = high, CLOCK = high : Idle.
+;   - DATA = high, CLOCK = low  : Communication Inhibited (host is holding the bus).
+;   - DATA = low,  CLOCK = high : Host Request-to-Send (host wants to transmit).
+;
+; Frame format (one byte per frame, 11 - 12 bits total, sent LSB first):
+;   - 1 start bit  (always 0)
+;   - 8 data bits  (least significant bit first)
+;   - 1 parity bit (odd parity)
+;   - 1 stop bit   (always 1)
+;   - 1 ACK bit    (host-to-device frames only; the DEVICE drives this one)
+;
+; Extra timing rules:
+;   - CLOCK frequency 10 - 16.7 kHz. From a rising clock edge to a DATA transition must be
+;     at least 5 us. From a DATA transition to the falling clock edge must be at least 5 us
+;     and no more than 25 us.
+;   - The host may inhibit communication at any time by pulling CLOCK low for at least 100 us.
+;   - If a transfer is inhibited before the 11th clock pulse, the device must abort and be ready
+;     to retransmit the whole current "chunk" (make code, break code, device ID, mouse packet, ...)
+;     once the host releases CLOCK. For example, a keyboard interrupted while sending the second
+;     byte of a two-byte break code must resend BOTH bytes, not only the interrupted one.
+;   - If the host pulls CLOCK low before the first high-to-low clock transition, or after the
+;     falling edge of the last clock pulse, no retransmission is required. Any freshly generated
+;     data must instead be buffered until the host releases CLOCK. Keyboards keep a 16-byte buffer
+;     for this; once it is full, further keystrokes are dropped until space frees up.
+;
+; How the host starts a host-to-device transfer (the device must poll for this at <= 10 ms intervals):
+;   1)  Bring CLOCK low for at least 100 us (inhibit).
+;   2)  Bring DATA low (this becomes the start bit) => "Request-to-Send".
+;   3)  Release CLOCK.
+;   4)  Wait for the device to bring CLOCK low.
+;   5)  Set/reset DATA to present the first data bit.
+;   6)  Wait for the device to bring CLOCK high.
+;   7)  Wait for the device to bring CLOCK low.
+;   8)  Repeat steps 5 - 7 for the remaining seven data bits and the parity bit.
+;   9)  Release DATA.
+;   10) Wait for the device to bring DATA low  (this is the device's ACK).
+;   11) Wait for the device to bring CLOCK low.
+;   12) Wait for the device to release both DATA and CLOCK (return to idle).
 
-; ------
+; -------------------------------------------------------------------------------------
+;  WHY THE ISR IS CLEARED SO OFTEN, AND WHERE THE CAPTURED BYTE ENDS UP
+; -------------------------------------------------------------------------------------
+; WARNING: Do NOT remove lines that look unnecessary (such as 'mov isr, null').
+; They cannot be optimized out. The main core can rewrite a state machine's PC at ANY
+; moment (to abort a bad capture), so the ISR must never be allowed to keep stale/garbage
+; bits from a previous, half-finished frame.
+;
+; PS/2 sends data LSB first, so each bit is sampled and right-shifted into the ISR. That
+; keeps the bit order correct and leaves the reconstructed 8-bit value sitting in the MOST
+; significant byte of the 32-bit ISR word (bits [31:24]). There is no free way to slide it
+; down into bits [7:0], so the main core reads that top byte directly. In C:
+;   io_rw_8* rxfifo_shift = (io_rw_8*)&pio->rxf[sm] + 3;
+; where the "+3" selects the top byte of the 32-bit FIFO word.
+;
+; Alternatively an 'IN NULL, 24' would shift in 24 zero bits to align the byte into [7:0]
+; before pushing, but that costs a PIO instruction, and instruction slots are precious here,
+; so this code reads the top byte on the C side instead. (A DMA channel could also harvest
+; that uppermost byte automatically.)
 
-; WARNING: Do not remove lines that seem unnecessary (like mov isr, null).
-; They cannot be optimized out due to potential issues with garbage values in the ISR register.
-; MCU is changing PC register in any moment, so we need to avoid garbage values in the ISR register.
-
-; In PS2 communication, data is transmitted least significant bit (LSB) first, requiring
-; bit-by-bit sampling and right-shifting in the ISR to maintain the correct order in memory,
-; ensuring the LSB arrives first and the most significant bit (MSB) ends up in the correct position
-; when the full byte is reconstructed;
-; however, this shifting places the complete 8-bit value in the most significant byte of the 32-bit word,
-; and there is no automatic way to shift the data to the right and have the bits end up
-; in the lower part of the word, so this process must be handled manually;
-; in C, you can read this byte from:
-;   io_rw_8* rxfifo_shift = (io_rw_8*)&pio->rxf[sm] + 3
-; where this offset (+3) accesses the top byte of the 32-bit word where the data resides;
-; alternatively, adding an IN NULL, 24 instruction in the PIO code shifts in 24 zero bits
-; to align the 8-bit data into bits [7:0] of the ISR before pushing, but since
-; my PIO code does not include 'IN NULL, 24' (Whenever possible, you should save instructions in PIO)
-; you must manually access the top byte as mentioned;
-; By the way, you can also use DMA logic to grab that uppermost byte.
-
-; ---- PIO0 AREA ---------------------------------------------------------------------
+; =====================================================================================
+;  PIO0 AREA
+; =====================================================================================
 
 .program inhibited_signal
-; PIO0_0, Must run at 1 MHz (each cycle ~1 microsecond)
-
-; This PIO program monitors the PS/2 CLOCK and DAT lines to detect an
-; "inhibited communication" condition: CLOCK stays LOW + DAT stays HIGH
-; for ~100 microseconds.
-
-; Normally, an inhibition period of around 100 µs would be used. However, to
-; accommodate some PS/2-USB adapters with slightly shorter timing, this code
-; uses ~90 µs instead because IMO is enough for our purposes.
-
-; WARNING: 'mov isr, null' lines are ESSENTIAL for preventing garbage
-; values in the ISR register. Make sure they are not removed or
-; "optimized out" in actual usage.
-
-; IRQ0: inhibited communication detected
-; IRQ1: no RTS detected
-; FIFO_JOIN_RX: RX FIFO length: 8 words deep, TX FIFO is disabled
-; IN PIN 0: DAT
-; IN PIN 1: CLOCK
-; JMP PIN : CLOCK
-; Shift: shift ISR to right, autopush = false, threshold = 0 bits
+; PIO0_0, must run at 1 MHz (each PIO cycle ~= 1 microsecond).
+;
+; Purpose: watch the PS/2 bus for a HOST-INHIBIT condition (CLOCK held LOW while DATA stays
+; HIGH) lasting ~90 us, then tell the main core whether the host followed it with a
+; Request-to-Send (DATA pulled low) or not.
+;
+; The protocol threshold for a real inhibit is ~100 us. We use ~90 us on purpose: some
+; PS/2-to-USB adapters inhibit for slightly less than the textbook time, and ~90 us is a
+; safe lower bound that still never fires on ordinary clock-low half-cycles (those last at
+; most ~50 us).
+;
+; IRQ meaning (handled by pio0_irq in ps2.c):
+;   IRQ0 -> inhibited communication detected.
+;   IRQ1 -> inhibit ended WITHOUT a Request-to-Send (host released the bus, no data coming).
+;
+; State-machine configuration (set up in ps2.c):
+;   FIFO_JOIN_RX : RX FIFO 8 words deep, TX FIFO disabled.
+;   IN  PIN 0    : DAT
+;   IN  PIN 1    : CLOCK
+;   JMP PIN      : CLOCK   (so 'jmp pin' == "jump if CLOCK is HIGH")
+;   Shift        : ISR shifts right, autopush = false, threshold = 0.
 .wrap_target
 restart:
-    mov isr, null                   ; 00 Clear the ISR to remove any leftover data
+    mov isr, null                   ; 00 Clear the ISR so no leftover bit can pollute the DATA sample below
 wait_for_inhibited:
-    set x, 30                       ; 01 At 1 MHz, each loop iteration ~3 µs => 30 * 3 = ~90 µs
+    set x, 30                       ; 01 Load the timeout counter. The loop below is 3 cycles/iter @ 1 MHz,
+                                    ;    and runs 31 times (x = 30..0), so ~93 us ~= 90 us of continuous CLOCK-low
 check_inhibited:
-    jmp pin wait_for_inhibited      ; 02 If CLOCK is HIGH, not inhibited => go back
-    jmp pin wait_for_inhibited      ; 03 Double-check CLOCK is still LOW
-    jmp x-- check_inhibited         ; 04 Decrement X, loop until time expires or CLOCK goes HIGH
-    irq nowait 0                    ; 05 Trigger IRQ0: "Inhibited communication" detected
-    wait 1 pin 1                    ; 06 Wait until CLOCK goes HIGH again
-    in pins, 1                      ; 07 Sample DAT pin (1 bit) into the ISR
-    mov y, isr                      ; 08 Move the captured bit from ISR to register Y
-    jmp !y, restart                 ; 09 If DAT is LOW => valid RTS detected => restart
-    irq nowait 1                    ; 10 If DAT is HIGH => "No RTS" => trigger IRQ1
-.wrap                               ; Restart program
+    jmp pin wait_for_inhibited      ; 02 CLOCK HIGH? Then the bus is not inhibited -> reload the counter and retry
+    jmp pin wait_for_inhibited      ; 03 Sample CLOCK a second time to reject a sub-microsecond glitch on the line
+    jmp x-- check_inhibited         ; 04 CLOCK still LOW: decrement X and keep counting until the window elapses
+    irq nowait 0                    ; 05 Window survived with CLOCK low the whole time => raise IRQ0 (inhibit detected)
+    wait 1 pin 1                    ; 06 Block until the host RELEASES CLOCK (CLOCK goes HIGH again)
+    in pins, 1                      ; 07 Sample DATA (1 bit) right after the release to see what the host intends
+    mov y, isr                      ; 08 Copy that sampled bit out of the ISR into Y so we can test it
+    jmp !y, restart                 ; 09 DATA == 0 => host is pulling DATA low => valid Request-to-Send => just restart
+    irq nowait 1                    ; 10 DATA == 1 => host released without an RTS => raise IRQ1 ("no data coming")
+.wrap                               ; Loop back to 'restart' and watch for the next inhibit
 
 .program device_to_host
-; PIO0_1, Must run ~133.6 kHz, 7.5 microseconds per cycle
-
-; it is expected to have no fewer than 8 PIO state machine cycles for each keyboard
-; clock cycle the data transition occurs when the Clock line is low
-
-; This PIO program captures PS/2 packets from the keyboard (device) to the host.
-; It listens for a start bit signal (external trigger), then reads 8 data bits,
-; and finally skips the parity and stop bits. The 8 data bits are then pushed.
-
-; On device-to-host communication, data is read on the falling edge of the clock signal (CLOCK LOW).
-
-; Why the Host May Need to Reset This State Machine:
-;   - Some PS/2-USB adapters exhibit glitches and strange signals between valid
-;     packets.
-;   - If, during packet capture, communication is disrupted (INHIBIT, RTS, or IDLE),
-;     or if a glitch occurs, the host may decide to reset this SM before the push
-;     instruction executes, preventing garbage data from entering the FIFO. For this reason
-;     ISR is cleared at the beginning of the program because host can reset the SM at any time.
-
-; Important Notes:
-;   - Do NOT move the 'push' instruction or enable AUTOPUSH unless you fully
-;     understand the side effects. Its current location has been validated in
-;     multiple scenarios.
-;   - Seemingly useless waits/delays are intentional. They provide time for the
-;     host to detect anomalies and reset this SM before an incorrect push occurs.
-;   - The jmp pin is helping to discard malformed data.
-
-; WARNING: 'mov isr, null' lines are ESSENTIAL for preventing garbage
-; values in the ISR register. Make sure they are not removed or
-; "optimized out" in actual usage.
-
-; FIFO_JOIN_RX: RX FIFO length: 8 words deep, TX FIFO is disabled
-; IN PIN 0: DAT
-; IN PIN 1: CLOCK
-; JMP PIN: EXTERNAL SIGNAL TO START CAPTURING
-; shift ISR to right, autopush: false, threshold: 0 bits
+; PIO0_1, must run at ~133.6 kHz (7.5 us per PIO cycle).
+;
+; The divider is chosen so there are at least 8 PIO cycles per PS/2 clock cycle, which gives
+; the 'wait' instructions plenty of resolution. On device-to-host frames the data is valid
+; while CLOCK is LOW, so every bit is sampled after a falling edge.
+;
+; Purpose: capture one byte sent by the keyboard/mouse (the device) to the host. The program
+; waits for an external "go" signal, skips the start bit, reads the 8 data bits, and pushes
+; them; the parity and stop bits are stepped over but not stored.
+;
+; The external "go" signal is the AUX_D2H_JMP_GPIO pin driven by the main core, NOT the PS/2
+; clock. Holding that pin HIGH parks this program at line 00; driving it LOW lets a capture
+; begin. That is how the main core arms and disarms device-to-host sniffing (see
+; start/stop_device_to_host_sm in ps2.c).
+;
+; Why the host may need to reset this state machine mid-capture:
+;   - Some PS/2-to-USB adapters emit glitches and odd waveforms between valid packets.
+;   - If a capture is interrupted (INHIBIT, RTS or IDLE) or a glitch slips in, the main core
+;     can rewrite this SM's PC BEFORE the push executes, so corrupt data never reaches the FIFO.
+;     That is exactly why the ISR is cleared at the top: a reset can arrive at any instant.
+;
+; Important:
+;   - Do NOT move the 'push' or switch to autopush unless you fully understand the side effects;
+;     its current position has been validated across many real adapters.
+;   - The apparently idle waits/delays are deliberate. They give the main core a window to spot
+;     an anomaly and reset this SM before a wrong byte is pushed.
+;   - The 'jmp pin' at line 10 is the abort hook the main core uses to discard malformed data.
+;
+; State-machine configuration (set up in ps2.c):
+;   FIFO_JOIN_RX : RX FIFO 8 words deep, TX FIFO disabled.
+;   IN  PIN 0    : DAT
+;   IN  PIN 1    : CLOCK
+;   JMP PIN      : AUX_D2H_JMP_GPIO  (external arm/abort signal, HIGH = wait/abort, LOW = capture)
+;   Shift        : ISR shifts right, autopush = false, threshold = 0.
 .wrap_target
 wait_for_start_signal:
-    jmp pin wait_for_start_signal       ; 00 Keep looping until the external signal is received
-    mov isr, null                       ; 01 Clear the ISR of any residual bits before capturing a new packet
+    jmp pin wait_for_start_signal       ; 00 Park here while the arm pin (AUX_D2H_JMP_GPIO) is HIGH; fall through when it goes LOW
+    mov isr, null                       ; 01 Clear any residual bits before this fresh capture begins
 skip_start_bit:
-    wait 0 pin 1                        ; 02 Wait for PS/2 CLOCK to go LOW (skip start-bit)
-    wait 1 pin 1                        ; 03 Wait for PS/2 CLOCK to go HIGH (skip start-bit)
+    wait 0 pin 1                        ; 02 Wait for CLOCK LOW  -> the start bit is being clocked out
+    wait 1 pin 1                        ; 03 Wait for CLOCK HIGH -> start bit done, we have now skipped it
 proceed_to_capture:
-    set x, 7                            ; 04 Prepare scratch register X to count 8 bits
+    set x, 7                            ; 04 Load bit counter for 8 data bits (x = 7..0 => 8 iterations)
 capture_8_bits_loop:
-    wait 0 pin 1 [1]                    ; 05 Wait for CLOCK LOW (falling edge)
-    in pins, 1                          ; 06 Read 1 data bit from the DAT pin
-    wait 1 pin 1 [1]                    ; 07 Wait for CLOCK HIGH (rising edge)
-    jmp x-- capture_8_bits_loop         ; 08 Loop until all 8 bits are captured
+    wait 0 pin 1 [1]                    ; 05 Wait for the falling edge, then delay 1 cycle to settle in the LOW cell
+    in pins, 1                          ; 06 Sample one DATA bit into the ISR (LSB first, shifted right)
+    wait 1 pin 1 [1]                    ; 07 Wait for the rising edge (end of this bit cell), delay 1 to debounce
+    jmp x-- capture_8_bits_loop         ; 08 Repeat until all 8 data bits are in
 skip_parity_and_stop_bits:
-    wait 0 pin 1 [1]                    ; 09 Wait for CLOCK LOW of the parity bit
-    jmp pin wait_for_start_signal [1]   ; 10 If pin is HIGH. The host inform us that we need to reset the SM before the PUSH
-    push noblock                        ; 11 Push the 8 captured bits
-    wait 1 pin 1                        ; 12 Wait for CLOCK HIGH of the parity bit
-    wait 0 pin 1 [1]                    ; 13 Wait for CLOCK LOW of the stop bit
-    wait 1 pin 1                        ; 14 Wait for CLOCK HIGH of the stop bit
-.wrap                                   ; Restart program
+    wait 0 pin 1 [1]                    ; 09 Falling edge of the PARITY bit (we do not store parity)
+    jmp pin wait_for_start_signal [1]   ; 10 ABORT HOOK: if the arm pin went HIGH, the host is telling us to
+                                        ;    drop this frame -> jump back and push nothing. Otherwise continue
+    push noblock                        ; 11 Commit the 8 captured bits to the RX FIFO (noblock: never stall the SM)
+    wait 1 pin 1                        ; 12 Rising edge of the parity bit
+    wait 0 pin 1 [1]                    ; 13 Falling edge of the STOP bit
+    wait 1 pin 1                        ; 14 Rising edge of the stop bit -> frame complete
+.wrap                                   ; Loop back to 'wait_for_start_signal' for the next byte
 
-; ---- PIO1 AREA ---------------------------------------------------------------------
-
+; =====================================================================================
+;  PIO1 AREA
+; =====================================================================================
 
 .program host_to_device
-; PIO1_0, Must run ~133.6 kHz, 7.5 microseconds per cycle
-
-; it is expected to have no fewer than 8 PIO state machine cycles for each keyboard clock cycle
-; the data transition occurs when the Clock line is high
-
-; This PIO program captures PS/2 packets from the host to the keyboard (device).
-
-; On host-to-device communication, data is read on the rising edge of the clock signal (CLOCK HIGH).
-; BUT! ACK bit is read on the falling edge of the clock signal (CLOCK LOW).
-
-; Normally, an inhibition period of around 100 µs would be used. However, to
-; accommodate some PS/2-USB adapters with slightly shorter timing, this code
-; uses ~90 µs instead because IMO is enough for our purposes.
-
-; Why the Host May Need to Reset This State Machine:
-;   - Some PS/2-USB adapters exhibit glitches and strange signals between valid
-;     packets.
-;   - If, during packet capture, communication is disrupted (INHIBIT, RTS, or IDLE),
-;     or if a glitch occurs, the host may decide to reset this SM before the push
-;     instruction executes, preventing garbage data from entering the FIFO. For this reason
-;     ISR is cleared at the beginning of the program because host can reset the SM at any time.
-
-; Important Notes:
-;   - Do NOT move the 'push' instruction or enable AUTOPUSH unless you fully
-;     understand the side effects. Its current location has been validated in
-;     multiple scenarios.
-;   - Seemingly useless waits/delays are intentional. They provide time for the
-;     host to detect anomalies and reset this SM before an incorrect push occurs.
-
-; WARNING: 'mov isr, null' lines are ESSENTIAL for preventing garbage
-; values in the ISR register. Make sure they are not removed or
-; "optimized out" in actual usage.
-
-; FIFO_JOIN_RX: RX FIFO length: 8 words deep, TX FIFO is disabled
-; IN PIN 0: DAT
-; IN PIN 1: CLOCK
-; JMP PIN: CLOCK
-; shift ISR to right, autopush: false, threshold: 0 bits
+; PIO1_0, must run at ~133.6 kHz (7.5 us per PIO cycle).
+;
+; Same >= 8-PIO-cycles-per-clock reasoning as device_to_host. On host-to-device frames the
+; host changes DATA while CLOCK is LOW and the device samples on the RISING edge, so here we
+; sample every data bit while CLOCK is HIGH. (The final ACK bit is the exception; see below.)
+;
+; Purpose: capture one byte the host sends to the keyboard/mouse. A host transfer always opens
+; with an inhibit (CLOCK held low), so this program first waits for that inhibit, then skips the
+; start bit, reads 8 data bits, pushes them, and steps over parity, stop and ACK.
+;
+; The inhibit gate uses ~90 us for the same adapter-compatibility reason as inhibited_signal:
+; the textbook value is ~100 us, but ~90 us tolerates adapters with slightly short timing while
+; staying above any normal clock-low half-cycle.
+;
+; Why the host may need to reset this state machine, and why the "useless" waits exist: identical
+; to the device_to_host notes above (glitchy adapters; the main core can reset before the push to
+; keep garbage out of the FIFO; the ISR is cleared up front because a reset can land at any time).
+;
+; Important:
+;   - Do NOT move the 'push' or enable autopush without understanding the consequences.
+;
+; State-machine configuration (set up in ps2.c):
+;   FIFO_JOIN_RX : RX FIFO 8 words deep, TX FIFO disabled.
+;   IN  PIN 0    : DAT
+;   IN  PIN 1    : CLOCK
+;   JMP PIN      : CLOCK   (so 'jmp pin' == "jump if CLOCK is HIGH")
+;   Shift        : ISR shifts right, autopush = false, threshold = 0.
 .wrap_target
-    mov isr, null                      ; 00 Clear the ISR to remove any leftover data
+    mov isr, null                      ; 00 Clear the ISR of any leftover bits from a previous/aborted frame
 wait_for_inhibition:
-    set x, 5                           ; 01 Each iteration of the loop is ~2 instructions => ~12 instructions total => ~90 µs
+    set x, 5                           ; 01 Timeout counter. The loop below is 2 cycles/iter and runs 6 times
+                                       ;    (x = 5..0) => 12 cycles @ 7.5 us ~= 90 us of continuous CLOCK-low
 check_inhibition_loop:
-    jmp pin wait_for_inhibition        ; 02 If CLOCK is HIGH => not inhibited => go back
-    jmp x--, check_inhibition_loop     ; 03 Decrement X until ~90 µs or until CLOCK goes HIGH
+    jmp pin wait_for_inhibition        ; 02 CLOCK HIGH? Bus not inhibited yet -> reload the counter and keep waiting
+    jmp x--, check_inhibition_loop     ; 03 CLOCK LOW: count down until the ~90 us inhibit window is confirmed
 skip_start_bit:
-    wait 1 pin 1                       ; 04 Wait for CLOCK to go HIGH (skip start bit)
-    wait 0 pin 1                       ; 05 Wait for CLOCK LOW (skip start bit)
+    wait 1 pin 1                       ; 04 Wait for CLOCK HIGH -> the start bit is being clocked
+    wait 0 pin 1                       ; 05 Wait for CLOCK LOW  -> start bit skipped
 proceed_to_capture:
-    set x, 7                           ; 06 Prepare to capture 8 bits
+    set x, 7                           ; 06 Load bit counter for 8 data bits (x = 7..0 => 8 iterations)
 capture_8_bits_loop:
-    wait 1 pin 1 [1]                   ; 07 Wait for CLOCK rising edge
-    in pins, 1                         ; 08 Read 1 bit from DAT
-    wait 0 pin 1 [1]                   ; 09 Wait for CLOCK falling edge
-    jmp x-- capture_8_bits_loop        ; 10 Decrement X until all 8 bits are captured
+    wait 1 pin 1 [1]                   ; 07 Wait for the RISING edge, delay 1 cycle to settle in the HIGH cell
+    in pins, 1                         ; 08 Sample one DATA bit into the ISR (LSB first, shifted right)
+    wait 0 pin 1 [1]                   ; 09 Wait for the falling edge (end of this bit cell), delay 1 to debounce
+    jmp x-- capture_8_bits_loop        ; 10 Repeat until all 8 data bits are in
 skip_parity_and_stop_bits:
-    wait 1 pin 1 [1]                   ; 11 Wait for CLOCK to go HIGH (skip parity bit)
-    push noblock                       ; 12 Push the captured 8 bits
-    wait 0 pin 1                       ; 13 Wait for CLOCK to go LOW
-    wait 1 pin 1 [1]                   ; 14 Wait for CLOCK HIGH
+    wait 1 pin 1 [1]                   ; 11 Rising edge of the PARITY bit (not stored)
+    push noblock                       ; 12 Commit the 8 captured bits to the RX FIFO (noblock: never stall the SM)
+    wait 0 pin 1                       ; 13 Falling edge after the parity bit
+    wait 1 pin 1 [1]                   ; 14 Rising edge of the STOP bit
 skip_ack_bit:
-    wait 0 pin 1 [1]                   ; 15 Skip the ACK bit (CLOCK LOW)
-    ; NOTE on the ACK Bit:
-    ;   The ACK bit transitions while CLOCK is HIGH, whereas other 11 bits
-    ;   transition while CLOCK is LOW. If you need to capture the ACK bit,
-    ;   replace lines 14-15 with something like:
+    wait 0 pin 1 [1]                   ; 15 Falling edge where the device drives its ACK bit -> we step over it
+    ; NOTE on the ACK bit:
+    ;   The first 11 bits are driven by the HOST and change while CLOCK is LOW, so we sample
+    ;   them on the rising edge (CLOCK HIGH). The 12th bit, ACK, is driven by the DEVICE and
+    ;   changes while CLOCK is HIGH, so it would be sampled on the falling edge (CLOCK LOW).
+    ;   This program does not need the ACK, so it is skipped. To capture it, replace lines
+    ;   14-15 with something like:
     ;       wait 0 pin 1 [1]
     ;       in pins, 1
-.wrap                                  ; Restart program
+.wrap                                  ; Loop back to the top for the next byte
 
 .program idle_signal
-; PIO1_1, must run at 1 MHz (each PIO cycle ~1 microsecond)
-
-; This PIO program detects an IDLE state in PS/2 lines where both CLOCK and DAT
-; remain HIGH for at least ~100 µs.
-
-; ~90 µs is used here because IMO is enough for our purposes.
-
-; IRQ0: IDLE detected
-; FIFO_JOIN_RX: RX FIFO length: 8 words deep, TX FIFO is disabled
-; IN PIN 0: DAT
-; IN PIN 1: CLOCK
-; JMP PIN: CLOCK
+; PIO1_1, must run at 1 MHz (each PIO cycle ~= 1 microsecond).
+;
+; Purpose: detect the PS/2 IDLE state (both CLOCK and DATA held HIGH) lasting long enough to be
+; certain the bus is quiet, then raise IRQ0 so the main core can (re)arm the capture SMs.
+;
+; The protocol treats ~100 us of both-lines-high as reliably idle. The confirmation window here
+; is ~124 us: the check loop below is 4 cycles/iteration @ 1 MHz and runs 31 times (x = 30..0),
+; i.e. 31 * 4 = ~124 us. That is comfortably past the ~100 us threshold, so a stray short clock
+; pulse or a mid-frame gap can never be mistaken for idle.
+;   (Note: the sibling detectors inhibited_signal/host_to_device reach ~90 us with a 3- and
+;    2-instruction loop respectively; this one has an extra instruction per pass, hence ~124 us.)
+;
+; IRQ meaning (handled by pio1_irq in ps2.c):
+;   IRQ0 -> IDLE detected.
+;
+; State-machine configuration (set up in ps2.c):
+;   FIFO_JOIN_RX : RX FIFO 8 words deep, TX FIFO disabled.
+;   IN  PIN 0    : DAT
+;   IN  PIN 1    : CLOCK
+;   JMP PIN      : CLOCK
 .wrap_target
 wait_for_idle:
-    set x, 30                           ; 00 Prepare ~90 µs window (30 * 3 instructions @ 1 µs each)
+    set x, 30                           ; 00 Load the idle-window counter (see the ~124 us math in the header)
 check_idle_loop:
-    mov osr, !pins                      ; 01 Read and invert DAT & CLOCK (2 bits) into OSR
-    out y, 2                            ; 02 Move these 2 inverted bits from OSR into register Y
-    jmp !y, next_idle_check             ; 03 If y == 0 => original pins == 1 => DAT & CLOCK both HIGH => possible IDLE
+    mov osr, !pins                      ; 01 Read DAT+CLOCK and INVERT them into the OSR (both-high becomes both-zero)
+    out y, 2                            ; 02 Pull the low 2 inverted bits (DAT, CLOCK) out of the OSR into Y
+    jmp !y, next_idle_check             ; 03 Y == 0 means both lines were HIGH -> still possibly idle -> keep counting
 not_idle_detected:
-    jmp wait_for_idle                   ; 04 If DAT or CLOCK wasn't HIGH => not IDLE => restart detection
+    jmp wait_for_idle                   ; 04 Y != 0 means DAT or CLOCK was LOW -> not idle -> reload and start over
 next_idle_check:
-    jmp x--, check_idle_loop            ; 05 Decrement X and re-check until ~90 µs or a LOW pin is found
+    jmp x--, check_idle_loop            ; 05 Decrement X and re-sample until the window elapses or a line drops LOW
 idle_detected:
-    irq nowait 0                        ; 06 IDLE confirmed => trigger IRQ0
-.wrap                                   ; Restart program
+    irq nowait 0                        ; 06 Both lines stayed HIGH for the whole window => raise IRQ0 (idle)
+.wrap                                   ; Loop back and watch for the next idle period
 
-
-; PIO??? AREA ---------------------------------------------------------------------
-
-
+; =====================================================================================
+;  AUXILIARY / EXPERIMENTAL PROGRAMS
+;
+;  The programs below are helpers that are NOT loaded by the current ps2.c firmware. They
+;  exist for bring-up, bus debugging and for tackling the glitchy adapters documented in the
+;  developer notes: some PS/2-to-USB adapters emit an extra long CLOCK pulse during "idle",
+;  fast ~1.8 us low pulses, and wild ~8 us spikes on CLOCK before the real packet. These
+;  snippets are kept here as building blocks for measuring and rejecting such glitches.
+; =====================================================================================
 
 .program two_pin_mirror_reverse_inverter
-; PIO???, should run at the highest possible frequency.
-
-; This program reads two consecutive input pins (DAT on pin 0, CLOCK on pin 1),
-; then outputs their inverted states on two consecutive pins in reverse order:
-;   - OUT PIN 0: Inverted CLOCK
-;   - OUT PIN 1: Inverted DAT
+; Should run at the highest practical frequency.
 ;
-; Essentially:
-;   1 → 0
-;   0 → 1
-; and the pin positions are swapped.
-
-; IN PIN 0: DAT
-; IN PIN 1: CLOCK
+; Reads DAT (pin 0) and CLOCK (pin 1), then drives two output pins with the INVERTED levels in
+; SWAPPED order:
+;   OUT PIN 0: inverted CLOCK
+;   OUT PIN 1: inverted DAT
+; i.e. each level is flipped (1 -> 0, 0 -> 1) and the two pin positions are exchanged.
+;
+; IN  PIN 0: DAT
+; IN  PIN 1: CLOCK
 ; OUT PIN 0: CLOCK (inverted)
-; OUT PIN 1: DAT (inverted)
-; NO USE AUTOPUSH, CONFIGURE THIS SM WITH DEFAULT PICO-SDK SETTINGS
+; OUT PIN 1: DAT   (inverted)
+; Do NOT use autopush; configure this SM with the default Pico-SDK settings.
 .wrap_target
-    in pins, 2            ; 00 sample both pins
-    mov y, ::isr          ; 01 store the value in Y in reverse order
-    mov pins, !y          ; 02 output the inverted values
-.wrap                     ; Restart the program
+    in pins, 2            ; 00 Sample both input pins into the ISR
+    mov y, ::isr          ; 01 Copy the ISR into Y bit-REVERSED (the '::' operator), swapping the pin order
+    mov pins, !y          ; 02 Drive the output pins with the inverted, reversed value
+.wrap                     ; Restart
 
 .program two_pin_inverter
-; PIO???, should run at the highest possible frequency.
-
-; This program reads two consecutive input pins (DAT on pin 0, CLOCK on pin 1),
-; then outputs their inverted states on two consecutive pins in the same order:
-;   - OUT PIN 0: Inverted DAT
-;   - OUT PIN 1: Inverted CLOCK
+; Should run at the highest practical frequency.
 ;
-; Essentially, the pin positions are mirrored, and the states are inverted.
-
-; IN PIN 0: DAT
-; IN PIN 1: CLOCK
-; OUT PIN 0: DAT  (inverter)
-; OUT PIN 1: CLOCK (inverter)
+; Reads DAT (pin 0) and CLOCK (pin 1) and drives them back out INVERTED, in the SAME order:
+;   OUT PIN 0: inverted DAT
+;   OUT PIN 1: inverted CLOCK
+;
+; IN  PIN 0: DAT
+; IN  PIN 1: CLOCK
+; OUT PIN 0: DAT   (inverted)
+; OUT PIN 1: CLOCK (inverted)
 .wrap_target
-    mov pins, !pins       ; 00 sample and output inverted values
-.wrap                     ; Restart the program
+    mov pins, !pins       ; 00 Sample both pins and drive them straight back out, inverted
+.wrap                     ; Restart
 
 .program two_pin_mirror
-; PIO???, should run at the highest possible frequency.
-
-; This program reads two consecutive input pins (DAT on pin 0, CLOCK on pin 1),
-; then outputs their states on two consecutive pins in the same order:
-;   - OUT PIN 0: DAT
-;   - OUT PIN 1: CLOCK
+; Should run at the highest practical frequency.
 ;
-; Essentially, the pin positions are mirrored.
-
-; IN PIN 0: DAT
-; IN PIN 1: CLOCK
+; Reads DAT (pin 0) and CLOCK (pin 1) and copies them to the output pins unchanged, same order:
+;   OUT PIN 0: DAT
+;   OUT PIN 1: CLOCK
+;
+; IN  PIN 0: DAT
+; IN  PIN 1: CLOCK
 ; OUT PIN 0: DAT
 ; OUT PIN 1: CLOCK
 .wrap_target
-    mov pins, pins       ; 00 sample and output the same values
-.wrap                     ; Restart the program
+    mov pins, pins       ; 00 Sample both pins and drive the identical levels straight back out
+.wrap                     ; Restart
 
 .program two_pin_reverse
-; PIO???, should run at the highest possible frequency.
-
-; This program reads two consecutive input pins (DAT on pin 0, CLOCK on pin 1),
-; then outputs their states on two consecutive pins in reverse order:
-;   - OUT PIN 0: CLOCK
-;   - OUT PIN 1: DAT
+; Should run at the highest practical frequency.
 ;
-; Essentially, the pin positions are swapped.
-
-; IN PIN 0: DAT
-; IN PIN 1: CLOCK
+; Reads DAT (pin 0) and CLOCK (pin 1) and drives them out in SWAPPED order (levels unchanged):
+;   OUT PIN 0: CLOCK
+;   OUT PIN 1: DAT
+;
+; IN  PIN 0: DAT
+; IN  PIN 1: CLOCK
 ; OUT PIN 0: CLOCK
 ; OUT PIN 1: DAT
-; NO USE AUTOPUSH, CONFIGURE THIS SM WITH DEFAULT PICO-SDK SETTINGS
+; Do NOT use autopush; configure this SM with the default Pico-SDK settings.
 .wrap_target
-    in pins, 2            ; 00 sample both pins
-    mov pins, ::isr       ; 01 output the values in reverse order
-.wrap                     ; Restart the program
+    in pins, 2            ; 00 Sample both input pins into the ISR
+    mov pins, ::isr       ; 01 Drive the output pins with the ISR bit-REVERSED, swapping the pin order
+.wrap                     ; Restart
 
 .program glitch_det_fast_rise
-; PIO???, Must run at 8 MHz (each instruction takes 0.125 µs).
-
-; It detects very short pulses ("glitches") on a clock input pin, measuring
-; from a falling edge to the next rising edge. Glitches of ~8 µs or shorter
-; are considered detected.
-
-;   - We need to observe a ~8 µs window, which corresponds to 64 instructions
-;     at 8 MHz (64 × 0.125 µs = 8 µs).
-;   - The loop uses 32 iterations, each taking 2 instructions,
-;     resulting in a total of 64 instructions for the detection window.
-;   - If the clock pin goes HIGH during these iterations, we register it
-;     as a glitch.
-
-;    Normal clock (no glitch):
+; Must run at 8 MHz (each instruction takes 0.125 us).
+;
+; Detects a suspiciously SHORT clock-low pulse: it measures from a falling edge to the next
+; rising edge and flags the pulse as a "glitch" if that rise happens within the ~8 us window.
+;   - The window is 64 instructions @ 8 MHz (64 * 0.125 us = 8 us).
+;   - It is built from 32 loop iterations of 2 instructions each (32 * 2 = 64).
+;   - If CLOCK returns HIGH before those 32 iterations run out, we treat the rise as a glitch.
+;
+;   Normal clock (no glitch):
 ;        ___          _________          ________
 ; CLOCK:    |________|         |________|        |________
 ;
-;    With a short glitch
+;   With a short glitch:
 ;        ___          __  _____          _________
 ; CLOCK:    |________|  ||     |________|         |________
-;                        ↑
-;                       short glitch (~8 µs)
-
-; The PIO program detects this fast rise (transition to HIGH)
-; happening sooner than expected, which qualifies it as a glitch.
-
-; The 'x' value is used to send the glitch event to the host and at same time is the time of the glitch.
-; At 8MHz is a low resolution counter for very short pulses but it is better than nothing.
-
-; AUTOPUSH must be true, 32 bit threshold
-; IN PIN 0: CLOCK
-; JMP PIN: CLOCK
+;                        ^
+;                       short glitch (~8 us)
+;
+; The counter X does double duty: it flags the glitch event to the host AND its remaining value
+; encodes WHEN inside the window the rise happened (a coarse timestamp). At 8 MHz this is a
+; low-resolution timer for very short pulses, but it is better than nothing.
+;
+; AUTOPUSH must be true, 32-bit threshold.
+; IN  PIN 0: CLOCK
+; JMP PIN  : CLOCK
 .wrap_target
 init_detection:
-    set x, 31                 ; 00 Initialize X for 16 loop iterations
-    wait 1 pin, 0             ; 01 Ensure the CLOCK pin goes HIGH first (avoids false triggers)
-    wait 0 pin, 0             ; 02 Now wait until the CLOCK pin goes LOW (start point for measuring)
+    set x, 31                 ; 00 Preload X for 32 loop iterations (x = 31..0)
+    wait 1 pin, 0             ; 01 First make sure CLOCK is HIGH (so we start from a known level, no false trigger)
+    wait 0 pin, 0             ; 02 Then wait for CLOCK to go LOW -> this falling edge is our measurement start
 check_for_glitch:
-    jmp pin, glitch_detected  ; 03 If the pin transitions HIGH prematurely, it's a glitch
-    jmp x--, check_for_glitch ; 04 If still LOW, repeat up to 16 times
-    jmp init_detection        ; 05 No glitch detected in this window; restart
+    jmp pin, glitch_detected  ; 03 CLOCK went HIGH again already? That early rise is the glitch -> record it
+    jmp x--, check_for_glitch ; 04 Still LOW: count down and keep watching (up to 32 iterations)
+    jmp init_detection        ; 05 Window elapsed with no early rise -> normal pulse -> restart detection
 glitch_detected:
-    in x, 32                  ; 06 Read the CLOCK pin to register the glitch event
-.wrap                         ; Restart program
+    in x, 32                  ; 06 Shift the remaining count X into the ISR; autopush flushes it to the RX FIFO
+.wrap                         ; Restart
 
 .program glitch_det_fast_fall
-; PIO???, Must run at 8 MHz (each instruction takes 0.125 µs).
-
-; The same as glitch_det_fast_rise but for detecting the opposite transition.
-
-;    Normal clock (no glitch):
+; Must run at 8 MHz (each instruction takes 0.125 us).
+;
+; Same idea as glitch_det_fast_rise but for the opposite transition: it measures from a rising
+; edge to the next falling edge and flags a "glitch" if CLOCK drops back LOW within the window.
+;
+;   Normal clock (no glitch):
 ;        ___          _________          ________
 ; CLOCK:    |________|         |________|        |________
 ;
-;    With a short glitch
+;   With a short glitch:
 ;        ___          _________          _________
 ; CLOCK:    |___||___|         |________|         |________
-;                ↑
-;              short glitch (~8 µs)
-
-; The PIO program detects this fast fall (transition to LOW)
-
-; The 'x' value is used to send the glitch event to the host and at same time is the time of the glitch.
-; At 8MHz is a low resolution counter for very short pulses but it is better than nothing.
-
-; AUTOPUSH must be true, 32 bit threshold
-; IN PIN 0: CLOCK
-; JMP PIN: CLOCK
+;                ^
+;              short glitch (~8 us)
+;
+; As above, X flags the event and encodes a coarse timestamp of when the fall occurred.
+;
+; AUTOPUSH must be true, 32-bit threshold.
+; IN  PIN 0: CLOCK
+; JMP PIN  : CLOCK
 .wrap_target
 init_detection:
-    set x, 31                           ; 00 Initialize X for 16 loop iterations
-    wait 0 pin, 0                       ; 01 Ensure the CLOCK pin goes LOW first (avoids false triggers)
-    wait 1 pin, 0                       ; 02 Now wait until the CLOCK pin goes HIGH (start point for measuring)
+    set x, 31                           ; 00 Preload X for 32 loop iterations (x = 31..0)
+    wait 0 pin, 0                       ; 01 First make sure CLOCK is LOW (known starting level, no false trigger)
+    wait 1 pin, 0                       ; 02 Then wait for CLOCK to go HIGH -> this rising edge is our measurement start
 check_for_glitch:
-    jmp pin, no_glitch_detected         ; 03 If the pin transitions LOW prematurely, it's a glitch
+    jmp pin, no_glitch_detected         ; 03 CLOCK still HIGH? No fall yet -> go count another iteration
 glitch_detected:
-    in x, 32                            ; 04 Read the CLOCK pin to register the glitch event
+    in x, 32                            ; 04 CLOCK fell early: shift remaining count X into the ISR (autopush -> RX FIFO)
     jmp init_detection                  ; 05 Restart detection
 no_glitch_detected:
-    jmp x--, check_for_glitch           ; 06 If still HIGH, repeat up to 16 times
-.wrap                                   ; Restart program
-
+    jmp x--, check_for_glitch           ; 06 Still HIGH: count down and keep watching (up to 32 iterations)
+.wrap                                   ; Restart
 
 .program rise_counter
-; PIO???, Must run at 125 MHz (each instruction takes 8 ns).
-
-; This program measures the time between a falling edge and the next rising edge
-; on the CLOCK pin by counting instructions. We do the following:
-;   1) Initialize counter to 0xFFFFFFFF
-;   2) Wait for the CLOCK pin to go HIGH, then LOW (i.e., a falling edge).
-;   3) Enter a loop:
-;        - If pin goes HIGH (rising edge), jump to "capture_time".
-;        - Else decrement counter and keep looping until it hits zero.
-;   4) Once the rising edge is detected, we push the current counter.
-;      This value indicates how many loop iterations remained.
-
-; Time Calculation:
-;   - Each PIO instruction takes 8 ns at 125 MHz.
-;   - The loop uses 2 instructions per iteration, so each iteration = 16 ns.
-;   - The final measured time in nanoseconds is (0xFFFFFFFF - x) * 16 ns
-;     (since X started at 0xFFFFFFFF and was decremented each iteration).
-
-; With a 16 ns resolution, this method is not perfect for measuring very short pulses.
-; I have seen PS2-USB adapters with glitches shorter than 16 ns, but it's better than nothing.
-
-; Overclocking RP to 250 MHz can increase the resolution to 8 ns.
-; (Configuring the PIO clock divider to 1).
-
-; TO-DO This SM should run in parallel and in a synchronized way with
-; the glitch detection SM to know the time of the glitch.
-
+; Must run at 125 MHz (each instruction takes 8 ns).
+;
+; Measures the time from a falling edge to the next rising edge on CLOCK by counting loop passes:
+;   1) Seed the counter X to 0xFFFFFFFF.
+;   2) Wait for CLOCK HIGH then LOW (i.e. a falling edge).
+;   3) Loop: on a rising edge jump to capture; otherwise decrement X and keep looping.
+;   4) On the rising edge, push X. Its distance from 0xFFFFFFFF tells you how long the low lasted.
+;
+; Time conversion:
+;   - At 125 MHz each instruction is 8 ns and the loop body is 2 instructions, so 16 ns/iteration.
+;   - Elapsed time = (0xFFFFFFFF - x) * 16 ns.
+;   - 16 ns resolution is coarse for the shortest pulses (some PS/2-USB adapters glitch even
+;     faster than 16 ns), but it is better than nothing. Overclocking to 250 MHz and setting the
+;     PIO clock divider to 1 halves this to 8 ns.
+;
+; TO-DO: run this SM in parallel and synchronized with the glitch-detection SM so the glitch
+; event and its timestamp line up.
+;
 ; AUTOPUSH must be true, 32-bit threshold.
-; IN PIN 0: CLOCK
-; JMP PIN: CLOCK
+; IN  PIN 0: CLOCK
+; JMP PIN  : CLOCK
 .wrap_target
 initialize_counter:
-    mov x, !null            ; 00 X = 0xFFFFFFFF (maximum count value)
-    wait 1 pin, 0           ; 01 Wait until CLOCK pin goes HIGH (start of falling edge detection)
-    wait 0 pin, 0           ; 02 Wait until CLOCK pin goes LOW (falling edge)
+    mov x, !null            ; 00 X = 0xFFFFFFFF (maximum start value; we count DOWN from here)
+    wait 1 pin, 0           ; 01 Wait for CLOCK HIGH (so the next step catches a real falling edge)
+    wait 0 pin, 0           ; 02 Wait for CLOCK LOW -> falling edge; timing starts now
 count_loop:
-    jmp pin, capture_time   ; 03 If pin goes HIGH (rising edge), jump to capture
-    jmp x--, count_loop     ; 04 Decrement X and continue looping
+    jmp pin, capture_time   ; 03 Rising edge? Stop timing and go record the count
+    jmp x--, count_loop     ; 04 Still LOW: decrement X and keep counting the low period
 capture_time:
-    in x, 32                ; 05 Push X into the RX FIFO
-.wrap                       ; Restart program
+    in x, 32                ; 05 Shift X into the ISR; autopush flushes the elapsed count to the RX FIFO
+.wrap                       ; Restart
 
 .program fall_counter
-; PIO???, Must run at 125 MHz (each instruction takes 8 ns).
-
-; The same as rise_counter but for detecting the opposite transition.
-
-; TO-DO This SM should run in parallel and in a synchronized way with
-; the glitch detection SM to know the time of the glitch.
-
+; Must run at 125 MHz (each instruction takes 8 ns).
+;
+; Same as rise_counter but for the opposite transition: it times from a rising edge to the next
+; falling edge. See rise_counter for the time-conversion math and resolution notes.
+;
+; TO-DO: run this SM in parallel and synchronized with the glitch-detection SM so the glitch
+; event and its timestamp line up.
+;
 ; AUTOPUSH must be true, 32-bit threshold.
-; IN PIN 0: CLOCK
-; JMP PIN: CLOCK
+; IN  PIN 0: CLOCK
+; JMP PIN  : CLOCK
 .wrap_target
 initialize_counter:
-    mov x, !null            ; 00 X = 0xFFFFFFFF (maximum count value)
-    wait 0 pin, 0           ; 01 Wait until CLOCK pin goes LOW
-    wait 1 pin, 0           ; 02 Then wait until CLOCK pin goes HIGH (rising edge)
+    mov x, !null            ; 00 X = 0xFFFFFFFF (maximum start value; we count DOWN from here)
+    wait 0 pin, 0           ; 01 Wait for CLOCK LOW (so the next step catches a real rising edge)
+    wait 1 pin, 0           ; 02 Wait for CLOCK HIGH -> rising edge; timing starts now
 count_loop:
-    jmp pin, check_fall     ; 03 Continue looping while pin is HIGH
-    jmp capture_time        ; 04 If pin goes LOW (falling edge), jump to capture
+    jmp pin, check_fall     ; 03 CLOCK still HIGH -> go decrement and keep timing the high period
+    jmp capture_time        ; 04 CLOCK LOW (falling edge) -> stop timing and go record the count
 check_fall:
-    jmp x--, count_loop     ; 05 Decrement X and continue looping
+    jmp x--, count_loop     ; 05 Decrement X and continue looping while CLOCK stays HIGH
 capture_time:
-    in x, 32                ; 06 Push X into the RX FIFO
-.wrap                       ; Restart program
+    in x, 32                ; 06 Shift X into the ISR; autopush flushes the elapsed count to the RX FIFO
+.wrap                       ; Restart

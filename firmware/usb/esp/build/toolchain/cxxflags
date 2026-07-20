@@ -1,0 +1,4 @@
+-march=rv32imc_zicsr_zifencei
+-mtune=esp-base
+"-specs=C:/Users/regue/Desktop/okhi/firmware/usb/esp/build/specs/picolibc.specs"
+-fno-rtti

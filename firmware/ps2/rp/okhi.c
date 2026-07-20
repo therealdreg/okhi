@@ -33,9 +33,6 @@ WARNING: BULLSHIT CODE X-)
 
 // This project assumes that copy_to_ram is enabled, so ALL code is running from RAM
 
-#include "../../../../last_firmv.h"
-#include "../../com.c"
-#include "../com_ps2.c"
 #include "hardware/clocks.h"
 #include "hardware/flash.h"
 #include "hardware/irq.h"
@@ -58,8 +55,14 @@ WARNING: BULLSHIT CODE X-)
 #include <stdio.h>
 #include <string.h>
 
+#include "../../../../last_firmv.h"
+
+#include "../../com/com.h"
+
+#include "../../com/com_rp.h"
+
 // uncomment to enable dev build
-#define DEV_BUILD 1 // NOT USED YET
+// #define DEV_BUILD 1 // NOT USED YET
 
 // for UART debugging on devboard & HW version detection
 #define GPIO_A 4
@@ -93,6 +96,11 @@ WARNING: BULLSHIT CODE X-)
 #define SPI_MISO_PIN 12
 #define SPI_CS_PIN 13
 
+// --- PS/2 bus + PIO helper pins --------------------------------------------------
+// These four GPIOs must keep THIS numeric order. The capture programs use DAT_GPIO as their
+// input base, so the SDK sees DAT at "in pin 0" and CLK at "in pin 1" (CLK must be DAT+1).
+// The two AUX pins are software-only JMP helpers the main core toggles to arm/abort the
+// capture state machines.
 // Must be in that order
 #define AUX_H2D_JMP_GPIO 19 // PIO JMP HELPER PIN FOR HOST TO DEVICE PIO (must be a free GPIO pin)
 #define DAT_GPIO 20         // PS/2 data
@@ -164,6 +172,10 @@ typedef enum
 
 extern char __flash_binary_end;
 
+// --- PS/2 capture state (shared between the PIO IRQs, the main loop and core1) ----
+// ringbuff holds parsed PS/2 bytes as short timestamped ASCII strings that core1 drains to
+// the ESP; write_index is the producer cursor. kbd_h2d_sm/kbd_sm and their offset_* identify
+// the host->device and device->host state machines so the IRQs can restart them by name.
 volatile static unsigned int write_index = 0;
 volatile static char ringbuff[RING_BUFF_MAX_ENTRIES][32];
 volatile static uint kbd_h2d_sm;
@@ -334,6 +346,8 @@ static int my_spi_write_read_blocking(const uint8_t *src, uint8_t *dst, size_t l
     return retf;
 }
 
+// Release every state machine claimed on a PIO block, so the four PS/2 programs can be
+// (re)loaded from a clean slate at startup (see pio_destroy).
 static void free_all_pio_state_machines(PIO pio)
 {
     for (int sm = 0; sm < 4; sm++)
@@ -371,16 +385,27 @@ static void erase_flash(void)
     reset_usb_boot(0, 0);
 }
 
+// ---------------------------------------------------------------------------------
+// Device->host capture SM control.
+//
+// The device_to_host PIO program is gated by AUX_D2H_JMP_GPIO (its JMP pin): while that pin
+// is HIGH the program parks on its first instruction; while it is LOW it captures a byte.
+// "restart" simply forces the SM's program counter back to the program's entry point.
+// ---------------------------------------------------------------------------------
 static void restart_device_to_host_sm(void)
 {
     pio_sm_exec(pio0, kbd_sm, pio_encode_jmp(offset_kbd));
 }
 
+// Force the host->device SM back to its first instruction, so the next host transfer is
+// captured cleanly from the start (used after inhibit/idle events).
 static void restart_host_to_device_sm(void)
 {
     pio_sm_exec(pio1, kbd_h2d_sm, pio_encode_jmp(offset_kbd_h2d));
 }
 
+// Disarm device->host capture: drive the arm pin HIGH to park the SM, spin until we read that
+// HIGH back (so the level has actually propagated), then restart the SM at its parked entry.
 static void stop_device_to_host_sm(void)
 {
     gpio_put(AUX_D2H_JMP_GPIO, true);
@@ -391,12 +416,24 @@ static void stop_device_to_host_sm(void)
     restart_device_to_host_sm();
 }
 
+// Arm device->host capture: drop the arm pin LOW so the SM may leave its wait loop, then
+// restart it at the top to begin a fresh capture on the next start bit.
 static void start_device_to_host_sm(void)
 {
     gpio_put(AUX_D2H_JMP_GPIO, false);
     restart_device_to_host_sm();
 }
 
+// =================================================================================
+// PIO0 interrupt - bus-inhibit events raised by the inhibited_signal SM.
+//
+//   IRQ0 -> the host is INHIBITING the bus (CLOCK held low ~90 us). Disarm device->host
+//           capture so a half-formed byte can never be pushed as garbage.
+//   IRQ1 -> the inhibit ended with NO Request-to-Send (host released without sending).
+//           Re-arm device->host capture and restart the host->device SM for whatever is next.
+//
+// Each branch first clears its own flag (write 1 to pio0_hw->irq) before acting.
+// =================================================================================
 // IRQ0: Inhibited communication detected
 // IRQ1: No Host Request-to-Send detected after inhibiting communication
 void pio0_irq(void)
@@ -417,6 +454,13 @@ void pio0_irq(void)
     }
 }
 
+// =================================================================================
+// PIO1 interrupt - idle events raised by the idle_signal SM.
+//
+//   IRQ0 -> the bus is IDLE (CLOCK and DATA both high long enough). Arm device->host capture
+//           and restart the host->device SM so both are ready for the next packet.
+//   IRQ1 -> not produced by the idle SM; the branch just clears the flag if it ever fires.
+// =================================================================================
 // IRQ0: IDLE DETECTED, CLOCK is HIGH + DAT is HIGH for at least 100 microseconds
 void pio1_irq(void)
 {
@@ -450,7 +494,7 @@ void gpio_callback(uint gpio, uint32_t events)
         gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
 
         wait_20 = 0x69699696;
-        puts("\r\nexternal ESP-RESET detected!\r\nrebooting in 20 secs!!!\r\n");
+        puts("\r\nexternal ESP-RESET detected!\r\nrebooting in 50 secs!!!\r\n");
         watchdog_reboot(0, 0, 0);
     }
 }
@@ -534,6 +578,8 @@ void core1_main()
     }
 }
 
+// Tear down every PS/2 state machine and wipe both PIO instruction memories, so the programs
+// can be reloaded into a known layout on each boot (see the ordering note in ps2.pio).
 static void pio_destroy(void)
 {
     free_all_pio_state_machines(pio0);
@@ -589,13 +635,14 @@ static void boot_press(void)
 int main(void)
 {
     boot_press();
+    blink_led(2);
 
     if (wait_20 == 0x69699696)
     {
         stdio_init_all();
-        puts("\r\nwaiting 20 secs...\r\n");
+        puts("\r\nwaiting 50 secs...\r\n");
         wait_20 = 0;
-        sleep_ms(20000);
+        sleep_ms(50000);
     }
 
     gpio_init(ESP_RESET_GPIO);
@@ -668,18 +715,30 @@ int main(void)
 
     pio_destroy();
 
+    // ===== HOST -> DEVICE capture SM (PIO1, program: host_to_device) =====
     // host to device:
     // get a state machine
     kbd_h2d_sm = pio_claim_unused_sm(pio1, true);
     // reserve program space in SM memory
     offset_kbd_h2d = pio_add_program(pio1, &host_to_device_program);
-    // Set pin directions base
+    // Set DAT and CLK (2 consecutive pins from DAT_GPIO) as PIO inputs.
+    // NOTE: this passes kbd_sm, yet here that names the same SM as kbd_h2d_sm - kbd_sm is still
+    // 0 at this point (its pio0 value is assigned later) and pio_claim_unused_sm() also returned
+    // SM 0 on pio1 for kbd_h2d_sm. Pin directions apply at the GPIO level for the whole PIO too,
+    // so DAT/CLK are configured as inputs correctly regardless.
     pio_sm_set_consecutive_pindirs(pio1, kbd_sm, DAT_GPIO, 2, false);
-    // program the start and wrap SM registers
+    // Build the default SM config (this fills in the .wrap_target/.wrap bounds).
+    // NOTE: this calls device_to_host's getter, not host_to_device's. Both programs put
+    // .wrap_target on their first instruction, but device_to_host is 15 instructions (wrap
+    // bottom = offset+14) while host_to_device is 16 (offset+15). So the wrap bottom lands on
+    // line 14 and the final 'skip_ack_bit' (line 15) ends up just outside the wrap loop. This is
+    // harmless in practice: after the stop bit the SM wraps, re-clears the ISR and re-arms, and
+    // the short (~30-50 us) ACK clock-low can't trip the ~90 us inhibit gate.
     pio_sm_config c_kbd_h2d = device_to_host_program_get_default_config(offset_kbd_h2d);
     // Set the base input pin. pin index 0 is DAT, index 1 is CLK
     sm_config_set_in_pins(&c_kbd_h2d, DAT_GPIO);
-    // Shift 8 bits to the right, autopush disabled
+    // ISR shifts RIGHT, autopush DISABLED, push threshold 0. The captured byte therefore stays
+    // in the ISR's most-significant byte and is read from the FIFO word's top byte in C.
     sm_config_set_in_shift(&c_kbd_h2d, true, false, 0);
     // JMP pin
     sm_config_set_jmp_pin(&c_kbd_h2d, CLK_GPIO);
@@ -698,6 +757,7 @@ int main(void)
     pio_sm_set_enabled(pio1, kbd_h2d_sm, true);
     pio_sm_exec(pio1, kbd_h2d_sm, pio_encode_jmp(offset_kbd_h2d));
 
+    // ===== IDLE detector SM (PIO1, program: idle_signal, raises PIO1 IRQ0) =====
     // idle detection:
     // get a state machine
     uint kbd_idle_sm = pio_claim_unused_sm(pio1, true);
@@ -729,6 +789,7 @@ int main(void)
     pio_sm_set_enabled(pio1, kbd_idle_sm, true);
     pio_sm_exec(pio1, kbd_idle_sm, pio_encode_jmp(offset_idle));
 
+    // ===== INHIBIT detector SM (PIO0, program: inhibited_signal, raises PIO0 IRQ0/1) =====
     // inhibited detection:
     // get a state machine
     uint kbd_inh_sm = pio_claim_unused_sm(pio0, true);
@@ -760,21 +821,23 @@ int main(void)
     pio_sm_set_enabled(pio0, kbd_inh_sm, true);
     pio_sm_exec(pio0, kbd_inh_sm, pio_encode_jmp(offset_inh));
 
+    // ===== DEVICE -> HOST capture SM (PIO0, program: device_to_host) =====
     // device to host:
     // get a state machine
     kbd_sm = pio_claim_unused_sm(pio0, true);
     // reserve program space in SM memory
     offset_kbd = pio_add_program(pio0, &device_to_host_program);
-    // Set pin directions base
+    // Set DAT, CLK and the AUX arm pin (3 consecutive pins from DAT_GPIO) as PIO inputs.
     pio_sm_set_consecutive_pindirs(pio0, kbd_sm, DAT_GPIO, 3, false);
     // program the start and wrap SM registers
     pio_sm_config c_kbd = device_to_host_program_get_default_config(offset_kbd);
     // Set the base input pin. pin index 0 is DAT, index 1 is CLK
     sm_config_set_in_pins(&c_kbd, DAT_GPIO);
-    // Shift 8 bits to the right, autopush disabled
+    // Active config below: ISR shifts RIGHT, autopush DISABLED, threshold 0. (The commented
+    // line just above is the autopush-every-8-bits alternative, kept for reference, not used.)
     // sm_config_set_in_shift(&c_kbd, true, true, 8);
     sm_config_set_in_shift(&c_kbd, true, false, 0);
-    // JMP pin
+    // JMP pin = AUX_D2H_JMP_GPIO, the software arm/abort gate (NOT the PS/2 clock).
     sm_config_set_jmp_pin(&c_kbd, AUX_D2H_JMP_GPIO);
     // Deeper FIFO as we're not doing any TX
     sm_config_set_fifo_join(&c_kbd, PIO_FIFO_JOIN_RX);
@@ -799,6 +862,14 @@ int main(void)
     multicore_reset_core1();
     multicore_launch_core1(core1_main);
 
+    // =================================================================================
+    // Main capture loop - drain both RX FIFOs and log every parsed byte.
+    //
+    // Each PIO program leaves its 8-bit result in the TOP byte of the 32-bit FIFO word, so the
+    // byte is read through an 8-bit view offset by +3 (see the ISR note in ps2.pio). Bytes are
+    // tagged 'H' (host->device) or 'D' (device->host) with a timestamp and written to the ring
+    // buffer; core1 ships those strings out. write_index is the producer cursor.
+    // =================================================================================
     while (1)
     {
         /* The pushed value is an 8-bit sample positioned in the upper (most significant) byte of the

@@ -1,0 +1,2 @@
+--flash-mode dio --flash-freq 60m --flash-size 4MB
+0x300000 storage.bin
