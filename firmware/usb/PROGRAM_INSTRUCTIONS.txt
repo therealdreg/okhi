@@ -34,9 +34,12 @@ ready for operational use.
 10. Reconnecting for Regular Use: Disconnect the OKHI module from USB and then 
 reconnect it without pressing the programming button for normal use.
 
-11. Connecting to the ESP WiFi Network: An ESP WiFi network will become 
-available with the password '0123456789'. Connect to this network and open a 
+11. Connecting to the ESP WiFi Network: An ESP PS/USB_id WiFi network will become 
+available with the password '1234567890'. Connect to this network and open a 
 web browser to access the web interface at: 
 http://192.168.4.1/ 
+
+Note: uart_bridge.uf2 prior to firmware version v5 require using esptool version (v4.7.0) included in release package. Using other versions may cause issues! Refer to this link for more details: https://github.com/espressif/esptool/issues/1119
+Starting from firmware version v5, uart_bridge.uf2 is compatible with the latest version of esptool without any issues.
 
 echo "By Dreg"

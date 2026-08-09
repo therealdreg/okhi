@@ -1,0 +1,4 @@
+"-specs=C:/Users/regue/Desktop/okhi/firmware/usb/esp/build/bootloader/specs/picolibc.specs"
+-march=rv32imc_zicsr_zifencei
+-mtune=esp-base
+-fno-rtti

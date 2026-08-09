@@ -1,0 +1,3 @@
+-march=rv32imc_zicsr_zifencei
+-mtune=esp-base
+-fno-rtti

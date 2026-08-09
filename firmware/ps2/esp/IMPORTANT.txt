@@ -1,0 +1,101 @@
+========================================================================
+IMPORTANT - okhi ESP32-C2 firmware build & hardware notes
+========================================================================
+
+Read this before building, flashing, or upgrading ESP-IDF. These are
+non-obvious, hardware-specific settings. They were lost once when
+sdkconfig regenerated during the ESP-IDF 5.5 -> 6.0.2 upgrade, which
+broke the build and would have broken devices in the field. All of them
+are now pinned in `sdkconfig.defaults` so a regenerated `sdkconfig`
+cannot silently reset them.
+
+Treat `sdkconfig.defaults` as the source of truth. `sdkconfig` is a
+generated file and can be deleted/regenerated at any time.
+
+
+------------------------------------------------------------------------
+1. Crystal: 26 MHz (NOT 40 MHz)
+------------------------------------------------------------------------
+Every okhi board uses a 26 MHz crystal, never 40 MHz.
+
+    CONFIG_XTAL_FREQ_26=y
+
+If this is wrong the serial output is garbled and WiFi / timing break.
+With the crystal set correctly to 26 MHz, the serial console runs at a
+clean standard 115200 baud.
+
+
+------------------------------------------------------------------------
+2. Chip revision: support ALL ESP32-C2 revisions with one binary
+------------------------------------------------------------------------
+Devices in the field may be any revision: v1.0, v1.1, v1.2 or v2.0.
+A single binary must run on all of them.
+
+    CONFIG_ESP32C2_REV_MIN_1=y      (Minimum Supported Revision = v1.0)
+
+NEVER set the minimum supported revision to v2.0. A v2.0 binary refuses
+to flash on older chips with an error like:
+
+    requires chip revision in range [v2.0 - v1.99] (this chip is v1.2)
+
+Trade-off: keeping v1.0 as the minimum gives up the ~20 KB SRAM and
+~100 KB flash savings that would only be available on v2.0-only builds.
+This is the intended trade-off (Espressif advisory AR2025-001).
+
+
+------------------------------------------------------------------------
+3. Flash size: 4 MB
+------------------------------------------------------------------------
+    CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+The 'storage' SPIFFS partition lives at offset 0x300000, so anything
+smaller than 4 MB does not fit and the build fails.
+
+
+------------------------------------------------------------------------
+4. Partition table: custom (partitions.csv)
+------------------------------------------------------------------------
+    CONFIG_PARTITION_TABLE_CUSTOM=y
+    CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+The default single-app table has no 'storage' partition, so
+spiffs_create_partition_image(storage ...) in main/CMakeLists.txt fails
+with "Failed to create SPIFFS image for partition 'storage'".
+
+Partition layout (partitions.csv):
+    nvs       data  nvs     0x9000    24K
+    phy_init  data  phy     0xF000    4K
+    factory   app   factory 0x10000   3008K
+    storage   data  spiffs  0x300000  1M
+
+
+------------------------------------------------------------------------
+5. ESP-IDF 6.0 migration notes
+------------------------------------------------------------------------
+The monolithic `driver` component was split into per-peripheral
+components. main/CMakeLists.txt must require the specific ones:
+
+    esp_driver_gpio   -> driver/gpio.h
+    esp_driver_spi    -> driver/spi_slave.h
+    esp_driver_uart   -> driver/uart.h
+
+Also, picolibc (the new default C library in IDF 6.0) no longer pulls in
+<sys/stat.h> transitively, so com/com_esp.h must include it explicitly:
+
+    #include <sys/stat.h>       (needed for struct stat / stat())
+
+
+------------------------------------------------------------------------
+Flashing
+------------------------------------------------------------------------
+Use upload_firmware.bat, or:
+
+    esptool --chip esp32c2 --baud 921600 write-flash -z \
+        --flash-mode dio --flash-freq 60m --flash-size 4MB \
+        0x0000   bootloader.bin \
+        0x8000   partition-table.bin \
+        0x10000  okhi.bin \
+        0x300000 storage.bin
+
+Serial monitor: 115200 baud.
+========================================================================
