@@ -1,0 +1,104 @@
+========================================================================
+okhi - updating over the air
+========================================================================
+
+    okhi_USB_ota.pkg / okhi_PS2_ota.pkg
+        ONE file, both chips. This is what you upload.
+
+    ota_esp.bin, ota_rp.bin
+        the same two images loose, for updating one chip on its own.
+
+Only for devices already running an OTA capable firmware. A device from
+an older release has to be installed once by cable, with
+upload_firmware.bat and the .uf2, because the ESP partition table
+changed and that cannot be migrated over the air.
+
+Requirement: do not power the device off during an update.
+
+
+------------------------------------------------------------------------
+1. Connect
+------------------------------------------------------------------------
+Join the device WiFi network (USB_xxxxxxxxxxxx or PS2_xxxxxxxxxxxx,
+password 1234567890) and open http://192.168.4.1/
+
+
+------------------------------------------------------------------------
+2. Upload the package
+------------------------------------------------------------------------
+Use the UPLOAD FIRMWARE button and pick the .pkg, or:
+
+    curl -X POST -H "Expect:" --data-binary "@okhi_USB_ota.pkg" \
+        http://192.168.4.1/ota
+
+That is the whole update. What happens next is automatic:
+
+  a. The ESP checks the package header, its variant tag and both CRC32s.
+  b. The ESP half is written to the spare slot and validated.
+  c. The RP half is stored on the ESP filesystem.
+  d. The ESP reboots into the new firmware.
+  e. YOU RECONNECT AND LOAD THE PAGE. This confirms the ESP update.
+  f. Only then does the ESP offer the RP image. The RP fetches it over
+     SPI, verifies it with a CRC32, backs up its current firmware to a
+     golden slot, applies the new one and reboots.
+  g. The RP reports back the CRC of what it is running. When it matches,
+     the ESP deletes the staged image and the update is closed.
+
+Step (e) is not optional. If nobody loads the page within 5 minutes the
+ESP reboots and rolls back to the previous firmware, and the RP is never
+touched. An update nobody could reach is an update that failed.
+
+
+------------------------------------------------------------------------
+3. Updating one chip on its own
+------------------------------------------------------------------------
+    curl -X POST -H "Expect:" --data-binary "@ota_esp.bin" \
+        http://192.168.4.1/ota
+
+    curl -X POST -H "Expect:" --data-binary "@ota_rp.bin" \
+        http://192.168.4.1/rpimage
+    then open http://192.168.4.1/rpcommit
+
+/rpimage only stages the image; /rpcommit tells the RP to apply it.
+Use these for development. For releases use the package, which cannot
+leave the two chips on mismatched firmware.
+
+
+------------------------------------------------------------------------
+What you give up during an update
+------------------------------------------------------------------------
+Keyboard capture is suspended for the couple of seconds the SPI transfer
+and the commit take, and one packet is lost at the seam when it resumes.
+The keyboard itself keeps working normally throughout: those keystrokes
+are simply not recorded.
+
+
+------------------------------------------------------------------------
+Checking the result
+------------------------------------------------------------------------
+http://192.168.4.1/stats reports, among others:
+
+    partition        ESP slot in use, ota_0 or ota_1
+    booted_pending   1 when this session came from an OTA
+    rp_image_ready   1 while an RP image is still staged
+    ring_dropped     must stay at 0
+    spi_records      rises as you type, matches the RP's own counter
+
+
+------------------------------------------------------------------------
+If something goes wrong
+------------------------------------------------------------------------
+Power loss while the ESP half is uploading or being written is harmless:
+it is written to the inactive slot and the old firmware keeps running.
+
+A new ESP firmware that boots but cannot be reached rolls back on its
+own after 5 minutes.
+
+A new RP firmware that boots but cannot talk to the ESP is replaced by
+the golden backup after three attempts.
+
+The one step with no software recovery is the couple of seconds while
+the RP is rewriting its own application. If power is lost exactly there,
+the RP comes up as a USB mass storage device and has to be recovered by
+copying okhi.uf2 onto it.
+========================================================================

@@ -1,0 +1,80 @@
+{
+  "effortLevel": "xhigh",
+  "includeCoAuthoredBy": false,
+  "env": {
+    "PICO_SDK_PATH": "C:\\Users\\regue\\.pico-sdk\\sdk\\2.3.0",
+    "IDF_PATH": "C:\\Users\\regue\\esp\\.espressif\\v6.0.2\\esp-idf"
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Agent",
+      "Workflow",
+      "WebSearch",
+      "WebFetch",
+
+      "Bash(cmake:*)",
+      "Bash(ninja:*)",
+      "Bash(make:*)",
+      "Bash(idf.py:*)",
+      "Bash(/c/Users/regue/.pico-sdk/ninja/v1.13.2/ninja.exe:*)",
+      "Bash(arm-none-eabi-size:*)",
+      "Bash(arm-none-eabi-objdump:*)",
+      "Bash(arm-none-eabi-nm:*)",
+      "Bash(arm-none-eabi-readelf:*)",
+
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git stash:*)",
+      "Bash(git fetch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(diff:*)",
+      "Bash(file:*)",
+      "Bash(xxd:*)",
+      "Bash(strings:*)",
+      "Bash(which:*)",
+
+      "PowerShell(idf.py:*)",
+      "PowerShell(Get-ChildItem:*)",
+      "PowerShell(Get-Content:*)",
+      "PowerShell(Get-Item:*)",
+      "PowerShell(Test-Path:*)",
+      "PowerShell(Select-String:*)",
+      "PowerShell(Measure-Object:*)",
+
+      "PowerShell($cli = \"C:\\\\Users\\\\regue\\\\AppData\\\\Local\\\\Programs\\\\Arduino IDE\\\\resources\\\\app\\\\lib\\\\backend\\\\resources\\\\arduino-cli.exe\"; & $cli compile --warnings all --fqbn esp32:esp32:Geekble_ESP32C3 \"c:\\\\Users\\\\regue\\\\Desktop\\\\hc0n2027_ctf_hardware_hacking_priv\\\\code\" 2>&1 | Select-Object -Last 15)"
+    ],
+    "ask": [
+      "Bash(picotool:*)",
+      "Bash(esptool:*)",
+      "Bash(openocd:*)",
+      "Bash(make_release.bat:*)",
+      "PowerShell(picotool:*)",
+      "PowerShell(esptool:*)",
+      "PowerShell(openocd:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean:*)",
+      "Bash(git push --force:*)",
+      "Read(//c/Users/regue/.ssh/**)",
+      "Read(**/id_rsa*)",
+      "Read(**/.env)",
+      "Read(**/*.pem)"
+    ]
+  }
+}

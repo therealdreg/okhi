@@ -1,0 +1,55 @@
+# okhi build output.
+#
+# The remote doubles as a backup and as an informal nightly-build channel, so the
+# flashable images and their debug symbols stay versioned. Only the intermediate
+# build junk is dropped: object files, static libs, cmake and ninja state, the
+# vendored esp-idf and pico-sdk build trees, and idf.py logs.
+#
+# Deny the contents of build/ and re-admit the artifacts by name, so anything a
+# future SDK version starts generating is ignored by default instead of silently
+# creeping back in. Nothing outside firmware/*/esp/build, firmware/*/rp/build and
+# firmware/uart_bridge/build is touched.
+
+# ESP-IDF generated config. Rebuilt from sdkconfig.defaults on every build and
+# verified byte-identical, so versioning it only adds noise. sdkconfig.defaults,
+# sdkconfig.ci* and partitions.csv stay in: those are the source of truth.
+# sdkconfig.old is just idf.py's backup copy of the same generated file.
+firmware/*/esp/sdkconfig
+firmware/*/esp/sdkconfig.old
+
+# ESP32-C2, ESP-IDF
+firmware/*/esp/build/*
+!firmware/*/esp/build/okhi.bin
+!firmware/*/esp/build/okhi.elf
+!firmware/*/esp/build/okhi.map
+!firmware/*/esp/build/ota_data_initial.bin
+!firmware/*/esp/build/storage.bin
+
+!firmware/*/esp/build/bootloader/
+firmware/*/esp/build/bootloader/*
+!firmware/*/esp/build/bootloader/bootloader.bin
+!firmware/*/esp/build/bootloader/bootloader.elf
+!firmware/*/esp/build/bootloader/bootloader.map
+
+!firmware/*/esp/build/partition_table/
+firmware/*/esp/build/partition_table/*
+!firmware/*/esp/build/partition_table/partition-table.bin
+
+# RP2040, Pico SDK
+firmware/*/rp/build/*
+!firmware/*/rp/build/okhi.uf2
+!firmware/*/rp/build/okhi.bin
+!firmware/*/rp/build/okhi.elf
+!firmware/*/rp/build/okhi.elf.map
+!firmware/*/rp/build/okhi.hex
+!firmware/*/rp/build/okhi.dis
+
+# RP2040 USB-UART bridge, Pico SDK. make_release.bat copies uart_bridge.uf2 out
+# of build/, so a fresh clone has to carry it like every other release input.
+firmware/uart_bridge/build/*
+!firmware/uart_bridge/build/uart_bridge.uf2
+!firmware/uart_bridge/build/uart_bridge.bin
+!firmware/uart_bridge/build/uart_bridge.elf
+!firmware/uart_bridge/build/uart_bridge.elf.map
+!firmware/uart_bridge/build/uart_bridge.hex
+!firmware/uart_bridge/build/uart_bridge.dis

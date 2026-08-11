@@ -23,7 +23,8 @@ if (EXISTS ${picoVscode})
     include(${picoVscode})
 endif()
 # ====================================================================================
-set(PICO_BOARD pico CACHE STRING "Board type")
+list(APPEND PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR}/boards)
+set(PICO_BOARD okhi CACHE STRING "Board type")
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
@@ -82,7 +83,6 @@ target_compile_definitions(okhi PRIVATE
 	PICO_DEFAULT_UART_TX_PIN=4
 	PICO_DEFAULT_UART_RX_PIN=5
     PICO_DEFAULT_UART_BAUD_RATE=921600
-    PICO_FLASH_SIZE_BYTES=16777216
 	)
 
 

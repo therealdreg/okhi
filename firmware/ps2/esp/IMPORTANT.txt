@@ -48,8 +48,9 @@ This is the intended trade-off (Espressif advisory AR2025-001).
 ------------------------------------------------------------------------
     CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
-The 'storage' SPIFFS partition lives at offset 0x300000, so anything
-smaller than 4 MB does not fit and the build fails.
+The 'storage' SPIFFS partition lives at offset 0x2d0000 and runs to the
+end of the chip, so anything smaller than 4 MB does not fit and the build
+fails.
 
 
 ------------------------------------------------------------------------
@@ -62,11 +63,28 @@ The default single-app table has no 'storage' partition, so
 spiffs_create_partition_image(storage ...) in main/CMakeLists.txt fails
 with "Failed to create SPIFFS image for partition 'storage'".
 
-Partition layout (partitions.csv):
-    nvs       data  nvs     0x9000    24K
-    phy_init  data  phy     0xF000    4K
-    factory   app   factory 0x10000   3008K
-    storage   data  spiffs  0x300000  1M
+Partition layout (partitions.csv), two OTA slots and no factory:
+    nvs       data  nvs     0x9000    0x4000    16K
+    otadata   data  ota     0xd000    0x2000    8K
+    phy_init  data  phy     0xf000    0x1000    4K
+    ota_0     app   ota_0   0x10000   0x160000  1408K
+    ota_1     app   ota_1   0x170000  0x160000  1408K
+    storage   data  spiffs  0x2d0000  0x130000  1216K
+
+It adds up to exactly 4 MB. The app is around 790 KB, so each slot runs
+at about 55% with 635 KB to spare. Adding a third permanent 'factory'
+slot does NOT fit: three app slots would leave under 60 KB of headroom
+each. Two slots are the recovery mechanism anyway, since ota_1 always
+holds the previous known-good image.
+
+There is no 'factory' partition on purpose. Do not add one back.
+
+WARNING: this layout replaced an older one where nvs spanned 0x9000 to
+0xF000 and storage lived at 0x300000. Migrating a device REQUIRES a full
+erase, because otadata now sits at 0xd000, right where the old nvs used
+to be, and the bootloader would read the leftover bytes as a boot
+selector. upload_firmware.bat runs erase-flash before write-flash for
+exactly this reason.
 
 
 ------------------------------------------------------------------------
@@ -86,16 +104,280 @@ Also, picolibc (the new default C library in IDF 6.0) no longer pulls in
 
 
 ------------------------------------------------------------------------
+6. SPI slave must stay ARMED AT ALL TIMES
+------------------------------------------------------------------------
+The RP is the SPI master. Before every transfer it raises
+MASTERDATAREADY and then spins on `while (!gpio_get(SLAVEREADY))` with NO
+timeout, so it stalls for as long as the ESP takes to arm.
+
+The old spi_task polled MASTERDATAREADY with vTaskDelay(1) and only then
+called spi_slave_transmit(), which is what actually arms the DMA. At
+CONFIG_FREERTOS_HZ=100 that is 10-20 ms of dead time per forwarded
+packet, during which the RP is blocked and stops capturing.
+
+The current design pre-queues SPI_QUEUE_DEPTH transactions with
+spi_slave_queue_trans() and then only blocks in
+spi_slave_get_trans_result(), re-queueing each descriptor as it comes
+back. The hardware is armed before the master ever asks, so:
+
+  - The handshake is driven entirely from the driver ISR:
+    restore_cs() -> start -> post_setup_cb() raises SLAVEREADY.
+    The RP therefore never asserts CS before the DMA is live.
+  - The task sleeps instead of polling, so it burns no CPU while idle and
+    WiFi gets the whole core.
+
+Do NOT go back to spi_slave_transmit() in a poll loop, and do NOT lower
+SPI_QUEUE_DEPTH below 2.
+
+spi_task is created FIRST in app_main, before SPIFFS / NVS / WiFi, so
+SLAVEREADY comes up within milliseconds of boot instead of after several
+seconds. The boot LED blink runs in its own task for the same reason.
+
+
+------------------------------------------------------------------------
+7. The SPI callbacks MUST live in IRAM
+------------------------------------------------------------------------
+    CONFIG_SPI_SLAVE_ISR_IN_IRAM=y
+    CONFIG_GPIO_CTRL_FUNC_IN_IRAM=y
+
+The SPI slave ISR runs from IRAM, and it calls our post_setup_cb /
+post_trans_cb, which drive SLAVEREADY with gpio_set_level(). If either
+the callbacks or gpio_set_level() sit in flash, a transaction arriving
+while the cache is disabled (SPIFFS read while serving the web page, NVS
+write) dereferences unmapped memory: crash, or a handshake that never
+rises and hangs the RP forever.
+
+Both callbacks are marked IRAM_ATTR in com/com_esp.h. Keep them that way,
+and keep both Kconfig options set.
+
+
+------------------------------------------------------------------------
+8. HTTP server: non-blocking, select() based
+------------------------------------------------------------------------
+The old server was a serial accept loop with a 2 s header timeout and a
+1 s drain loop at the end of every request. Browsers open speculative
+preconnect sockets that send nothing, and each one froze the whole server
+for seconds. That, not the radio, was why the page loaded slowly.
+
+The server now keeps HTTP_MAX_CONN connections in a select() loop with
+non-blocking sockets, so no single client can stall it. When every slot
+is busy the listening socket is simply left out of the read set, so
+pending connections wait in the backlog instead of spinning.
+
+Endpoints:
+    /           index.html.gz, streamed from the embedded copy
+    /buffer     captured records; ?from=N for a stateless cursor
+    /esp        one line of live ESP counters
+    /rp         last status line received from the RP over UART
+    /ver        firmware version
+    /hwver      hardware version, parsed out of the RP status line
+    /stats      full counter dump, one key=value per line
+    /versions   build identity of both chips, plus the SPI link state
+    /spibench   ?ms=N, suspends capture and measures SPI throughput
+
+/buffer answers with these headers:
+    X-Okhi-Next     cursor to pass as ?from= on the next request
+    X-Okhi-Head     total records captured since boot
+    X-Okhi-Skipped  records the ring could not deliver to THIS request
+
+Calling /buffer with no ?from= keeps the old server-side cursor
+behaviour, so a stale cached index.html.gz still works.
+
+
+------------------------------------------------------------------------
+9. Regenerating the web page (it is EMBEDDED, not in SPIFFS)
+------------------------------------------------------------------------
+The page is linked into the application binary. After editing
+webps2/index.html:
+
+    cd webps2
+    node webgen.js
+
+That writes main/index.html.gz, which main/CMakeLists.txt links in with
+
+    EMBED_FILES "index.html.gz"
+
+and the linker turns into _binary_index_html_gz_start / _end, which
+http_reply_index() streams straight out of memory mapped flash. The file
+name is load bearing: rename it and the symbol name changes with it.
+
+Then rebuild the ESP. There is no storage.bin to reflash for a page
+change, and the change travels over the air like any other firmware
+change. Full reasoning in section 9 of firmware/usb/esp/IMPORTANT.txt.
+
+
+------------------------------------------------------------------------
+10. DIRAM is a single pool: IRAM code steals heap
+------------------------------------------------------------------------
+The ESP32-C2 does not have separate IRAM and DRAM regions. The linker
+reports one DIRAM pool (~191 KB), so anything placed in IRAM comes
+straight out of the heap.
+
+    CONFIG_ESP_WIFI_IRAM_OPT=n
+    CONFIG_ESP_WIFI_RX_IRAM_OPT=n
+
+Those default to y and buy sustained WiFi throughput, which this firmware
+never needs. Disabling them returned ~17.5 KB to the heap on the USB
+build.
+
+The number to watch is min_free_heap in /stats, NOT the link-time
+"Remain" figure, because WiFi allocates a large amount at esp_wifi_init()
+and lwIP allocates per connection. Rule of thumb after a few minutes of
+real use with the web page open:
+
+    > 20 KB   comfortable
+    10-20 KB  works, no margin
+    < 10 KB   allocations will start failing under load
+
+If it needs to come down further, the next lever is RING_ENTRIES in
+com/com_esp.h: 512 -> 256 gives back 16 KB, at the cost of halving how
+much capture survives while no browser is connected.
+
+
+------------------------------------------------------------------------
+11. OTA
+------------------------------------------------------------------------
+    POST /ota      body = the raw .bin, Content-Length required
+
+    curl -X POST -H "Expect:" --data-binary "@build/okhi.bin" \
+        http://192.168.4.1/ota
+
+The body is streamed straight into esp_ota_write() and never buffered,
+because the device only has around 26 KB of free heap. It lands in the
+INACTIVE slot, so losing power at any point before the final 8 KB otadata
+write just leaves the old firmware running.
+
+Rollback (CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y): an image installed
+over the air boots in ESP_OTA_IMG_PENDING_VERIFY. app_validation_confirm()
+promotes it on the FIRST HTTP request served, which proves the whole chain
+works: it boots, the radio comes up, a station associates and the server
+answers. If nothing is served within OTA_VALIDATE_TIMEOUT_MS (5 minutes)
+the firmware calls esp_restart() and the bootloader falls back to the
+previous slot. That restart is essential: the bootloader only rolls back
+on reboot, so an app left alive in pending state would never recover.
+
+/stats reports:
+    partition       slot currently running, ota_0 or ota_1
+    pending_verify  1 while unconfirmed. You will NEVER see this over
+                    HTTP, because asking for it confirms the image.
+    booted_pending  latched at boot, so it stays 1 for the rest of the
+                    session after an OTA. This is the field to look at.
+
+Variant guard: both the usb and the ps2 project are named "okhi", so the
+app descriptor alone cannot tell them apart, and the usb binary is a
+perfectly valid image that would boot on a ps2 board. PROJECT_VER carries
+the variant tag ("usb" / "ps2") and is set in the top level CMakeLists
+before project(). Once esp_ota_end() has validated the image, its
+descriptor is read back with esp_ota_get_partition_description() and the
+update is rejected if project_name or version differ from the running app.
+
+PROJECT_VER is the VARIANT, never the firmware version. The firmware
+version lives in last_firmv.h. Put a version number in PROJECT_VER and
+every future OTA will be rejected as a foreign variant.
+
+
+------------------------------------------------------------------------
+12. Every limit, and the ps2 specific gap
+------------------------------------------------------------------------
+The ps2 RP used to have NO OTA path at all. It does now: both variants
+share firmware/com/com_rp_ota.h, which carries the v3 SPI control
+protocol and the RP self update, exactly the way both ESPs share
+firmware/com/com_esp.h. A combined ps2 package updates both chips.
+
+The RP side of that header expects the including okhi.c to define
+RP_VARIANT and OTA_WATCHDOG_UPDATE, and to keep a specific order inside
+main(): watchdog_disable() FIRST, then ota_boot_check(), and
+watchdog_enable(4000, 0) just before the capture loop. ota_boot_check()
+feeds the watchdog while the SDK's load_value is still 0, which is only
+harmless because the watchdog is disabled at that point. The capture loop
+is what feeds it from then on, through capture_note_traffic() and
+capture_note_idle(), which are also shared.
+
+THE ONE THAT WILL BITE YOU:
+
+  Bumping SPI_FRAME_VERSION means a cable release for both chips,
+  because an over the air update cannot cross a protocol break.
+
+"Changing the web page requires a cable" used to be on this list. It is
+not any more: the page is embedded in the application binary, written to
+main/index.html.gz by webps2/webgen.js and linked in with EMBED_FILES.
+See section 9 of firmware/usb/esp/IMPORTANT.txt for the reasoning.
+
+
+ESP APPLICATION
+    maximum        1441792 bytes (0x160000), the ota_0 / ota_1 size
+    minimum        8192 bytes (OTA_MIN_IMAGE_SIZE)
+    first byte     0xE9
+
+The 4 MB flash is 100% allocated: 0x2d0000 + 0x130000 = 0x400000 exactly.
+There is no spare region. Growing the app means taking the space from
+SPIFFS, and because ota_0 and ota_1 must be the same size, every extra
+1 MB of application costs 2 MB of flash.
+
+
+THE WEB PAGE
+    lives in       the application binary, not SPIFFS
+    real cost      the gzipped size counted TWICE, ota_0 and ota_1
+
+The page must be entirely SELF-CONTAINED. The device is an access point
+with no route to the internet, so a CDN script, a web font or any remote
+resource simply never loads. Inline all CSS and JS.
+
+
+SPIFFS
+    partition      1245184 bytes (0x130000) minus SPIFFS overhead
+    open files     12 (max_files)
+
+Now used ONLY to stage an incoming RP image, as rp.new and then rp.bin.
+At the worst moment it holds both.
+
+
+HTTP
+    HTTP_REQ_MAX    1280   whole request head: method, path and headers
+    HTTP_PATH_MAX    128   path only
+    HTTP_BODY_MAX   1536   any text response body
+    HTTP_RESP_MAX   2048   header + body together
+    HTTP_MAX_CONN      4   concurrent connections
+
+If header + body exceeds HTTP_RESP_MAX, http_reply() silently falls back
+to a bare 500. /stats is the biggest response at roughly 1290 bytes worst
+case, so check that ceiling before adding fields to it.
+
+
+TIME
+The ESP validation window is 5 minutes (OTA_VALIDATE_TIMEOUT_MS). A
+freshly updated ESP must serve one HTTP request inside it or it reboots
+and rolls back. Reconnect to the access point and load the page.
+
+
+CAPTURE RING AND HEAP
+    RING_ENTRIES        512 records
+    RECORD_PAYLOAD_MAX   62 bytes per record
+
+With no browser polling, records older than 512 are dropped. min_free_heap
+runs around 16 KB with the web page open. If it ever approaches 10 KB the
+lever is RING_ENTRIES 512 -> 256, which returns about 16 KB.
+
+The full limit reference, including the RP flash map and the copy_to_ram
+RAM ceiling, is section 13 of firmware/usb/esp/IMPORTANT.txt.
+
+
+------------------------------------------------------------------------
 Flashing
 ------------------------------------------------------------------------
 Use upload_firmware.bat, or:
+
+    esptool --chip esp32c2 --baud 921600 erase-flash
 
     esptool --chip esp32c2 --baud 921600 write-flash -z \
         --flash-mode dio --flash-freq 60m --flash-size 4MB \
         0x0000   bootloader.bin \
         0x8000   partition-table.bin \
         0x10000  okhi.bin \
-        0x300000 storage.bin
+        0x2d0000 storage.bin
+
+The erase-flash step is mandatory when coming from a pre-OTA device, see
+section 4. Note that storage moved from 0x300000 to 0x2d0000.
 
 Serial monitor: 115200 baud.
 ========================================================================

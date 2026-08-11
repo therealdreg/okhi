@@ -59,6 +59,8 @@ Check size before buying, maybe it is too big for your target. Or maybe you need
 - Supports both PS2 and USB keyboards (limited to classic USB low-speed mode yet)
 - WiFi + web support
 - Real-time viewing of keystrokes
+- Multi-language keyboard layouts (since v7): pick the layout of the target keyboard in the web interface and the keystrokes are decoded with it
+- OTA updates (since v7): update both chips over WiFi from the web interface, no cables, no probe board, no disassembly
 - Open Hardware
 - Open Source (MIT License)
 - Community support
@@ -168,29 +170,55 @@ Follow these steps to update the firmware:
 
 - Connect the implant to implant probe PROG pins 
 
+![](stuff/images/programokhiusb.jpg)
+
 - Connect the implant probe to the computer 
 
 - Entering Program Mode for the okhi Module: Before connecting the okhi module to a USB port, ensure you press and hold the programming button (BOOT).
 
+![](stuff/images/holdbuttonusbprobe.jpg)
+
 - Uploading the UART Bridge Firmware: Transfer the uart_bridge.uf2 file to the okhi module, which will appear as a MASS STORAGE DEVICE RP2040 on your computer (e.g., drive E:). The device will automatically eject once the file transfer completes.
 
-- Switching to Normal Mode: To operate the okhi module in normal mode, connect it to a USB port without pressing any buttons.
+![](stuff/images/copybridge.jpg)
+
+- Switching to Normal Mode: To return the okhi module to normal operation, disconnect it from USB, then reconnect it to a USB port without pressing any buttons.
 
 - Programming the ESP Module: Run the upload_firmware.bat script to start programming the ESP module. This script automates the firmware installation process.
 
 - Selecting the COM Port: Input the COM port number where the okhi module is connected (e.g., COM3). If you are uncertain of the correct COM port, the batch file will display a list of available COM ports. You may need to try each one sequentially to find the correct connection.
 
+![](stuff/images/uploadbat.png)
+
 - Completing the Programming Process: Wait for the script to finish running. Once complete, the ESP module will be programmed and ready for use.
+
+![](stuff/images/uploadbat2.png)
 
 - Re-entering Program Mode: Disconnect the okhi module from the USB, then reconnect it in program mode by pressing the programming button before plugging it back into the USB.
 
+![](stuff/images/holdbuttonusbprobe.jpg)
+
 - Programming the RP2040 Chip: Copy the okhi.uf2 file to the okhi module, now recognized again as a MASS STORAGE DEVICE RP2040 (e.g., drive E:). The device will automatically eject after the file transfer.
+
+![](stuff/images/copyokhiuf2.png)
 
 - Finalizing Setup for RP2040: The RP2040 chip is now programmed and ready for operational use.
 
-- Reconnecting for Regular Use: Disconnect the okhi module from USB and then reconnect it without pressing the programming button for normal use.
+- Reconnecting for Regular Use: Disconnect the okhi module from USB.
+
+- Connect okhi to sniff zone of implant probe.
+
+![](stuff/images/sniffusb.jpg)
+
+- Connect the implant probe to the computer.
+
+![](stuff/images/probeworking.jpg)
+
+- Additionally, connect the program zone's USB to your PC as an extra power source to ensure the okhi implant has sufficient power.
 
 - Connecting to the ESP WiFi Network: An ESP WiFi network (PS2/USB_<device_id>) will become available with the password '1234567890'. Connect to this network and open a web browser to access the web interface at: http://192.168.4.1/
+
+![](stuff/images/v5webdemo.png)
 
 Note: old firmware SSID: ESP_PS2/USB, password: '0123456789'
 
@@ -209,6 +237,34 @@ Starting from firmware version v5, uart_bridge.uf2 is compatible with the latest
 | `esptool-macos-arm64` | macOS Apple Silicon (M1/M2/M3...) |
 
 Just pick the binary that matches your OS and architecture — no installation needed.
+
+### Firmware update over the air (OTA), since FirmwareV7
+
+**OTA stands for "Over The Air"**: updating the firmware of the implant through its own WiFi network, instead of taking it out of the target, plugging it into an implant probe board and copying files over USB. Starting from firmware **FirmwareV7**, okhi can update **both chips** this way. Once an implant is hidden inside a keyboard, laptop or tower case, you never have to open it again to put a newer firmware on it: connect to its WiFi, open the web interface, upload one file.
+
+The whole update is a single file, `okhi_USB_ota.pkg` or `okhi_PS2_ota.pkg`, included in the release package. It carries the ESP32-C2 firmware and the RP2040 firmware together, tagged with the variant (USB or PS2) and protected by a CRC32 for each half, so the device refuses a package built for the other variant or a corrupted one, and the two chips can never end up running mismatched firmware.
+
+To update, join the device WiFi network (`USB_xxxxxxxxxxxx` or `PS2_xxxxxxxxxxxx`, password `1234567890`), open http://192.168.4.1/, use the **Upload firmware** button and pick the `.pkg`. From there everything is automatic: the ESP validates the package, writes its own half to the spare flash slot and reboots into it, then **you reconnect and load the page again to confirm the update**. Only after that confirmation does the RP2040 pull its own image over the internal SPI link, verify it with a CRC32, back up its current firmware to a golden slot, apply the new one and reboot.
+
+That confirmation step is not optional, and it is the core of the safety design: if nobody loads the page within 5 minutes, the ESP assumes the new firmware is broken (or unreachable), rolls back to the previous one and never touches the RP2040. An update nobody could reach is an update that failed. In the same spirit, a power loss while the package is uploading is harmless (the old firmware keeps running from the other slot), and an RP2040 firmware that boots but cannot talk to the ESP is replaced by the golden backup after three attempts.
+
+While the update runs, keystroke capture is suspended for the couple of seconds the SPI transfer and the commit take. The keyboard itself keeps working normally throughout, those keystrokes are simply not recorded.
+
+Do not power the device off during an update.
+
+**Important**: OTA only works on devices already running an OTA capable firmware, that is v7 or newer. A device coming from an older release has to be programmed **once by cable** with `upload_firmware.bat` and the `.uf2` files, as described above, because the ESP partition table changed and that change cannot be migrated over the air. After that first cable install, every following update can be done over WiFi.
+
+The release package also ships `ota_esp.bin` and `ota_rp.bin`, the same two images loose, to update one chip on its own. Those are meant for development; for normal use always use the `.pkg`. Full details, including the `curl` commands and how to check the result on http://192.168.4.1/stats, are in [stuff/OTA_INSTRUCTIONS.txt](stuff/OTA_INSTRUCTIONS.txt).
+
+### Multi-language keyboard support, since FirmwareV7
+
+A keyboard does not send characters, it sends **key positions** (HID usage IDs on USB, scan codes on PS2). What turns a position into a character is the keyboard layout configured in the target computer, so the same physical key is `;` on an english keyboard and `ñ` on a spanish one. Until FirmwareV7 okhi decoded everything as an english keyboard, which meant wrong characters whenever the target used a different layout.
+
+Starting from firmware **FirmwareV7**, the web interface has a **Keyboard layout** selector at the top. Pick the layout the target machine is using and the keystrokes are decoded with it, including the characters typed with **AltGr** (`@`, `#`, `€`, `[`, `]`, and so on), which do not exist at all in the english layout. Decoding happens in the browser, so the selector changes how new keystrokes are shown from that moment on; the text already on screen keeps the characters it was decoded with, and the selected layout is saved together with the capture when you press **Download all data**.
+
+The layouts currently included are **english** (default) and **spanish**. Adding a new one is easy and does not require touching any C code: the tables live in `webusb\index.html` (USB firmware, `LAYOUTS` object) and `webps2\index.html` (PS2 firmware, `PS2_LAYOUTS` object), with one entry per layout and three tables in each (`base`, `shift` and `altgr`) mapping key code to character. The USB tables are indexed by HID usage ID and the PS2 ones by set 2 scan code, since that is what each protocol puts on the wire. Add your layout there, add an `<option>` to the selector, regenerate the web with `webgen.js` and rebuild the ESP firmware, as described in the **Web Developers** section below. Pull requests with new layouts are very welcome.
+
+Note: the raw stream is always kept next to the decoded keys (**HID reports** on USB, **PS/2 data** on PS2) and both go into the downloaded file, so nothing is lost by having the wrong layout selected while capturing.
 
 
 ## Thanks to PCBWAY for sponsoring the okhi project
@@ -526,6 +582,55 @@ To compile USB firmware, follow the same steps. Just select the firmware\usb\rp 
 
 Note: I modified the original usb-sniffer-lite project by Alex Taradov (porting to pico-sdk). I am not a RP2040 expert, so I am learning a lot with this project.
 
+## The ESP32-C2 as an SPI slave: behavior, quirks, and how they shaped the code
+
+The two chips talk over a private SPI link plus two side-band GPIO lines. The **RP2040 is the SPI master** and the **ESP32-C2 is the SPI slave**: the RP is the real time capture engine, so it owns the clock and decides when anything moves, while the ESP is the Wi-Fi / web / OTA brain that only ever answers. The slave side is ESP-IDF's `driver/spi_slave.h`, driven from [firmware/com/com_esp.h](firmware/com/com_esp.h); the RP master side lives in [firmware/com/com_rp_hw.h](firmware/com/com_rp_hw.h). Everything below is behavior of the ESP32-C2 slave and of the ESP-IDF `spi_slave` driver that we hit during development, and that the current protocol and timing hacks exist to work around. It is written down so anyone extending the link knows why the code looks the way it does.
+
+**Wire and frame format.** SPI mode 0 (CPOL=0, CPHA=0), MSB first, about 5 MHz (`SPI_BAUD` in com_rp_hw.h), DMA on the ESP side. The frame layout is 256 bytes (`SPI_FRAME_SIZE` in [firmware/com/com.h](firmware/com/com.h)): a 16-byte lead, an `OKHI` / `OKHC` magic, a small header, then a payload area. The ESP arms its DMA buffers at that full size, but the master does not always clock all 256 bytes (see quirk 3). Both ends stamp `SPI_FRAME_VERSION` into their frames, and the ESP rejects a control frame whose version does not match (counted as `spi_proto_mismatch`), so a version skew between the two firmwares is caught rather than silently misparsed.
+
+**Pins, clock and DMA.** The ESP-IDF slave driver caps non-DMA transfers at 64 bytes, so the 256-byte frames need DMA, which is why the slave is brought up with `SPI_DMA_CH_AUTO`. The ESP SPI pins (MOSI 7, MISO 2, SCLK 6, CS 10 in com_esp.h) are the ESP32-C2 IO_MUX defaults for SPI2, so the signals stay on the dedicated pins instead of going through the GPIO matrix. At 5 MHz that is not a performance requirement (the ESP-IDF docs note that at 80 MHz and below both routings behave identically), and 5 MHz sits far below the slave's rated 60 MHz ceiling.
+
+### 1. The slave must be armed before the master clocks a single bit
+
+An ESP SPI slave does not listen for free. A DMA transaction has to be queued with `spi_slave_queue_trans()` **before** the master pulls CS and starts clocking; if the master clocks while nothing is queued, that data is not captured. This one fact drives most of the design:
+
+- The slave pre-queues a ring of 8 transactions at startup (`SPI_QUEUE_DEPTH`, `spi_task()` in com_esp.h) and re-queues each buffer as soon as it has processed it, so there is always one waiting.
+- A dedicated ready line, `ELOG_SLAVEREADY` (ESP -> RP), tells the master when the slave actually has a transaction loaded. The slave raises it in `spi_post_setup_cb()`, which the driver fires after it has loaded a queued transaction into the SPI hardware, and drops it in `spi_post_trans_cb()`. Both callbacks are `IRAM_ATTR` because they run from interrupt context.
+- The master treats that line as a hard interlock. `my_spi_to_esp_write_blocking()` in [firmware/usb/rp/okhi.c](firmware/usb/rp/okhi.c) raises `EBOOT_MASTERDATAREADY` (RP -> ESP), spins until `ELOG_SLAVEREADY` is high, and only then drives CS and clocks the frame out. At boot, `init_esp_seq()` waits for the slave to come up before the first poll.
+
+None of this is an okhi invention. The ESP-IDF slave docs state plainly that "a Host should not start a transaction before its Device is ready for receiving data" and recommend a dedicated GPIO handshake to sync the two sides, and the official `spi_slave` receiver example raises that handshake line in its `post_setup_cb` and drops it in its `post_trans_cb`, which is exactly what okhi's `spi_post_setup_cb` / `spi_post_trans_cb` do with `ELOG_SLAVEREADY`. The line exists precisely because an SPI slave cannot be clocked on demand: the master has to be told when a transaction is armed. Both handshake GPIOs are pinned in [firmware/com/com_rp_pins.h](firmware/com/com_rp_pins.h).
+
+### 2. CS setup and hold matter, and the official ESP example shows you must delay around CS
+
+The ESP slave can miss the final bit of a frame when CS deasserts too close to the last clock edge, that is, when CS reaches the slave faster than the clock does. This is not okhi folklore. The official ESP-IDF `spi_slave` "sender" example handles exactly this on the master side by keeping CS asserted for a few SPI clock cycles after the last bit, with `cs_ena_posttrans = 3` in its master device config (that same example master runs at 5 MHz in mode 0, the exact clock and mode okhi uses). That example, its URL and the reasoning it gives ("Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK") are quoted verbatim in the comment above the `delay_cs()` macro in [firmware/com/com_rp_hw.h](firmware/com/com_rp_hw.h).
+
+okhi cannot use `cs_ena_posttrans`, because the RP drives CS in **software** rather than with the hardware CS pin (`rp_spi_master_init()` sets the CS GPIO by hand). So it reproduces the same margins itself, inside the `CS_LOW()` / `CS_HIGH()` macros that wrap every transfer:
+
+- **Hold after the last bit**, the direct analog of `cs_ena_posttrans = 3`: `delay_cs_pos()` keeps CS low for a short NOP delay after the last clock, before releasing it. The comment in com_rp_hw.h works the sizing out (about 90 NOPs, on the order of a few SPI clock cycles at 5 MHz, matching the example's 3). Both variants use this default.
+- **Setup after asserting CS**, before the first clock: the USB build additionally waits 25 us here (`delay_cs_pre()` / `SPI_CS_SETUP_US` in [firmware/usb/rp/okhi.c](firmware/usb/rp/okhi.c)); the PS/2 build leaves this at the same default NOP delay.
+
+The point for anyone touching this: the software-CS, NOP and busy-wait arrangement is not cargo cult, it is there to give the ESP slave enough CS setup and hold time so it does not drop the last bit, mirroring what the official example does with `cs_ena_posttrans`. If you change the CPU clock or the SPI rate, re-check these delays, since the NOP timing scales with the clock (com_rp_hw.h spells out the 125 MHz and 250 MHz cases).
+
+### 3. Fixed-size DMA buffers, word-aligned, with a separately reported transfer length
+
+The slave's DMA works in fixed length buffers, so the RX and TX buffers are a fixed 256 bytes each and every transaction is armed for that full length (`length = SPI_FRAME_SIZE * 8` bits in `spi_task()`). The ESP-IDF docs are explicit that `length` is only the buffer capacity: the real transaction length is decided by the master's clock and CS, and can only be read afterwards from `trans_len`. So the master does not have to clock all 256 bytes: the driver reports the actual bit count through `trans_len` (the ESP keeps it for diagnostics), and the payload length itself is recovered by scanning the received buffer in `spi_payload_length()`. This is how the PS/2 variant can forward short keystroke lines while the poll, status and OTA-data frames use the full 256-byte layout. The RX/TX buffers carry `WORD_ALIGNED_ATTR` because, with DMA, the driver requires the buffer to start on a 32-bit boundary and be a multiple of 4 bytes long, and it errors out of `spi_slave_queue_trans()` otherwise; the fixed 256-byte size meets the length-multiple part. The net effect is that the slave side always deals in 256-byte buffers even when the payload is a short line.
+
+### 4. The slave can never start a transfer, so everything is poll plus piggyback
+
+A slave only responds. The ESP cannot push a byte when it wants to; it can only place data in its TX buffer and wait for the master to clock it out on MISO. The whole protocol is built around that constraint:
+
+- The RP periodically clocks a control frame (magic `OKHC`, `SPI_CTRL_TYPE_POLL`) in `poll_esp()`, driven by `poll_esp_if_due()`, as one full-duplex 256-byte transfer. On that same transfer the ESP's already-queued TX buffer rides back on MISO as a status frame with flag bits (`SPI_FLAG_RP_IMAGE_READY`, `SPI_FLAG_RP_COMMIT`, and so on). Because the TX buffer was filled when the ESP re-armed it, the status the RP reads reflects the state as of that arming, one transfer behind.
+- OTA of the RP image is pure request/response over polling: the RP asks for block N with `SPI_CTRL_TYPE_REQUEST_BLOCK`, the ESP only acts on that request after the transfer completes and loads block N into the *next* TX buffer in `spi_fill_frame()`, so the RP reads it back on a following poll (`ota_fetch_block()` retries for exactly this reason). Nothing "sends" the image; the RP pulls it 128 bytes at a time.
+- Captured keystrokes travel the other way, RP -> ESP on MOSI, and the ESP just files whatever landed in its RX buffer into a ring for the web server to serve.
+
+### ESP-IDF specifics
+
+The ESP firmware is built on native **ESP-IDF** (v6.0.2 here). Since okhi v5 the old PlatformIO + Arduino layer was dropped, partly so a single codebase supports both the legacy ESP32-C2 and the new 2.0 (H4X) silicon, which older ESP-IDF cannot build for (see the note under **ESP-C2 DEV SETUP** above). The slave lives entirely in the `spi_slave` driver; the DMA queue, the two IRAM callbacks and the fixed-frame model above are all ESP-IDF behavior, not something okhi invented.
+
+### In hindsight: the master and slave roles are arguably backwards
+
+Every quirk in this section comes from the ESP32-C2 being the **slave**. Looking back, flipping the roles, making the **RP2040 the SPI slave** and the **ESP32-C2 the master**, would likely have been the cleaner choice. The RP2040's PIO can implement a tightly timed SPI slave in hardware, and an ESP master could initiate a transfer whenever it wanted data instead of waiting to be clocked. That would have removed the `SLAVEREADY` / `MASTERDATAREADY` arming handshake and much of the software-CS setup and hold tuning that the current direction forces. But that is not how it was built, and in practice it does not matter: the current design has proven reliable in the field and works well, so it stays as is. Treat this section as a heads-up for anyone extending the link, not a bug list.
+
 # Web Developers
 
 The web is located in webps2\index.html for PS2 firmware and webusb\index.html for USB firmware. You can modify the web as you want, adding more keyboard layouts, improving keyboard protocol parsing (javascript)...
@@ -660,16 +765,32 @@ Pack includes:
 
 ![](stuff/images/usbdevboard.jpg)
 
-- 1 PS2 sniffer board for developers (this board converts PS2 signals to 3v3 for Raspberry Pi Pico):
+- 1 PS2 sniffer board for developers (this board converts PS2 signals to 3v3 for RP2040 BOARD):
 
-![](stuff/images/ps2devboard.jpg)
+![](stuff/images/newdevsetup.png)
 
 You need buy by yourself:
 
-- 1 RASPBERRY PI PICO (soldered version) + USB cable
-- 1 Raspberry Debug probe (debugger) + USB cable
+- 1 RP2040 board with 16 MB of flash, Raspberry Pi Pico form factor (soldered version) + USB cable. **A stock Raspberry Pi Pico will not work**, see the note below
+
+- 1 Raspberry Pi Debug probe (debugger) + USB cable
 - 1 ESP8684-DevKitM-1 (soldered version) + USB cable
 - 1 kit Dupont cables (Female-Female, Male-Male, Male-Female)
+
+-----
+
+- 3-JST-SH to 3-Female DuPont cable 
+- 3-JST-SH to 3-Male DuPont cable 
+- 3-JST-SH to 3-JST-SH cable
+
+This combination covers the vast majority of RP2040 boards available online, letting you connect the Raspberry Pi Debug Probe via SWD and UART regardless of the connector type used:
+
+![](stuff/images/jstshcableset.png)
+
+Recommendation: buy a couple of JST-SH sets of each cable so you have spares and avoid losing connectivity during testing or debugging.
+
+-----
+
 - 1 Cheap logic analyzer ~8$ (compatible with Saleae software if possible)
 - 1 PS2<->USB adapter
 - 1 PS2 male to PS2 male cable (MINI-DIN 6P)
@@ -677,21 +798,57 @@ You need buy by yourself:
 - 1 USB Keyboard (optional)
 - 1 PS2 Keyboard (Lenovo on Aliexpress is OK) (optional)
 
-So, this is basically the okhi implant in big format! the PCBs just allow an easy sniffer and interconnection between Raspberry Pi Pico and ESP32-C2 and the keyboard.
+So, this is basically the okhi implant in big format! the PCBs just allow an easy sniffer and interconnection between RP2040 board and ESP32-C2 and the keyboard.
 
 With this setup, you can debug, test, and develop the implant firmware in a more comfortable way.
 
-## Flash PI PICO PS2 firmware using Raspberry Pi Debug Probe
+## About the RP2040 board
 
-- Connect the raspberry pi debug probe to the raspberry pi pico:
+A stock Raspberry Pi Pico is **not** enough: it only carries 2 MB of flash, and okhi needs 16 MB. What you need is a board that keeps the same form factor, pinout and GPIO mapping as the Pico, but ships a 16 MB flash chip. Everything else must stay identical, otherwise the firmware and the developer boards above will not line up.
+
+There are plenty of cheap ones on the internet, and many of them come with USB-C instead of micro-USB, which is a nice bonus. The one I use and recommend is the **YD-RP2040** (16 MB version).
+
+![](stuff/images/rp2040bigflash.png)
+
+# Extract boards from the female header pins
+
+![](stuff/images/extractool.png)
+
+https://github.com/therealdreg/removal_tool_cw308_ufo_chipwhisperer
+
+Use this 3D-printable removal tool for the CW308 UFO ChipWhisperer platform to remove the RP2040 board from the female header pins without damaging either the board or the pins. It is designed to fit the RP2040 board precisely, making it easy to extract it safely from the female headers.
+
+Gently pry up each of the four corners of the board little by little, rotating around the board as you go, until it comes free from the female pins. Do not apply too much force; work slowly and carefully.
+
+[Click here to watch a short video showing how to safely extract the board without damaging it: stuff/images/extractfig.gif](stuff/images/extractfig.gif)
+
+
+## Flash RP2040 Board PS2 firmware using Raspberry Pi Debug Probe
+
+- Connect the raspberry pi debug probe SWD + UART to the RP2040 board:
+
+
+![](stuff/images/Cum1K.jpg)
+
+-----
+
+Example PI PICO + Debug Probe:
 
 ![](stuff/images/debugprobepico.png)
 
-Connect the debug probe to the computer using a USB cable. Also connect raspberry pi pico to the computer using a USB cable.
+-----
+
+Final setup for PS2 dev SWD + UART debugging:
+
+![](stuff/images/I69UQ.jpg)
+
+------
+
+Connect the debug probe to the computer using a USB cable. Also connect the RP2040 board to the computer using a USB cable.
 
 Open Visual Studio Code (with the Raspberry Pi Pico extension), open okhi ps2 project, shift+ctrl+p, type ">Tasks: Run Task", press enter, select "Flash", press enter. Done!
 
-## Debugging PI PICO PS2 firmware using Raspberry Pi Debug Probe
+## Debugging RP2040 Board PS2 firmware using Raspberry Pi Debug Probe
 
 - The same as flashing, but go to Run and Debug icon (shift+ctrl+d). Select "Pico Debug (Cortex Debug)" and press the green arrow. Done!
 
@@ -699,11 +856,11 @@ Open Visual Studio Code (with the Raspberry Pi Pico extension), open okhi ps2 pr
 
 The debugger stops on platform_entry function, At this point, you can set a breakpoint in the main() code, etc...
 
-## PI PICO Debug UART Console
+## RP2040 Board Debug UART Console
 
-Connect GND from USB to 3v3 UART adapter to GND PIN of the Raspberry Pi Pico.
+Connect GND from USB to 3v3 UART adapter to GND PIN of the RP2040 board.
 
-Connect a USB to 3v3 UART adapter -> RX From adapter to the TX PIN (GPIO 4) of the Raspberry Pi Pico:
+Connect a USB to 3v3 UART adapter -> RX From adapter to the TX PIN (GPIO 4) of the RP2040 board:
 
 ![](stuff/images/uartdebug.png)
 
@@ -711,7 +868,7 @@ You can use Raspberry Pi Debug probe to debug UART because it has a USB to UART 
 
 ![](stuff/images/uartcon.png)
 
-Note: Raspberry Pi Pico is 3v3, so you need a 3v3 USB to UART adapter.
+Note: RP2040 board is 3v3, so you need a 3v3 USB to UART adapter.
 
 Open a terminal (putty, teraterm, etc...) and select the COM port of the USB to UART adapter. Set the baudrate to 921600 and done! you can see the debug messages in the terminal.
 
@@ -773,6 +930,10 @@ Hard resetting via RTS pin...
 ```
 
 And then the debug UART window should appear
+
+Somtimes is neccesary run a "Erase Flash Memory from Device" after build but before flash, to avoid problems with old firmware in the flash memory. Build the code, whe finish: Press Ctrl+Shift+P, type "> ESP-IDF: Erase Flash Memory from Device" and press enter. After that, you can flash again.
+
+![](stuff/images/idffullera.png)
 
 # PS2 Captures
 

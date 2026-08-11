@@ -68,8 +68,71 @@ call :copy_checked "firmware\%tgt%\esp\build\storage.bin" "%dest%"
 call :copy_checked "firmware\%tgt%\rp\build\okhi.uf2" "%dest%"
 call :copy_checked "firmware\%tgt%\PROGRAM_INSTRUCTIONS.txt" "%dest%"
 call :copy_checked "stuff\okhi_reset_flash.uf2" "%dest%"
-call :copy_checked "stuff\pico-uart-bridge-dregmod\build\uart_bridge.uf2" "%dest%"
+call :copy_checked "firmware\uart_bridge\build\uart_bridge.uf2" "%dest%"
+
+rem --- over the air payloads, renamed so both chips can live side by side ---
+call :copy_as "firmware\%tgt%\esp\build\okhi.bin" "%dest%\ota_esp.bin"
+call :copy_as "firmware\%tgt%\rp\build\okhi.bin" "%dest%\ota_rp.bin"
+call :copy_checked "stuff\OTA_INSTRUCTIONS.txt" "%dest%"
+
+rem --- the combined package, which is what the user actually uploads ---
+call :make_package "%tgt%" "%dest%"
 exit /b
+
+:: -------------------------
+:make_package
+set "PKGTGT=%~1"
+set "PKGDEST=%~2"
+
+if /I "%PKGTGT%"=="usb" (set "PKGVAR=USB") else (set "PKGVAR=PS2")
+
+powershell -NoProfile -ExecutionPolicy Bypass -File "stuff\make_ota_package.ps1" ^
+  -EspImage "firmware\%PKGTGT%\esp\build\okhi.bin" ^
+  -RpImage "firmware\%PKGTGT%\rp\build\okhi.bin" ^
+  -Variant "%PKGVAR%" ^
+  -Output "%PKGDEST%\okhi_%PKGVAR%_ota.pkg"
+
+if errorlevel 1 (
+  echo [PACKAGE FAIL] %PKGTGT%
+  set /a ERRORS+=1
+)
+goto :eof
+
+:: -------------------------
+:copy_as
+set "SRC=%~1"
+set "DST=%~2"
+
+if not exist "%SRC%" (
+  echo [MISSING] %SRC%
+  set /a ERRORS+=1
+  goto :eof
+)
+
+for %%D in ("%DST%") do if not exist "%%~dpD" mkdir "%%~dpD" 2>nul
+
+copy /y "%SRC%" "%DST%" >nul
+if errorlevel 1 (
+  echo [COPY FAIL] %SRC% -^> %DST%
+  set /a ERRORS+=1
+  goto :eof
+)
+
+if not exist "%DST%" (
+  echo [NO DEST] %DST%
+  set /a ERRORS+=1
+  goto :eof
+)
+
+fc /b "%SRC%" "%DST%" >nul
+if errorlevel 1 (
+  echo [VERIFY FAIL] %SRC% != %DST%
+  set /a ERRORS+=1
+  goto :eof
+)
+
+if defined VERBOSE echo [OK] %SRC% ^> %DST%
+goto :eof
 
 :: -------------------------
 :copy_checked

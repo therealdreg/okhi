@@ -13,7 +13,11 @@ const OUT_MIN = 'webuff.txt';
 const OUT_GZ  = 'webuff_gz.txt';        
 const OUT_ORI = 'webuff_orig.txt';      
 
-const EXTRA_PATH_GZ_SPIFF = '..\\firmware\\usb\\esp\\spiffs\\index.html.gz';
+// The page is EMBEDDED in the ESP application, it no longer lives in SPIFFS.
+// main/CMakeLists.txt picks this file up with EMBED_FILES, which is why it has
+// to land in the component directory and keep exactly this name: the linker
+// derives _binary_index_html_gz_start from it.
+const EXTRA_PATH_GZ_EMBED = '..\\firmware\\usb\\esp\\main\\index.html.gz';
 const EXTRA_MIN = '..\\firmware\\usb\\esp\\src\\webuff.txt';
 const EXTRA_GZ  = '..\\firmware\\usb\\esp\\src\\webuff_gz.txt';
 const EXTRA_ORI = '..\\firmware\\usb\\esp\\src\\webuff_orig.txt';
@@ -81,6 +85,18 @@ fs.readFile(INPUT, 'utf8', (err, data) => {
 
     fs.writeFile('index.orig.gz', gzBuf, e => e ? console.error(e) : console.log('index.orig.gz written'));
 
-    fs.writeFile(EXTRA_PATH_GZ_SPIFF, gzBuf, e => e ? console.error(e) : console.log(`${EXTRA_PATH_GZ_SPIFF} written`));
+    fs.writeFile(EXTRA_PATH_GZ_EMBED, gzBuf, e => e ? console.error(e) : console.log(`${EXTRA_PATH_GZ_EMBED} written`));
+
+    const minGzBuf = zlib.gzipSync(minBuf, { level: zlib.constants.Z_BEST_COMPRESSION });
+
+    console.log('\n--- Embedded cost ---');
+    console.log('Shipped inside the ESP application:', gzBuf.length, 'bytes');
+    console.log('Flash actually consumed:', gzBuf.length * 2, 'bytes, because ota_0 and ota_1 both carry it');
+    console.log('Minified would be:', minGzBuf.length, 'bytes, a saving of', gzBuf.length - minGzBuf.length);
+    console.log('\nThe ORIGINAL is what gets shipped. html-minifier 4 runs minifyJS through');
+    console.log('uglify-js 3, which only parses ES5, and this page uses template literals and');
+    console.log('arrow functions. Switch to minBuf only if you load the page afterwards and');
+    console.log('confirm the JS still runs.');
+    console.log('\nNow rebuild the ESP: the page is linked into the binary, not flashed to SPIFFS.');
   });
 });

