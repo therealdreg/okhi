@@ -71,6 +71,58 @@ Swap `usb` for `ps2` for the other variant. `-C <dir>` avoids having to `cd`. Us
 
 **ESP builds are slow.** ~30 s of CMake configure plus 752 compile steps: several minutes from clean. Run them with `run_in_background: true` and wait for the notification rather than polling.
 
+### Dev WiFi build (`wifi_secret.h`) and the ccache trap that WILL waste your time
+
+To make a board come up on a real network instead of its own AP, create
+`firmware/<variant>/esp/src/wifi_secret.h` (gitignored) with `OKHI_DEV_STA_SSID`
+and `OKHI_DEV_STA_PASS`. `wifi_client.h` (tracked, no secrets) pulls it in with
+`#if __has_include("wifi_secret.h")`. See the README "Putting the implant on your
+own WiFi" for the file body and the commit-safety rules.
+
+**The trap (this cost a whole session):** `__has_include` creates a dependency
+on a file that did *not* exist at the previous compile, so **neither ninja nor
+ccache re-runs `okhi.c` when you add or remove `wifi_secret.h`.** ESP-IDF enables
+ccache (`C:\Espressif\tools\ccache\...`); its direct mode hashes only the headers
+the *last* compile recorded, misses the new `wifi_secret.h`, and returns the
+STALE object — so the build "succeeds", the `.obj` mtime updates, but the secret
+is NOT compiled in and the board still comes up as an AP. Touching `okhi.c` alone
+is not enough: ninja recompiles, ccache serves the stale object anyway.
+
+**The reliable way to pick up a `wifi_secret.h` add/remove/change:**
+
+```powershell
+$env:IDF_CCACHE_ENABLE = "0"
+Remove-Item "c:\Users\regue\Desktop\okhi\firmware\usb\esp\build\esp-idf\main\CMakeFiles\__idf_main.dir\okhi.c.obj" -Force -ErrorAction SilentlyContinue
+. "C:\Espressif\tools\Microsoft.v6.0.2.PowerShell_profile.ps1" | Out-Null
+$env:IDF_CCACHE_ENABLE = "0"
+Invoke-idfpy -C "c:\Users\regue\Desktop\okhi\firmware\usb\esp" build
+```
+
+(Set `IDF_CCACHE_ENABLE=0` **both** before and after dot-sourcing the profile; the
+profile can reset the environment. `ccache -C` clears the whole cache if you
+prefer that over deleting the one object.) A full `build/` wipe also works and is
+the safest, just slower.
+
+**ALWAYS verify, never trust the exit code.** The build prints a `#pragma message`
+"wifi_secret.h is compiled in ..." when the secret is really in the translation
+unit. Then confirm the image carries it. Do NOT rely on a plain string grep: a
+short password (<= 8 bytes) is emitted as immediate word-stores, not a contiguous
+rodata literal, so `grep pass okhi.bin` finds nothing even on a correct build.
+The SSID (longer) does appear as a literal, so it is the reliable canary:
+
+```bash
+python -c "print(open('firmware/usb/esp/build/okhi.bin','rb').read().count(b'YourSSID'))"   # >=1 means the STA config is in (use your real SSID)
+```
+
+To prove a short password is in, disassemble and look for its bytes as immediates
+(`riscv32-esp-elf-objdump -d okhi.elf`; e.g. "7mcc" -> `# 63636d37`, "AtSj" ->
+`# 6a537441`).
+
+The RP/Pico build has **no ccache** (checked: `CMakeCache.txt` has no
+`RULE_LAUNCH_COMPILE`/`COMPILER_LAUNCHER`) and no `__has_include` conditional
+headers, so it does not suffer this. A normal header edit like `com_rp_ota.h` is
+tracked by ninja deps and rebuilt correctly (the flash size moves when it should).
+
 ### RP (both variants)
 
 Configure once, then build. Two explicit `-D` flags are required because neither cmake nor ninja is on `PATH`:
@@ -144,10 +196,10 @@ Sizes below are from a verified clean build of every target. Treat a deviation a
 
 | target | size | notes |
 |---|---|---|
-| `usb/esp` | `okhi.bin` 0xc5640 (808 512 B), 44% of app partition free | 752 steps, **0 warnings** |
-| `ps2/esp` | `okhi.bin` 0xc5500, 44% free | 752 steps, **0 warnings** |
-| `usb/rp` | FLASH 44 360 B (2.12%), RAM 184 792 B (70.49%) | 76 steps, 10 warnings, all pre-existing |
-| `ps2/rp` | FLASH 40 976 B (1.95%), RAM 78 944 B (30.11%) | 76 steps, **0 warnings** |
+| `usb/esp` | `okhi.bin` 0xceb50 (846 672 B), 41% of app partition free | 752 steps, **0 warnings** |
+| `ps2/esp` | `okhi.bin` 0xcacf0, 42% free | 752 steps, **0 warnings** |
+| `usb/rp` | FLASH 56 916 B (2.71%), RAM 199 668 B (76.17%) | 76 steps, 10 warnings, all pre-existing |
+| `ps2/rp` | FLASH 53 824 B (2.57%), RAM 94 108 B (35.90%) | 76 steps, **0 warnings** |
 | `uart_bridge` | FLASH 33 100 B (1.58%), RAM 44 788 B (17.09%), `uart_bridge.uf2` 66 560 B | 91 steps, 2 warnings, both pre-existing |
 
 The 10 `usb/rp` warnings are long-standing and unrelated to recent work: unused `capture_*_str` / `display_*_str` tables, unused `ftime` and `readed_last`, a `-Wpointer-sign` on `my_spi_to_esp_write_blocking(pkts, ...)` at [okhi.c:621](firmware/usb/rp/okhi.c#L621), and a discarded `volatile` in `GetLastDbuffAddr` at [okhi.c:1050](firmware/usb/rp/okhi.c#L1050). `ps2/rp` has none, so they are specific to the usb source.
@@ -194,6 +246,14 @@ Verified against the pushed commit by exporting it with `git archive` and runnin
 
 ## Gotchas
 
+- **A build carrying `wifi_secret.h` must never be committed.** That header is
+  gitignored, but `firmware/*/esp/build/okhi.{bin,elf}` are tracked on purpose
+  so a fresh clone can run `make_release.bat`, and a build made with the secret
+  present has the SSID and password in those binaries in clear text. The build
+  emits a `#warning` when it happens. Before committing or releasing, remove the
+  header, rebuild, and confirm with `git grep -l "<the ssid>" -- .`.
+
+- **An OTA update WIPES NVS, so a STA board drops to AP unless creds are compiled in.** The ESP stores the running image's build stamp in NVS and, on every boot, erases the WHOLE of NVS on a stamp mismatch (documented, on purpose). Any OTA carries a new stamp, so after it the stored WiFi settings are gone and the board falls back to its factory default: an access point (`USB_xxxx`/`PS2_xxxx`, pass `1234567890`, `http://192.168.4.1/`). If the board was reached over the LAN in STA mode, **it will disappear from the LAN after the OTA** and the ESP validation step (load the page within 5 min or it rolls back) then has to happen at `192.168.4.1`. To keep a dev board on your network across OTAs, compile in `wifi_secret.h` (see the dev build section): after the NVS wipe it auto-rejoins from the compiled default and usually gets the same DHCP IP. **Warn the user before OTA-ing a STA board that has no compiled creds.**
 - **`export.ps1` is a dead end.** See above. This is the single most likely way to waste time here.
 - **The two RP `okhi` binaries are not byte-reproducible.** Both `okhi.c` files print `__DATE__` and `__TIME__` at startup, and `RP_IDENTITY` in [com_rp_ota.h](firmware/com/com_rp_ota.h#L66) bakes them in again, so any recompile moves 10 bytes even when nothing changed. Comparing hashes to prove a refactor was a no-op does not work here; `cmp -l old new` does, and the diff should land entirely inside those two time strings. `uart_bridge` has no timestamp and *is* byte-reproducible, so for that one the hash is a valid check.
 - **`firmware/usb/rp/build/.ninja_log` can get corrupted** (`ninja: warning: premature end of file; recovering`). Ninja then rebuilds all 14 targets every time instead of going incremental. Delete the file to fix it.

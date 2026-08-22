@@ -53,3 +53,16 @@ firmware/uart_bridge/build/*
 !firmware/uart_bridge/build/uart_bridge.elf.map
 !firmware/uart_bridge/build/uart_bridge.hex
 !firmware/uart_bridge/build/uart_bridge.dis
+
+# Developer WiFi credentials. Never commit these. wifi_client.h is the tracked
+# mechanism and stays empty; wifi_secret.h is the file that actually holds a
+# SSID and a password, and it is deliberately a different name so that it has
+# never been in the index and cannot be committed by accident.
+firmware/*/esp/src/wifi_secret.h
+
+# Release output. make_release.bat drops a yyyyMMddHHmmss folder at the repo
+# root holding the built images plus a copy of stuff/last_esptool, which is
+# hundreds of megabytes. None of it belongs in the history: it is all
+# reproducible from the tree, and a release built for testing carries whatever
+# was in wifi_secret.h at the time.
+/20????????????/

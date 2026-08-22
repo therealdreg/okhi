@@ -173,7 +173,13 @@ Endpoints:
     /hwver      hardware version, parsed out of the RP status line
     /stats      full counter dump, one key=value per line
     /versions   build identity of both chips, plus the SPI link state
-    /spibench   ?ms=N, suspends capture and measures SPI throughput
+    /wifi       network settings, see section 7i of the usb doc
+    /selftest   hardware self test, see section 7h of the usb doc
+    /spibench   SPI clock sweep, see section 7d of the usb doc. No query
+                string returns the last result table, ?start=1 runs a
+                new sweep, ?abort=1 stops one
+    /rpreset    reboot the RP, which pulls CHIP_PU and restarts the whole
+                board; reset_times in /versions counts the restarts
 
 /buffer answers with these headers:
     X-Okhi-Next     cursor to pass as ?from= on the next request

@@ -31,6 +31,8 @@ SOFTWARE.
 
 #include "../../../com/com.h"
 
+#include "../src/wifi_client.h"
+
 static const char *WIFI_PREFIX = OKHI_PACKAGE_TAG_USB;
 
 #include "../../../com/com_esp.h"

@@ -269,6 +269,139 @@ static int init_ver(void)
     return 0;
 }
 
+
+#define RP_FAULT_MAGIC 0xFA017EDCu
+
+typedef struct
+{
+    uint32_t magic;
+    uint32_t pc;
+    uint32_t lr;
+    uint32_t psr;
+    uint32_t sp;
+    uint32_t r0;
+    uint32_t r1;
+    uint32_t r2;
+    uint32_t r3;
+    uint32_t r12;
+    uint32_t core;
+    uint32_t count;
+} rp_fault_t;
+
+static rp_fault_t rp_fault __attribute__((section(".uninitialized_data")));
+
+static void rp_fault_putc(char c)
+{
+#ifdef uart_default
+    if ((uart_get_hw(uart_default)->cr & UART_UARTCR_UARTEN_BITS) == 0)
+    {
+        return;
+    }
+
+    while ((uart_get_hw(uart_default)->fr & UART_UARTFR_TXFF_BITS) != 0)
+    {
+        tight_loop_contents();
+    }
+
+    uart_get_hw(uart_default)->dr = (uint32_t)(uint8_t)c;
+#else
+    (void)c;
+#endif
+}
+
+static void rp_fault_puts(const char *text)
+{
+    while (*text != '\0')
+    {
+        rp_fault_putc(*text++);
+    }
+}
+
+static void rp_fault_hex(uint32_t value)
+{
+    static const char digits[] = "0123456789abcdef";
+
+    rp_fault_puts("0x");
+
+    for (int shift = 28; shift >= 0; shift -= 4)
+    {
+        rp_fault_putc(digits[(value >> shift) & 0xf]);
+    }
+}
+
+static void rp_fault_line(const char *name, uint32_t value)
+{
+    rp_fault_puts(name);
+    rp_fault_hex(value);
+    rp_fault_puts("\r\n");
+}
+
+void okhi_fault_report(uint32_t *frame, uint32_t exc_return)
+{
+    rp_fault.magic = RP_FAULT_MAGIC;
+    rp_fault.r0 = frame[0];
+    rp_fault.r1 = frame[1];
+    rp_fault.r2 = frame[2];
+    rp_fault.r3 = frame[3];
+    rp_fault.r12 = frame[4];
+    rp_fault.lr = frame[5];
+    rp_fault.pc = frame[6];
+    rp_fault.psr = frame[7];
+    rp_fault.sp = (uint32_t)frame;
+    rp_fault.core = get_core_num();
+    rp_fault.count++;
+
+    (void)exc_return;
+
+    rp_fault_puts("\r\n*** HARD FAULT on core ");
+    rp_fault_putc((char)('0' + (rp_fault.core & 1)));
+    rp_fault_puts(" ***\r\n");
+    rp_fault_line("  pc  ", rp_fault.pc);
+    rp_fault_line("  lr  ", rp_fault.lr);
+    rp_fault_line("  psr ", rp_fault.psr);
+    rp_fault_line("  sp  ", rp_fault.sp);
+    rp_fault_puts("rebooting\r\n");
+
+    watchdog_reboot(0, 0, 0);
+
+    while (1)
+    {
+        tight_loop_contents();
+    }
+}
+
+void __attribute__((naked)) isr_hardfault(void)
+{
+    __asm volatile("mov  r1, lr                     \n"
+                   "movs r0, #4                     \n"
+                   "tst  r0, r1                     \n"
+                   "bne  1f                         \n"
+                   "mrs  r0, msp                    \n"
+                   "b    2f                         \n"
+                   "1:                              \n"
+                   "mrs  r0, psp                    \n"
+                   "2:                              \n"
+                   "ldr  r2, =okhi_fault_report     \n"
+                   "bx   r2                         \n");
+}
+
+static void report_last_fault(void)
+{
+    if (rp_fault.magic != RP_FAULT_MAGIC)
+    {
+        return;
+    }
+
+    printf("\r\n*** the previous boot ended in a HARD FAULT on core %u, crash %u ***\r\n",
+           (unsigned)(rp_fault.core & 1), (unsigned)rp_fault.count);
+    printf("    pc %08x  lr %08x  psr %08x  sp %08x\r\n", (unsigned)rp_fault.pc, (unsigned)rp_fault.lr,
+           (unsigned)rp_fault.psr, (unsigned)rp_fault.sp);
+    printf("    r0 %08x  r1 %08x  r2 %08x  r3 %08x  r12 %08x\r\n", (unsigned)rp_fault.r0, (unsigned)rp_fault.r1,
+           (unsigned)rp_fault.r2, (unsigned)rp_fault.r3, (unsigned)rp_fault.r12);
+
+    rp_fault.magic = 0;
+}
+
 static int my_spi_write_blocking(const uint8_t *src, size_t len)
 {
     CS_LOW();

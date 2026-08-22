@@ -35,7 +35,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "hardware/adc.h"
+#include "hardware/clocks.h"
 #include "hardware/flash.h"
+#include "hardware/pll.h"
+#include "hardware/structs/pll.h"
 #include "hardware/sync.h"
 #include "hardware/watchdog.h"
 #include "pico/stdlib.h"
@@ -112,8 +116,40 @@ static uint32_t esp_poll_checks;
 static uint32_t esp_poll_reported;
 static bool esp_bench_armed;
 static uint32_t esp_bench_ms;
+static uint8_t esp_bench_run_id;
+static uint8_t esp_bench_max_steps;
+static uint16_t esp_bench_min_khz;
+static uint16_t esp_bench_max_khz;
+static uint8_t esp_bench_esp_state;
+static uint32_t esp_bench_soak_ms;
+static uint8_t esp_bench_stepdowns;
+static uint8_t esp_bench_overclock;
+static uint8_t esp_bench_kind;
+static uint16_t esp_bench_resume_khz;
+static uint8_t esp_selftest_armed;
+static uint8_t esp_selftest_run;
+static uint8_t esp_selftest_opts;
+static uint8_t esp_selftest_blink;
+static uint8_t esp_selftest_eboot;
+static uint8_t esp_wifi_mode;
+static uint32_t esp_wifi_ip;
+static uint32_t esp_wifi_reported = 0xffffffffu;
+static int esp_wifi_mode_reported = -1;
+static uint32_t esp_uart_min_baud;
+static uint32_t esp_uart_max_baud;
+static int esp_selftest_last_run = -1;
+static int esp_bench_last_run = -1;
+static uint32_t bench_native_peri_hz;
+static uint32_t bench_native_auxsrc;
+static uint32_t bench_native_sys_hz;
+static uint32_t bench_saved_pll_refdiv;
+static uint32_t bench_saved_pll_fbdiv;
+static uint32_t bench_saved_pll_pd1;
+static uint32_t bench_saved_pll_pd2;
+static uint8_t bench_result_seq;
 static bool esp_rp_image_ready;
 static bool esp_rp_commit_requested;
+static bool esp_rp_reset_requested;
 static uint32_t esp_rp_image_size;
 static uint32_t esp_rp_image_crc;
 static uint32_t ota_failed_crc;
@@ -550,6 +586,14 @@ static uint32_t spi_get_u32(const uint8_t *src)
     return (uint32_t)src[0] | ((uint32_t)src[1] << 8) | ((uint32_t)src[2] << 16) | ((uint32_t)src[3] << 24);
 }
 
+static void spi_put_u32(uint8_t *dst, uint32_t value)
+{
+    dst[0] = (uint8_t)value;
+    dst[1] = (uint8_t)(value >> 8);
+    dst[2] = (uint8_t)(value >> 16);
+    dst[3] = (uint8_t)(value >> 24);
+}
+
 static void spi_build_control(uint8_t type, uint32_t block)
 {
     memset(spi_poll_tx, 0, sizeof(spi_poll_tx));
@@ -643,13 +687,47 @@ static void poll_esp(void)
         esp_frame_offset_max = esp_frame_offset;
     }
 
+    if (head[5] != SPI_FRAME_TYPE_STATUS && head[5] != SPI_FRAME_TYPE_DATA)
+    {
+        esp_link_up = false;
+        esp_poll_failed++;
+        esp_poll_badframes++;
+        memcpy(esp_last_bad_head, spi_poll_rx, sizeof(esp_last_bad_head));
+        esp_last_bad_tail = spi_poll_rx[SPI_FRAME_SIZE - 1];
+        esp_last_bad_silent = false;
+        return;
+    }
+
     esp_firmware_version = head[6];
     esp_rp_image_ready = (head[7] & SPI_FLAG_RP_IMAGE_READY) != 0;
     esp_rp_commit_requested = (head[7] & SPI_FLAG_RP_COMMIT) != 0;
+    esp_rp_reset_requested = (head[7] & SPI_FLAG_RP_RESET) != 0;
     esp_rp_image_size = spi_get_u32(head + 12);
     esp_rp_image_crc = spi_get_u32(head + 16);
     esp_bench_armed = (head[7] & SPI_FLAG_BENCH_ARMED) != 0;
     esp_bench_ms = spi_get_u32(head + 8);
+    esp_bench_run_id = head[SPI_BENCH_STATUS_RUN_OFF];
+    esp_bench_max_steps = head[SPI_BENCH_STATUS_STEPS_OFF];
+    esp_bench_min_khz = (uint16_t)head[SPI_BENCH_STATUS_MINKHZ_OFF] |
+                        (uint16_t)((uint16_t)head[SPI_BENCH_STATUS_MINKHZ_OFF + 1] << 8);
+    esp_bench_max_khz = (uint16_t)head[SPI_BENCH_STATUS_MAXKHZ_OFF] |
+                        (uint16_t)((uint16_t)head[SPI_BENCH_STATUS_MAXKHZ_OFF + 1] << 8);
+    esp_bench_esp_state = head[SPI_BENCH_STATUS_STATE_OFF];
+    esp_bench_soak_ms = spi_get_u32(head + SPI_BENCH_STATUS_SOAKMS_OFF);
+    esp_bench_stepdowns = head[SPI_BENCH_STATUS_DOWN_OFF];
+    esp_bench_overclock = head[SPI_BENCH_STATUS_OC_OFF];
+    esp_bench_kind = head[SPI_BENCH_STATUS_KIND_OFF];
+    esp_bench_resume_khz = (uint16_t)head[SPI_BENCH_STATUS_RESUME_OFF] |
+                           (uint16_t)((uint16_t)head[SPI_BENCH_STATUS_RESUME_OFF + 1] << 8);
+    esp_selftest_armed = (head[7] & SPI_FLAG_SELFTEST_ARMED) != 0;
+    esp_selftest_run = head[SPI_SELFTEST_STATUS_RUN_OFF];
+    esp_selftest_opts = head[SPI_SELFTEST_STATUS_OPTS_OFF];
+    esp_selftest_blink = head[SPI_SELFTEST_STATUS_BLINK_OFF];
+    esp_selftest_eboot = head[SPI_SELFTEST_STATUS_EBOOT_OFF];
+    esp_wifi_mode = head[SPI_WIFI_MODE_OFF];
+    esp_wifi_ip = spi_get_u32(head + SPI_WIFI_IP_OFF);
+    esp_uart_min_baud = spi_get_u32(head + SPI_UART_MIN_BAUD_OFF);
+    esp_uart_max_baud = spi_get_u32(head + SPI_UART_MAX_BAUD_OFF);
     esp_link_up = true;
     esp_poll_ok++;
 }
@@ -844,37 +922,2035 @@ static void report_ota_state(void)
     }
 }
 
-static void ota_run_bench(uint32_t duration_ms)
-{
-    uint64_t deadline = time_us_64() + (uint64_t)duration_ms * 1000u;
-    uint32_t frames = 0;
-    uint32_t failures = 0;
 
-    printf("spi bench: capture SUSPENDED for %u ms\r\n", (unsigned)duration_ms);
+#define BENCH_VCO_MIN_HZ 750000000u
+#define BENCH_VCO_MAX_HZ 1600000000u
+#define BENCH_LADDER_MAX_DIVISOR 512u
+#define BENCH_WARMUP_FRAMES 64
+#define BENCH_STEP_WARMUP_OK 8
+#define BENCH_RESULT_ATTEMPTS 24
+
+typedef struct
+{
+    uint32_t hz;
+    uint32_t peri_hz;
+    uint8_t auxsrc;
+    uint8_t fbdiv;
+    uint8_t pd1;
+    uint8_t pd2;
+} bench_rate_t;
+
+typedef struct
+{
+    uint32_t actual_hz;
+    uint32_t target_hz;
+    uint32_t frames;
+    uint32_t miso_ok;
+    uint32_t miso_bad;
+    uint32_t xfer_fail;
+    uint64_t elapsed_us;
+    uint32_t stale;
+    uint32_t peri_hz;
+    uint16_t offset_min;
+    uint16_t offset_max;
+    uint32_t peer_ok;
+    uint32_t peer_bad;
+    uint32_t peer_tx;
+    uint8_t fbdiv;
+    uint8_t pd1;
+    uint8_t pd2;
+    uint8_t auxsrc;
+    uint8_t kind;
+} bench_step_stat_t;
+
+static bench_rate_t bench_ladder[SPI_BENCH_MAX_STEPS];
+static bool bench_ladder_pass[SPI_BENCH_MAX_STEPS];
+static uint8_t bench_slot;
+static uint8_t bench_tx_variant[SPI_BENCH_TX_VARIANTS][SPI_BENCH_MOSI_PATTERN_LEN];
+static uint32_t bench_tx_variant_state[SPI_BENCH_TX_VARIANTS];
+static uint32_t bench_tx_seq;
+static uint32_t bench_last_miso_seq;
+
+static void bench_uart_drain(void)
+{
+    uart_tx_wait_blocking(ESP_UART_ID);
+#ifdef uart_default
+    uart_tx_wait_blocking(uart_default);
+#endif
+}
+
+static void bench_uart_reclock(void)
+{
+    uart_set_baudrate(ESP_UART_ID, RP_UART_BAUD);
+#ifdef uart_default
+    uart_set_baudrate(uart_default, PICO_DEFAULT_UART_BAUD_RATE);
+#endif
+}
+
+static uint32_t bench_peri_auxsrc(void)
+{
+    return (clocks_hw->clk[clk_peri].ctrl & CLOCKS_CLK_PERI_CTRL_AUXSRC_BITS) >> CLOCKS_CLK_PERI_CTRL_AUXSRC_LSB;
+}
+
+static void bench_peri_to_sys(void)
+{
+    uint32_t sys_hz = clock_get_hz(clk_sys);
+
+    bench_uart_drain();
+    clock_configure_undivided(clk_peri, 0, CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_CLK_SYS, sys_hz);
+    bench_uart_reclock();
+}
+
+static void bench_go_safe(void)
+{
+    bench_peri_to_sys();
+    spi_set_baudrate(SPI_ID, SPI_BAUD);
+}
+
+static void bench_save_usb_pll(void)
+{
+    bench_saved_pll_refdiv = pll_usb_hw->cs & PLL_CS_REFDIV_BITS;
+    bench_saved_pll_fbdiv = pll_usb_hw->fbdiv_int & PLL_FBDIV_INT_BITS;
+    bench_saved_pll_pd1 = (pll_usb_hw->prim & PLL_PRIM_POSTDIV1_BITS) >> PLL_PRIM_POSTDIV1_LSB;
+    bench_saved_pll_pd2 = (pll_usb_hw->prim & PLL_PRIM_POSTDIV2_BITS) >> PLL_PRIM_POSTDIV2_LSB;
+}
+
+static void bench_restore_usb_pll(void)
+{
+    if (bench_saved_pll_refdiv == 0 || bench_saved_pll_fbdiv < 16 || bench_saved_pll_pd1 == 0 ||
+        bench_saved_pll_pd2 == 0)
+    {
+        return;
+    }
+
+    uint32_t ref_hz = XOSC_HZ / bench_saved_pll_refdiv;
+
+    pll_init(pll_usb, bench_saved_pll_refdiv, bench_saved_pll_fbdiv * ref_hz, bench_saved_pll_pd1,
+             bench_saved_pll_pd2);
+}
+
+static void bench_apply_rate(const bench_rate_t *rate)
+{
+    if (rate->fbdiv != 0)
+    {
+        bench_peri_to_sys();
+        pll_init(pll_usb, 1, (uint32_t)rate->fbdiv * XOSC_HZ, rate->pd1, rate->pd2);
+    }
+
+    bench_uart_drain();
+    clock_configure_undivided(clk_peri, 0, rate->auxsrc, rate->peri_hz);
+    bench_uart_reclock();
+}
+
+static bool bench_resolve_rate(uint32_t want_hz, bench_rate_t *out)
+{
+    bool found = false;
+
+    out->hz = 0;
+
+    if (want_hz == 0)
+    {
+        return false;
+    }
+
+    uint32_t sys_hz = clock_get_hz(clk_sys);
+    uint32_t divisor = (sys_hz + want_hz - 1) / want_hz;
+
+    if (divisor < 2)
+    {
+        divisor = 2;
+    }
+
+    if ((divisor & 1u) != 0)
+    {
+        divisor++;
+    }
+
+    if (divisor <= BENCH_LADDER_MAX_DIVISOR)
+    {
+        uint32_t hz = sys_hz / divisor;
+
+        if (hz != 0 && hz <= want_hz)
+        {
+            out->hz = hz;
+            out->peri_hz = sys_hz;
+            out->auxsrc = CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_CLK_SYS;
+            out->fbdiv = 0;
+            out->pd1 = 0;
+            out->pd2 = 0;
+            found = true;
+        }
+    }
+
+    uint64_t want_pll = (uint64_t)want_hz * 2u;
+
+    for (uint32_t pd1 = 1; pd1 <= 7; ++pd1)
+    {
+        for (uint32_t pd2 = 1; pd2 <= pd1; ++pd2)
+        {
+            uint32_t post = pd1 * pd2;
+            uint64_t fbdiv = (want_pll * post) / XOSC_HZ;
+
+            if (fbdiv > BENCH_VCO_MAX_HZ / XOSC_HZ)
+            {
+                fbdiv = BENCH_VCO_MAX_HZ / XOSC_HZ;
+            }
+
+            if (fbdiv * XOSC_HZ < BENCH_VCO_MIN_HZ)
+            {
+                continue;
+            }
+
+            uint32_t peri = ((uint32_t)fbdiv * XOSC_HZ) / post;
+            uint32_t hz = peri / 2u;
+
+            if (hz > want_hz || hz <= out->hz)
+            {
+                continue;
+            }
+
+            out->hz = hz;
+            out->peri_hz = peri;
+            out->auxsrc = CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_CLKSRC_PLL_USB;
+            out->fbdiv = (uint8_t)fbdiv;
+            out->pd1 = (uint8_t)pd1;
+            out->pd2 = (uint8_t)pd2;
+            found = true;
+        }
+    }
+
+    return found && out->hz != 0;
+}
+
+static void bench_build_variants(void)
+{
+    spi_build_control(SPI_CTRL_TYPE_BENCH, 0);
+    spi_poll_tx[SPI_BENCH_MOSI_RUN_OFF] = esp_bench_run_id;
+
+    for (uint32_t i = 0; i < SPI_BENCH_TX_VARIANTS; ++i)
+    {
+        spi_bench_fill_pattern(bench_tx_variant[i], SPI_BENCH_MOSI_PATTERN_LEN,
+                               (uint32_t)esp_bench_run_id * 4096u + i * 7919u + 1u);
+
+        memcpy(spi_poll_tx + SPI_BENCH_MOSI_PATTERN_OFF, bench_tx_variant[i], SPI_BENCH_MOSI_PATTERN_LEN);
+
+        bench_tx_variant_state[i] =
+            crc32_update(0xffffffffu, spi_poll_tx + SPI_BENCH_MOSI_CRC_A_OFF, SPI_BENCH_MOSI_CRC_A_LEN);
+    }
+}
+
+static void bench_build_pattern_frame(uint8_t step)
+{
+    spi_build_control(SPI_CTRL_TYPE_BENCH, 0);
+
+    spi_poll_tx[SPI_BENCH_MOSI_STEP_OFF] = step;
+    spi_poll_tx[SPI_BENCH_MOSI_RUN_OFF] = esp_bench_run_id;
+}
+
+static void bench_next_tx_frame(void)
+{
+    uint32_t variant = bench_tx_seq % SPI_BENCH_TX_VARIANTS;
+
+    bench_tx_seq++;
+
+    memcpy(spi_poll_tx + SPI_BENCH_MOSI_PATTERN_OFF, bench_tx_variant[variant], SPI_BENCH_MOSI_PATTERN_LEN);
+    spi_put_u32(spi_poll_tx + SPI_BENCH_MOSI_SEQ_OFF, bench_tx_seq);
+    spi_put_u32(spi_poll_tx + SPI_BENCH_MOSI_CRC_OFF,
+                crc32_update(bench_tx_variant_state[variant], spi_poll_tx + SPI_BENCH_MOSI_CRC_B_OFF,
+                             SPI_BENCH_MOSI_CRC_B_LEN) ^
+                    0xffffffffu);
+}
+
+static bool bench_frame_is_ours(const uint8_t *head)
+{
+    return head[5] == SPI_FRAME_TYPE_BENCH && head[SPI_BENCH_MISO_RUN_OFF] == esp_bench_run_id;
+}
+
+static bool bench_warmup(void)
+{
+    bench_build_pattern_frame(SPI_BENCH_NO_STEP);
+
+    for (int attempt = 0; attempt < BENCH_WARMUP_FRAMES; ++attempt)
+    {
+        OTA_WATCHDOG_UPDATE();
+
+        bench_next_tx_frame();
+        memset(spi_poll_rx, 0, SPI_FRAME_SIZE);
+
+        if (my_spi_to_esp_xfer_blocking(spi_poll_tx, spi_poll_rx, SPI_FRAME_SIZE) < 0)
+        {
+            continue;
+        }
+
+        const uint8_t *head = spi_find_frame(spi_poll_rx);
+
+        if (head != NULL && bench_frame_is_ours(head))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static void uart_run_step(uint32_t baud, uint32_t duration_ms, bench_step_stat_t *out);
+
+static void bench_run_step(uint8_t step, const bench_rate_t *rate, uint32_t duration_ms, bench_step_stat_t *out)
+{
+    if (esp_bench_kind == SPI_BENCH_KIND_UART)
+    {
+        (void)step;
+        uart_run_step(rate->hz, duration_ms, out);
+
+        return;
+    }
+
+    memset(out, 0, sizeof(*out));
+
+    out->target_hz = rate->hz;
+    out->peri_hz = rate->peri_hz;
+    out->fbdiv = rate->fbdiv;
+    out->pd1 = rate->pd1;
+    out->pd2 = rate->pd2;
+    out->auxsrc = rate->auxsrc;
+    out->offset_min = 0xFFFF;
+
+    bench_apply_rate(rate);
+
+    out->actual_hz = spi_set_baudrate(SPI_ID, rate->hz);
+
+    // Warm the full-duplex pipeline at THIS clock before measuring. The first
+    // frames after a clock change carry the worst MISO shift (section 7b), so
+    // without this the FIRST step of a sweep is scored on that transient and
+    // fails even when its clock is perfectly stable. NO_STEP frames are used so
+    // the ESP ignores them (step >= SPI_BENCH_MAX_STEPS) and the transient never
+    // lands in any step's counters. It settles in a few frames when the clock is
+    // fine and simply burns the cap when it is not, which is harmless.
+    bench_build_pattern_frame(SPI_BENCH_NO_STEP);
+
+    int warm_ok = 0;
+
+    for (int w = 0; w < BENCH_WARMUP_FRAMES && warm_ok < BENCH_STEP_WARMUP_OK; ++w)
+    {
+        OTA_WATCHDOG_UPDATE();
+
+        bench_next_tx_frame();
+        memset(spi_poll_rx, 0, SPI_FRAME_SIZE);
+
+        if (my_spi_to_esp_xfer_blocking(spi_poll_tx, spi_poll_rx, SPI_FRAME_SIZE) < 0)
+        {
+            warm_ok = 0;
+            continue;
+        }
+
+        const uint8_t *head = spi_find_frame(spi_poll_rx);
+
+        if (head != NULL && bench_frame_is_ours(head))
+        {
+            warm_ok++;
+        }
+        else
+        {
+            warm_ok = 0;
+        }
+    }
+
+    bench_build_pattern_frame(step);
+
+    uint64_t start = time_us_64();
+    uint64_t deadline = start + (uint64_t)duration_ms * 1000u;
 
     while (time_us_64() < deadline)
     {
         OTA_WATCHDOG_UPDATE();
 
+        bench_next_tx_frame();
+        memset(spi_poll_rx, 0, SPI_FRAME_SIZE);
+
         if (my_spi_to_esp_xfer_blocking(spi_poll_tx, spi_poll_rx, SPI_FRAME_SIZE) < 0)
         {
-            failures++;
+            out->xfer_fail++;
             continue;
         }
 
-        frames++;
+        out->frames++;
+
+        const uint8_t *head = spi_find_frame(spi_poll_rx);
+
+        if (head == NULL)
+        {
+            out->miso_bad++;
+            continue;
+        }
+
+        uint16_t offset = (uint16_t)(head - spi_poll_rx);
+
+        if (offset < out->offset_min)
+        {
+            out->offset_min = offset;
+        }
+
+        if (offset > out->offset_max)
+        {
+            out->offset_max = offset;
+        }
+
+        if (!bench_frame_is_ours(head))
+        {
+            out->stale++;
+
+            if (head[5] == SPI_FRAME_TYPE_STATUS)
+            {
+                esp_bench_esp_state = head[SPI_BENCH_STATUS_STATE_OFF];
+            }
+
+            continue;
+        }
+
+        uint32_t seq = spi_get_u32(head + SPI_BENCH_MISO_SEQ_OFF);
+        uint32_t want = crc32_update(0xffffffffu, head + SPI_BENCH_MISO_CRC_A_OFF, SPI_BENCH_MISO_CRC_A_LEN);
+
+        want = crc32_update(want, head + SPI_BENCH_MISO_CRC_B_OFF, SPI_BENCH_MISO_CRC_B_LEN) ^ 0xffffffffu;
+
+        bool good = want == spi_get_u32(head + SPI_BENCH_MISO_CRC_OFF);
+
+        if (good && seq <= bench_last_miso_seq)
+        {
+            good = false;
+        }
+
+        if (seq > bench_last_miso_seq)
+        {
+            bench_last_miso_seq = seq;
+        }
+
+        if (good)
+        {
+            out->miso_ok++;
+        }
+        else
+        {
+            out->miso_bad++;
+        }
+    }
+
+    out->elapsed_us = time_us_64() - start;
+
+    if (out->offset_min == 0xFFFF)
+    {
+        out->offset_min = 0;
+    }
+
+    bench_go_safe();
+}
+
+static int bench_send_result(uint8_t step, uint8_t total, uint8_t flags, uint8_t phase,
+                             const bench_step_stat_t *stat)
+{
+    if (++bench_result_seq == 0)
+    {
+        bench_result_seq = 1;
+    }
+
+    uint8_t seq = bench_result_seq;
+
+    for (int attempt = 0; attempt < BENCH_RESULT_ATTEMPTS; ++attempt)
+    {
+        OTA_WATCHDOG_UPDATE();
+
+        spi_build_control(SPI_CTRL_TYPE_BENCH_RESULT, 0);
+
+        spi_poll_tx[SPI_BENCH_MOSI_STEP_OFF] = step;
+        spi_poll_tx[SPI_BENCH_MOSI_RUN_OFF] = esp_bench_run_id;
+        spi_poll_tx[SPI_BENCH_RESULT_FLAGS_OFF] = flags;
+        spi_poll_tx[SPI_BENCH_RESULT_TOTAL_OFF] = total;
+        spi_poll_tx[SPI_BENCH_RESULT_SEQ_OFF] = seq;
+        spi_poll_tx[SPI_BENCH_RESULT_PHASE_OFF] = phase;
+
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_ACTUAL_OFF, stat->actual_hz);
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_TARGET_OFF, stat->target_hz);
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_FRAMES_OFF, stat->frames);
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_MISO_OK_OFF, stat->miso_ok);
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_MISO_BAD_OFF, stat->miso_bad);
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_XFER_FAIL_OFF, stat->xfer_fail);
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_ELAPSED_MS_OFF, (uint32_t)(stat->elapsed_us / 1000u));
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_STALE_OFF, stat->stale);
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_CLKPERI_OFF, stat->peri_hz);
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_NATIVE_OFF, bench_native_peri_hz);
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_SYSCLK_OFF, clock_get_hz(clk_sys));
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_MOSI_OK_OFF, stat->peer_ok);
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_MOSI_BAD_OFF, stat->peer_bad);
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_PEER_TX_OFF, stat->peer_tx);
+
+        spi_poll_tx[SPI_BENCH_RESULT_KIND_OFF] = stat->kind;
+
+        spi_poll_tx[SPI_BENCH_RESULT_FBDIV_OFF] = stat->fbdiv;
+        spi_poll_tx[SPI_BENCH_RESULT_PD1_OFF] = stat->pd1;
+        spi_poll_tx[SPI_BENCH_RESULT_PD2_OFF] = stat->pd2;
+        spi_poll_tx[SPI_BENCH_RESULT_AUXSRC_OFF] = stat->auxsrc;
+
+        spi_poll_tx[SPI_BENCH_RESULT_OFFMIN_OFF] = (uint8_t)stat->offset_min;
+        spi_poll_tx[SPI_BENCH_RESULT_OFFMIN_OFF + 1] = (uint8_t)(stat->offset_min >> 8);
+        spi_poll_tx[SPI_BENCH_RESULT_OFFMAX_OFF] = (uint8_t)stat->offset_max;
+        spi_poll_tx[SPI_BENCH_RESULT_OFFMAX_OFF + 1] = (uint8_t)(stat->offset_max >> 8);
+
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_CRC_OFF,
+                    crc32_buffer(spi_poll_tx + SPI_BENCH_RESULT_CRC_FROM, SPI_BENCH_RESULT_CRC_LEN));
+
+        memset(spi_poll_rx, 0, SPI_FRAME_SIZE);
+
+        if (my_spi_to_esp_xfer_blocking(spi_poll_tx, spi_poll_rx, SPI_FRAME_SIZE) < 0)
+        {
+            continue;
+        }
+
+        const uint8_t *head = spi_find_frame(spi_poll_rx);
+
+        if (head == NULL)
+        {
+            continue;
+        }
+
+        if ((head[5] == SPI_FRAME_TYPE_BENCH || head[5] == SPI_FRAME_TYPE_UART_STATS) &&
+            head[SPI_BENCH_MISO_RACK_OFF] == seq)
+        {
+            return head[SPI_BENCH_MISO_VERDICT_OFF] != 0 ? 1 : 0;
+        }
+
+        if (head[5] == SPI_FRAME_TYPE_STATUS && head[SPI_BENCH_STATUS_RACK_OFF] == seq)
+        {
+            esp_bench_esp_state = head[SPI_BENCH_STATUS_STATE_OFF];
+
+            return head[SPI_BENCH_STATUS_VERDICT_OFF] != 0 ? 1 : 0;
+        }
+    }
+
+    return -1;
+}
+
+static uint8_t uart_tx_frame[UART_BENCH_FRAME_LEN];
+static uint8_t uart_rx_frame[UART_BENCH_FRAME_LEN];
+static uint8_t uart_expect[UART_BENCH_PAYLOAD];
+static uint8_t uart_setup_token;
+
+static const uint32_t uart_baud_ladder[] = {9600,   19200,  38400,  57600,   74880,   115200, 230400,
+                                            460800, 921600, 1000000, 1500000, 2000000, 3000000};
+
+#define UART_BAUD_LADDER_LEN (sizeof(uart_baud_ladder) / sizeof(uart_baud_ladder[0]))
+
+static bool uart_resolve_rate(uint32_t want_hz, bench_rate_t *out)
+{
+    memset(out, 0, sizeof(*out));
+
+    for (int i = (int)UART_BAUD_LADDER_LEN - 1; i >= 0; --i)
+    {
+        if (uart_baud_ladder[i] <= want_hz)
+        {
+            out->hz = uart_baud_ladder[i];
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static const uint8_t uart_bench_magic[4] = {UART_BENCH_MAGIC0, UART_BENCH_MAGIC1, UART_BENCH_MAGIC2,
+                                            UART_BENCH_MAGIC3};
+
+static void uart_bench_build(uint8_t *frame, uint32_t seed, uint32_t seq)
+{
+    memcpy(frame, uart_bench_magic, sizeof(uart_bench_magic));
+    spi_put_u32(frame + UART_BENCH_SEQ_OFF, seq);
+    spi_bench_fill_pattern(frame + UART_BENCH_DATA_OFF, UART_BENCH_PAYLOAD, seed + seq);
+    spi_put_u32(frame + UART_BENCH_CRC_OFF, crc32_buffer(frame + UART_BENCH_CRC_FROM, UART_BENCH_CRC_LEN));
+}
+
+static const uint8_t *uart_read_stats(void)
+{
+    spi_build_control(SPI_CTRL_TYPE_POLL, 0);
+    memset(spi_poll_rx, 0, SPI_FRAME_SIZE);
+
+    if (my_spi_to_esp_xfer_blocking(spi_poll_tx, spi_poll_rx, SPI_FRAME_SIZE) < 0)
+    {
+        return NULL;
+    }
+
+    const uint8_t *head = spi_find_frame(spi_poll_rx);
+
+    if (head == NULL || head[5] != SPI_FRAME_TYPE_UART_STATS)
+    {
+        return NULL;
+    }
+
+    return head;
+}
+
+static bool uart_setup_peer(uint32_t baud, uint32_t seed, bool peer_sends)
+{
+    uart_setup_token++;
+
+    for (int attempt = 0; attempt < UART_BENCH_SETUP_ATTEMPTS; ++attempt)
+    {
+        OTA_WATCHDOG_UPDATE();
+
+        spi_build_control(SPI_CTRL_TYPE_UART_SETUP, 0);
+
+        spi_poll_tx[SPI_BENCH_MOSI_RUN_OFF] = esp_bench_run_id;
+        spi_put_u32(spi_poll_tx + SPI_UART_SETUP_BAUD_OFF, baud);
+        spi_put_u32(spi_poll_tx + SPI_UART_SETUP_SEED_OFF, seed);
+        spi_poll_tx[SPI_UART_SETUP_TOKEN_OFF] = uart_setup_token;
+        spi_poll_tx[SPI_UART_SETUP_FLAGS_OFF] = peer_sends ? 1 : 0;
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_CRC_OFF,
+                    crc32_buffer(spi_poll_tx + SPI_BENCH_RESULT_CRC_FROM, SPI_BENCH_RESULT_CRC_LEN));
+
+        memset(spi_poll_rx, 0, SPI_FRAME_SIZE);
+
+        if (my_spi_to_esp_xfer_blocking(spi_poll_tx, spi_poll_rx, SPI_FRAME_SIZE) < 0)
+        {
+            continue;
+        }
+
+        const uint8_t *head = spi_find_frame(spi_poll_rx);
+
+        if (head == NULL || head[5] != SPI_FRAME_TYPE_UART_STATS)
+        {
+            continue;
+        }
+
+        bool ready = head[SPI_UART_STATS_READY_OFF] != 0;
+
+        if (head[SPI_UART_STATS_TOKEN_OFF] == uart_setup_token && (baud == 0 ? !ready : ready))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static void uart_bench_feed(uint8_t byte, uint8_t *fill, uint32_t seed, uint32_t *last_seq,
+                            bench_step_stat_t *out)
+{
+    if (*fill < sizeof(uart_bench_magic))
+    {
+        if (byte == uart_bench_magic[*fill])
+        {
+            uart_rx_frame[(*fill)++] = byte;
+            return;
+        }
+
+        out->stale++;
+
+        if (*fill > 0)
+        {
+            *fill = 0;
+
+            if (byte == uart_bench_magic[0])
+            {
+                uart_rx_frame[(*fill)++] = byte;
+            }
+        }
+
+        return;
+    }
+
+    uart_rx_frame[(*fill)++] = byte;
+
+    if (*fill < UART_BENCH_FRAME_LEN)
+    {
+        return;
+    }
+
+    *fill = 0;
+
+    uint32_t seq = spi_get_u32(uart_rx_frame + UART_BENCH_SEQ_OFF);
+    bool good = crc32_buffer(uart_rx_frame + UART_BENCH_CRC_FROM, UART_BENCH_CRC_LEN) ==
+                spi_get_u32(uart_rx_frame + UART_BENCH_CRC_OFF);
+
+    if (good)
+    {
+        spi_bench_fill_pattern(uart_expect, UART_BENCH_PAYLOAD, seed + seq);
+
+        if (memcmp(uart_expect, uart_rx_frame + UART_BENCH_DATA_OFF, UART_BENCH_PAYLOAD) != 0)
+        {
+            good = false;
+        }
+    }
+
+    if (good && seq <= *last_seq && *last_seq != 0)
+    {
+        good = false;
+    }
+
+    if (good)
+    {
+        *last_seq = seq;
+        out->miso_ok++;
+    }
+    else
+    {
+        out->miso_bad++;
+    }
+}
+
+static void uart_run_step(uint32_t baud, uint32_t duration_ms, bench_step_stat_t *out)
+{
+    memset(out, 0, sizeof(*out));
+
+    out->kind = SPI_BENCH_KIND_UART;
+    out->target_hz = baud;
+    out->offset_min = 0xFFFF;
+
+    uint32_t seed = (uint32_t)esp_bench_run_id * 2654435761u + baud;
+
+    bool setup_ok = uart_setup_peer(baud, seed, true);
+
+    if (!setup_ok)
+    {
+        out->offset_min = 0;
+        return;
+    }
+
+    uart_set_fifo_enabled(ESP_UART_ID, true);
+
+    out->actual_hz = uart_set_baudrate(ESP_UART_ID, baud);
+
+    while (uart_is_readable(ESP_UART_ID))
+    {
+        (void)uart_getc(ESP_UART_ID);
+    }
+
+    uint8_t rx_fill = 0;
+    uint32_t last_seq = 0;
+    uint32_t tx_seq = 1;
+    uint32_t tx_left = 0;
+    const uint8_t *tx_cursor = uart_tx_frame;
+
+    uint64_t start = time_us_64();
+    uint64_t deadline = start + (uint64_t)duration_ms * 1000u;
+
+    while (time_us_64() < deadline)
+    {
+        OTA_WATCHDOG_UPDATE();
+
+        if (tx_left == 0)
+        {
+            uart_bench_build(uart_tx_frame, seed, tx_seq);
+            tx_cursor = uart_tx_frame;
+            tx_left = UART_BENCH_FRAME_LEN;
+        }
+
+        while (tx_left > 0 && uart_is_writable(ESP_UART_ID))
+        {
+            uart_get_hw(ESP_UART_ID)->dr = *tx_cursor++;
+            tx_left--;
+
+            if (tx_left == 0)
+            {
+                tx_seq++;
+                out->frames++;
+            }
+        }
+
+        while (uart_is_readable(ESP_UART_ID))
+        {
+            uart_bench_feed((uint8_t)uart_get_hw(ESP_UART_ID)->dr, &rx_fill, seed, &last_seq, out);
+        }
+    }
+
+    out->elapsed_us = time_us_64() - start;
+    out->offset_min = 0;
+
+    uint64_t drain = time_us_64() + 20000u;
+
+    while (time_us_64() < drain)
+    {
+        OTA_WATCHDOG_UPDATE();
+
+        while (uart_is_readable(ESP_UART_ID))
+        {
+            uart_bench_feed((uint8_t)uart_get_hw(ESP_UART_ID)->dr, &rx_fill, seed, &last_seq, out);
+        }
+    }
+
+    // The MISO is one SPI transfer behind, and the ESP's counters only settle
+    // once it has processed this step's traffic, so the first UART_STATS we read
+    // still carries the counters from the start of the step (all zero). Poll a
+    // few times and keep the freshest sample; the ESP's counters only grow within
+    // a step, so the largest rx_ok is the most recent. Reading the first frame and
+    // stopping was reporting peer_ok=0 even when the ESP had validated every frame.
+    bool got_stats = false;
+
+    for (int attempt = 0; attempt < UART_BENCH_STATS_POLLS; ++attempt)
+    {
+        OTA_WATCHDOG_UPDATE();
+
+        const uint8_t *s = uart_read_stats();
+
+        if (s == NULL)
+        {
+            continue;
+        }
+
+        uint32_t ok = spi_get_u32(s + SPI_UART_STATS_RX_OK_OFF);
+
+        if (!got_stats || ok >= out->peer_ok)
+        {
+            got_stats = true;
+            out->peer_ok = ok;
+            out->peer_bad = spi_get_u32(s + SPI_UART_STATS_RX_BAD_OFF);
+            out->peer_tx = spi_get_u32(s + SPI_UART_STATS_TX_OFF);
+            out->xfer_fail = spi_get_u32(s + SPI_UART_STATS_RESYNC_OFF);
+        }
+    }
+
+    uart_setup_peer(0, seed, false);
+
+    uart_set_baudrate(ESP_UART_ID, RP_UART_BAUD);
+    uart_set_fifo_enabled(ESP_UART_ID, false);
+}
+
+static bool uart_rp_clean(const bench_step_stat_t *stat)
+{
+    if (stat->frames == 0 || stat->peer_tx == 0)
+    {
+        return false;
+    }
+
+    if (stat->miso_bad != 0 || stat->peer_bad != 0)
+    {
+        return false;
+    }
+
+    // A UART step is asynchronous, so a frame or two at each edge of the window is
+    // an artifact of when each side starts and stops, not link corruption. Corruption
+    // is caught strictly above (miso_bad/peer_bad must be zero); here we allow a small
+    // absolute edge slack on top of the per-mille loss budget so a clean link passes
+    // even though the frame counts don't line up to the last frame.
+    uint32_t mosi_lost = stat->frames > stat->peer_ok ? stat->frames - stat->peer_ok : 0;
+    uint32_t miso_lost = stat->peer_tx > stat->miso_ok ? stat->peer_tx - stat->miso_ok : 0;
+
+    uint32_t mosi_slack = stat->frames / 1000u;
+    uint32_t miso_slack = stat->peer_tx / 1000u;
+
+    if (mosi_slack < UART_BENCH_EDGE_SLACK)
+    {
+        mosi_slack = UART_BENCH_EDGE_SLACK;
+    }
+
+    if (miso_slack < UART_BENCH_EDGE_SLACK)
+    {
+        miso_slack = UART_BENCH_EDGE_SLACK;
+    }
+
+    if (mosi_lost > mosi_slack)
+    {
+        return false;
+    }
+
+    return miso_lost <= miso_slack;
+}
+
+static bool bench_rp_clean(const bench_step_stat_t *stat)
+{
+    if (stat->kind == SPI_BENCH_KIND_UART)
+    {
+        return uart_rp_clean(stat);
+    }
+
+    if (stat->frames == 0 || stat->miso_bad != 0 || stat->xfer_fail != 0)
+    {
+        return false;
+    }
+
+    if (stat->offset_max >= SPI_MAGIC_SEARCH_MAX)
+    {
+        return false;
+    }
+
+    return (stat->frames - stat->miso_ok) <= stat->frames / 1000u;
+}
+
+static void bench_stat_add(bench_step_stat_t *total, const bench_step_stat_t *part)
+{
+    total->kind = part->kind;
+    total->peer_ok += part->peer_ok;
+    total->peer_bad += part->peer_bad;
+    total->peer_tx += part->peer_tx;
+    total->actual_hz = part->actual_hz;
+    total->target_hz = part->target_hz;
+    total->peri_hz = part->peri_hz;
+    total->fbdiv = part->fbdiv;
+    total->pd1 = part->pd1;
+    total->pd2 = part->pd2;
+    total->auxsrc = part->auxsrc;
+    total->frames += part->frames;
+    total->miso_ok += part->miso_ok;
+    total->miso_bad += part->miso_bad;
+    total->xfer_fail += part->xfer_fail;
+    total->stale += part->stale;
+    total->elapsed_us += part->elapsed_us;
+
+    if (part->offset_min < total->offset_min)
+    {
+        total->offset_min = part->offset_min;
+    }
+
+    if (part->offset_max > total->offset_max)
+    {
+        total->offset_max = part->offset_max;
+    }
+}
+
+static void bench_log_step(const char *tag, uint8_t step, const bench_step_stat_t *stat, int verdict, bool clean)
+{
+    printf("spi bench %s %u: %u Hz (clk_peri %u", tag, (unsigned)step, (unsigned)stat->actual_hz,
+           (unsigned)stat->peri_hz);
+
+    if (stat->fbdiv != 0)
+    {
+        printf(", usb pll fbdiv %u pd %ux%u", (unsigned)stat->fbdiv, (unsigned)stat->pd1, (unsigned)stat->pd2);
+    }
+
+    printf("), %u frames, miso ok %u bad %u, stale %u, xfer fail %u, offset %u-%u of %u, esp %s, %s\r\n",
+           (unsigned)stat->frames, (unsigned)stat->miso_ok, (unsigned)stat->miso_bad, (unsigned)stat->stale,
+           (unsigned)stat->xfer_fail, (unsigned)stat->offset_min, (unsigned)stat->offset_max,
+           (unsigned)SPI_MAGIC_SEARCH_MAX, verdict == 1 ? "clean" : "SAW ERRORS", clean ? "PASS" : "FAIL");
+}
+
+static bool bench_esp_gone(void)
+{
+    return esp_bench_esp_state == SPI_BENCH_STATE_ABORTED || esp_bench_esp_state == SPI_BENCH_STATE_TIMEOUT;
+}
+
+static int bench_measure(const bench_rate_t *rate, uint32_t duration_ms, uint8_t phase, const char *tag,
+                         bench_step_stat_t *stat)
+{
+    if (bench_slot >= SPI_BENCH_MAX_STEPS)
+    {
+        return -1;
+    }
+
+    uint8_t step = bench_slot++;
+
+    bench_ladder[step] = *rate;
+    bench_ladder_pass[step] = false;
+    bench_run_step(step, rate, duration_ms, stat);
+
+    int verdict = bench_send_result(step, bench_slot, 0, phase, stat);
+
+    if (verdict < 0)
+    {
+        printf("spi bench: the esp did not acknowledge %s %u, giving up\r\n", tag, (unsigned)step);
+        return -1;
+    }
+
+    bool clean = verdict == 1 && bench_rp_clean(stat);
+
+    bench_ladder_pass[step] = clean;
+
+    bench_log_step(tag, step, stat, verdict, clean);
+
+    return clean ? 1 : 0;
+}
+
+static bool bench_run_soak(uint8_t step, const bench_rate_t *rate, uint32_t soak_ms, bench_step_stat_t *total)
+{
+    bench_step_stat_t chunk;
+
+    memset(total, 0, sizeof(*total));
+
+    total->offset_min = 0xFFFF;
+    total->actual_hz = rate->hz;
+    total->target_hz = rate->hz;
+    total->peri_hz = rate->peri_hz;
+    total->fbdiv = rate->fbdiv;
+    total->pd1 = rate->pd1;
+    total->pd2 = rate->pd2;
+    total->auxsrc = rate->auxsrc;
+
+    if (bench_send_result(step, bench_slot, SPI_BENCH_RESULT_FLAG_SOAK_BEGIN | SPI_BENCH_RESULT_FLAG_PROGRESS,
+                          SPI_BENCH_PHASE_CONFIRM, total) < 0)
+    {
+        printf("spi bench: the esp did not accept the confirmation start\r\n");
+        return false;
+    }
+
+    printf("spi bench: confirming %u Hz for %u ms, this is the number that counts\r\n", (unsigned)rate->hz,
+           (unsigned)soak_ms);
+
+    uint32_t elapsed_ms = 0;
+    uint32_t chunks = 0;
+    int misses = 0;
+
+    while (elapsed_ms < soak_ms)
+    {
+        uint32_t slice = soak_ms - elapsed_ms;
+
+        if (slice > SPI_BENCH_SOAK_CHUNK_MS)
+        {
+            slice = SPI_BENCH_SOAK_CHUNK_MS;
+        }
+
+        bench_run_step(step, rate, slice, &chunk);
+        bench_stat_add(total, &chunk);
+
+        elapsed_ms += slice;
+        chunks++;
+
+        bool last = elapsed_ms >= soak_ms;
+        int sent = bench_send_result(step, bench_slot, last ? 0 : SPI_BENCH_RESULT_FLAG_PROGRESS,
+                                     SPI_BENCH_PHASE_CONFIRM, total);
+
+        if ((chunks % 10) == 0 || last)
+        {
+            printf("spi bench confirm: %u/%u ms, %u frames, miso bad %u, stale %u, xfer fail %u, offset max %u\r\n",
+                   (unsigned)elapsed_ms, (unsigned)soak_ms, (unsigned)total->frames, (unsigned)total->miso_bad,
+                   (unsigned)total->stale, (unsigned)total->xfer_fail, (unsigned)total->offset_max);
+        }
+
+        if (last)
+        {
+            if (sent < 0)
+            {
+                printf("spi bench: the esp never took the final confirmation result\r\n");
+                return false;
+            }
+
+            return sent == 1 && bench_rp_clean(total);
+        }
+
+        if (sent < 0)
+        {
+            if (++misses >= 3)
+            {
+                printf("spi bench: the esp stopped acknowledging the confirmation, stopping\r\n");
+                return false;
+            }
+        }
+        else
+        {
+            misses = 0;
+        }
+
+        if (bench_esp_gone())
+        {
+            printf("spi bench: the esp dropped out of the confirmation, stopping\r\n");
+            return false;
+        }
+    }
+
+    return false;
+}
+
+
+#define ST_SCRATCH_OFFSET 0x700000u
+#define ST_TEXT_MAX SPI_SELFTEST_TEXT_MAX
+#define ST_SEND_ATTEMPTS 24
+
+typedef struct
+{
+    uint8_t gpio;
+    const char *name;
+} st_pin_t;
+
+static const st_pin_t st_free_pins[] = {
+    {0, "GPIO0"},  {1, "GPIO1"},   {2, "GPIO2"},          {3, "GPIO3"},
+    {6, "GPIO6"},  {7, "GPIO7"},   {18, "GPIO18"},        {SPI_CS_PIN, "SPI CS"},
+    {EBOOT_MASTERDATAREADY_GPIO, "EBOOT"},                {RP_LED_GPIO, "LED2"},
+};
+
+static const st_pin_t st_switch_pins[] = {
+    {USSEL_PIN, "USSEL"},
+    {USOE_PIN, "USOE"},
+    {DP_SNIFF_GPIO, "sniff D+/DAT"},
+    {DM_SNIFF_GPIO, "sniff D-/CLK"},
+};
+
+#define ST_FREE_COUNT (sizeof(st_free_pins) / sizeof(st_free_pins[0]))
+#define ST_SWITCH_COUNT (sizeof(st_switch_pins) / sizeof(st_switch_pins[0]))
+#define ST_PIN_MAX (ST_FREE_COUNT + ST_SWITCH_COUNT)
+
+static st_pin_t st_pins[ST_PIN_MAX];
+static uint32_t st_pin_count;
+static uint8_t st_seq;
+static bool st_aborted;
+
+static void st_pin_release(uint8_t gpio)
+{
+    gpio_init(gpio);
+    gpio_set_dir(gpio, GPIO_IN);
+    gpio_disable_pulls(gpio);
+}
+
+static int st_send(uint8_t id, uint8_t status, uint32_t a, uint32_t b, const char *text, uint8_t flags)
+{
+    if (++st_seq == 0)
+    {
+        st_seq = 1;
+    }
+
+    uint8_t seq = st_seq;
+
+    for (int attempt = 0; attempt < ST_SEND_ATTEMPTS; ++attempt)
+    {
+        OTA_WATCHDOG_UPDATE();
+
+        spi_build_control(SPI_CTRL_TYPE_SELFTEST, 0);
+
+        spi_poll_tx[SPI_BENCH_MOSI_RUN_OFF] = esp_selftest_run;
+        spi_poll_tx[SPI_BENCH_RESULT_SEQ_OFF] = seq;
+        spi_poll_tx[SPI_SELFTEST_ID_OFF] = id;
+        spi_poll_tx[SPI_SELFTEST_STATUS_OFF] = status;
+        spi_poll_tx[SPI_SELFTEST_FLAGS_OFF] = flags;
+
+        spi_put_u32(spi_poll_tx + SPI_SELFTEST_A_OFF, a);
+        spi_put_u32(spi_poll_tx + SPI_SELFTEST_B_OFF, b);
+
+        for (uint32_t i = 0; i < SPI_SELFTEST_TEXT_MAX; ++i)
+        {
+            spi_poll_tx[SPI_SELFTEST_TEXT_OFF + i] = (text != NULL && text[i] != '\0') ? (uint8_t)text[i] : 0;
+
+            if (text != NULL && text[i] == '\0')
+            {
+                text = NULL;
+            }
+        }
+
+        spi_put_u32(spi_poll_tx + SPI_BENCH_RESULT_CRC_OFF,
+                    crc32_buffer(spi_poll_tx + SPI_BENCH_RESULT_CRC_FROM, SPI_BENCH_RESULT_CRC_LEN));
+
+        memset(spi_poll_rx, 0, SPI_FRAME_SIZE);
+
+        if (my_spi_to_esp_xfer_blocking(spi_poll_tx, spi_poll_rx, SPI_FRAME_SIZE) < 0)
+        {
+            continue;
+        }
+
+        const uint8_t *head = spi_find_frame(spi_poll_rx);
+
+        if (head == NULL || head[5] != SPI_FRAME_TYPE_STATUS)
+        {
+            continue;
+        }
+
+        esp_selftest_eboot = head[SPI_SELFTEST_STATUS_EBOOT_OFF];
+
+        if (head[SPI_BENCH_STATUS_RACK_OFF] == seq)
+        {
+            return 0;
+        }
+    }
+
+    st_aborted = true;
+
+    return -1;
+}
+
+static bool st_refresh_peer(void)
+{
+    for (int attempt = 0; attempt < 8; ++attempt)
+    {
+        OTA_WATCHDOG_UPDATE();
+
+        spi_build_control(SPI_CTRL_TYPE_POLL, 0);
+        memset(spi_poll_rx, 0, SPI_FRAME_SIZE);
+
+        if (my_spi_to_esp_xfer_blocking(spi_poll_tx, spi_poll_rx, SPI_FRAME_SIZE) < 0)
+        {
+            continue;
+        }
+
+        const uint8_t *head = spi_find_frame(spi_poll_rx);
+
+        if (head == NULL || head[5] != SPI_FRAME_TYPE_STATUS)
+        {
+            continue;
+        }
+
+        esp_selftest_eboot = head[SPI_SELFTEST_STATUS_EBOOT_OFF];
+
+        return true;
+    }
+
+    return false;
+}
+
+static void st_report_clock(uint8_t id, const char *name, uint32_t src, uint32_t want_khz, uint32_t tol_khz)
+{
+    char text[ST_TEXT_MAX + 8];
+
+    uint32_t got = frequency_count_khz(src);
+
+    snprintf(text, sizeof(text), "%s %u kHz", name, (unsigned)got);
+
+    uint8_t status = SELFTEST_INFO;
+
+    if (want_khz != 0)
+    {
+        uint32_t low = want_khz > tol_khz ? want_khz - tol_khz : 0;
+
+        status = (got >= low && got <= want_khz + tol_khz) ? SELFTEST_PASS : SELFTEST_FAIL;
+    }
+
+    st_send(id, status, got, want_khz, text, 0);
+}
+
+static void st_run_flash(void)
+{
+    char text[ST_TEXT_MAX + 8];
+
+    uint8_t manufacturer = 0;
+    uint8_t memory_type = 0;
+    uint8_t capacity = 0;
+
+    read_flash_jedec_id(&manufacturer, &memory_type, &capacity);
+
+    uint32_t id = ((uint32_t)manufacturer << 16) | ((uint32_t)memory_type << 8) | capacity;
+
+    snprintf(text, sizeof(text), "U3 jedec %02x %02x %02x", manufacturer, memory_type, capacity);
+    st_send(ST_RP_FLASH_ID, manufacturer != 0x00 && manufacturer != 0xff ? SELFTEST_PASS : SELFTEST_FAIL, id, 0,
+            text, 0);
+
+    uint32_t detected = get_detected_flash_size();
+    uint32_t configured = (uint32_t)PICO_FLASH_SIZE_BYTES;
+
+    snprintf(text, sizeof(text), "%u MB, build wants %u MB", (unsigned)(detected / (1024 * 1024)),
+             (unsigned)(configured / (1024 * 1024)));
+    st_send(ST_RP_FLASH_SIZE, detected == configured ? SELFTEST_PASS : SELFTEST_FAIL, detected, configured, text, 0);
+
+    if ((esp_selftest_opts & SELFTEST_OPT_FLASH) == 0)
+    {
+        st_send(ST_RP_FLASH_RW, SELFTEST_SKIP, 0, 0, "not requested", 0);
+        return;
+    }
+
+    for (uint32_t i = 0; i < FLASH_SECTOR_SIZE; ++i)
+    {
+        ota_transfer_buffer[i] = (uint8_t)(i * 7u + esp_selftest_run * 31u + 0x5Au);
     }
 
     OTA_WATCHDOG_UPDATE();
+    ota_flash_sector(ST_SCRATCH_OFFSET, ota_transfer_buffer, FLASH_SECTOR_SIZE);
+    OTA_WATCHDOG_UPDATE();
 
-    uint32_t elapsed_ms = duration_ms == 0 ? 1 : duration_ms;
-    uint32_t bytes = frames * SPI_FRAME_SIZE;
+    const uint8_t *back = (const uint8_t *)(XIP_BASE + ST_SCRATCH_OFFSET);
+    uint32_t wrong = 0;
 
-    printf("spi bench done: %u frames, %u failures, %u bytes in %u ms, %u KB/s, capture RESUMED\r\n",
-           (unsigned)frames, (unsigned)failures, (unsigned)bytes, (unsigned)duration_ms,
-           (unsigned)((bytes / 1024u) * 1000u / elapsed_ms));
+    for (uint32_t i = 0; i < FLASH_SECTOR_SIZE; ++i)
+    {
+        if (back[i] != ota_transfer_buffer[i])
+        {
+            wrong++;
+        }
+    }
+
+    snprintf(text, sizeof(text), "4k at 0x%06x, %u bad", (unsigned)ST_SCRATCH_OFFSET, (unsigned)wrong);
+    st_send(ST_RP_FLASH_RW, wrong == 0 ? SELFTEST_PASS : SELFTEST_FAIL, wrong, FLASH_SECTOR_SIZE, text, 0);
+}
+
+static void st_run_analog(void)
+{
+    char text[ST_TEXT_MAX + 8];
+
+    adc_init();
+
+    adc_set_temp_sensor_enabled(true);
+    adc_select_input(4);
+    sleep_ms(2);
+
+    uint32_t raw = adc_read();
+    int32_t milli = (int32_t)((uint64_t)raw * 3300u / 4096u);
+    int32_t temp = 27000 - ((milli * 1000 - 706000) * 1000 / 1721);
+
+    snprintf(text, sizeof(text), "die %d.%01u C", (int)(temp / 1000), (unsigned)((temp < 0 ? -temp : temp) % 1000) / 100);
+    st_send(ST_RP_TEMP, temp > -10000 && temp < 90000 ? SELFTEST_PASS : SELFTEST_WARN, raw, (uint32_t)temp, text, 0);
+
+    adc_set_temp_sensor_enabled(false);
+
+#ifdef RP_ADC_GPIO
+    adc_gpio_init(RP_ADC_GPIO);
+    adc_select_input(1);
+    sleep_ms(2);
+
+    raw = adc_read();
+    milli = (int32_t)((uint64_t)raw * 3300u / 4096u);
+
+    snprintf(text, sizeof(text), "GPIO27 %u mV, raw %u", (unsigned)milli, (unsigned)raw);
+    st_send(ST_RP_ADC_PIN, SELFTEST_INFO, raw, (uint32_t)milli, text, 0);
+#else
+    st_send(ST_RP_ADC_PIN, SELFTEST_SKIP, 0, 0, "not fitted on this variant", 0);
+#endif
+}
+
+static void st_run_gpio(void)
+{
+    char text[ST_TEXT_MAX + 8];
+
+    uint32_t pull_bad = 0;
+    uint32_t drive_bad = 0;
+    uint32_t short_bad = 0;
+    const char *pull_first = "";
+    const char *drive_first = "";
+    char short_first[ST_TEXT_MAX + 8];
+
+    short_first[0] = '\0';
+
+    for (uint32_t i = 0; i < st_pin_count; ++i)
+    {
+        uint8_t g = st_pins[i].gpio;
+
+        OTA_WATCHDOG_UPDATE();
+
+        gpio_init(g);
+        gpio_set_dir(g, GPIO_IN);
+        gpio_pull_up(g);
+        sleep_us(200);
+
+        bool high = gpio_get(g);
+
+        gpio_pull_down(g);
+        sleep_us(200);
+
+        bool low = gpio_get(g);
+
+        if (!high || low)
+        {
+            pull_bad |= 1u << g;
+
+            if (pull_first[0] == '\0')
+            {
+                pull_first = st_pins[i].name;
+            }
+        }
+
+        gpio_disable_pulls(g);
+        gpio_set_dir(g, GPIO_OUT);
+        gpio_put(g, 1);
+        sleep_us(200);
+
+        bool drove_high = gpio_get(g);
+
+        gpio_put(g, 0);
+        sleep_us(200);
+
+        bool drove_low = gpio_get(g);
+
+        if (!drove_high || drove_low)
+        {
+            drive_bad |= 1u << g;
+
+            if (drive_first[0] == '\0')
+            {
+                drive_first = st_pins[i].name;
+            }
+        }
+
+        gpio_set_dir(g, GPIO_IN);
+        gpio_pull_up(g);
+    }
+
+    sleep_us(500);
+
+    for (uint32_t i = 0; i < st_pin_count; ++i)
+    {
+        uint8_t g = st_pins[i].gpio;
+
+        OTA_WATCHDOG_UPDATE();
+
+        gpio_disable_pulls(g);
+        gpio_set_dir(g, GPIO_OUT);
+        gpio_put(g, 0);
+        sleep_us(300);
+
+        for (uint32_t j = 0; j < st_pin_count; ++j)
+        {
+            if (j == i)
+            {
+                continue;
+            }
+
+            if (!gpio_get(st_pins[j].gpio))
+            {
+                short_bad |= (1u << g) | (1u << st_pins[j].gpio);
+
+                if (short_first[0] == '\0')
+                {
+                    snprintf(short_first, sizeof(short_first), "%s to %s", st_pins[i].name, st_pins[j].name);
+                }
+            }
+        }
+
+        gpio_set_dir(g, GPIO_IN);
+        gpio_pull_up(g);
+        sleep_us(300);
+    }
+
+    for (uint32_t i = 0; i < st_pin_count; ++i)
+    {
+        st_pin_release(st_pins[i].gpio);
+    }
+
+    gpio_init(SPI_CS_PIN);
+    gpio_set_dir(SPI_CS_PIN, GPIO_OUT);
+    gpio_put(SPI_CS_PIN, true);
+
+    gpio_init(EBOOT_MASTERDATAREADY_GPIO);
+    gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_OUT);
+    gpio_put(EBOOT_MASTERDATAREADY_GPIO, false);
+
+    snprintf(text, sizeof(text), "%u pins, %s", (unsigned)st_pin_count, pull_bad ? pull_first : "all follow");
+    st_send(ST_RP_GPIO_PULL, pull_bad ? SELFTEST_FAIL : SELFTEST_PASS, pull_bad, st_pin_count, text, 0);
+
+    snprintf(text, sizeof(text), "%u pins, %s", (unsigned)st_pin_count, drive_bad ? drive_first : "all drive");
+    st_send(ST_RP_GPIO_DRIVE, drive_bad ? SELFTEST_FAIL : SELFTEST_PASS, drive_bad, st_pin_count, text, 0);
+
+    snprintf(text, sizeof(text), "%s", short_bad ? short_first : "no bridges found");
+    st_send(ST_RP_GPIO_SHORT, short_bad ? SELFTEST_FAIL : SELFTEST_PASS, short_bad, st_pin_count, text, 0);
+}
+
+static void st_run_chip_pu(void)
+{
+    char text[ST_TEXT_MAX + 8];
+
+    gpio_init(ESP_RESET_GPIO);
+    gpio_set_dir(ESP_RESET_GPIO, GPIO_IN);
+    gpio_disable_pulls(ESP_RESET_GPIO);
+    sleep_us(500);
+
+    bool floating = gpio_get(ESP_RESET_GPIO);
+
+    gpio_pull_down(ESP_RESET_GPIO);
+    sleep_us(500);
+
+    bool pulled = gpio_get(ESP_RESET_GPIO);
+
+    gpio_disable_pulls(ESP_RESET_GPIO);
+    gpio_pull_up(ESP_RESET_GPIO);
+
+    snprintf(text, sizeof(text), "R7 holds it %s", pulled ? "up" : "NOT up");
+    st_send(ST_X_ESP_RESET, floating && pulled ? SELFTEST_PASS : SELFTEST_FAIL, floating ? 1 : 0, pulled ? 1 : 0,
+            text, 0);
+}
+
+static void st_run_eboot(void)
+{
+    char text[ST_TEXT_MAX + 8];
+
+    gpio_init(EBOOT_MASTERDATAREADY_GPIO);
+    gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_OUT);
+
+    gpio_put(EBOOT_MASTERDATAREADY_GPIO, 1);
+    sleep_ms(2);
+
+    bool saw_high = st_refresh_peer() && esp_selftest_eboot != 0;
+
+    gpio_put(EBOOT_MASTERDATAREADY_GPIO, 0);
+    sleep_ms(2);
+
+    bool saw_low = st_refresh_peer() && esp_selftest_eboot == 0;
+
+    gpio_put(EBOOT_MASTERDATAREADY_GPIO, 0);
+
+    snprintf(text, sizeof(text), "RP14 to ESP IO9 %s", saw_high && saw_low ? "follows" : "STUCK");
+    st_send(ST_X_EBOOT, saw_high && saw_low ? SELFTEST_PASS : SELFTEST_FAIL, saw_high ? 1 : 0, saw_low ? 1 : 0,
+            text, 0);
+}
+
+static void st_run_elog(void)
+{
+    char text[ST_TEXT_MAX + 8];
+
+    uint32_t high = 0;
+    uint32_t low = 0;
+
+    for (int i = 0; i < 64; ++i)
+    {
+        OTA_WATCHDOG_UPDATE();
+
+        if (gpio_get(ELOG_SLAVEREADY_GPIO))
+        {
+            high++;
+        }
+        else
+        {
+            low++;
+        }
+
+        st_refresh_peer();
+    }
+
+    snprintf(text, sizeof(text), "ESP IO8 to RP15, %u hi %u lo", (unsigned)high, (unsigned)low);
+    st_send(ST_X_ELOG, high > 0 ? SELFTEST_PASS : SELFTEST_FAIL, high, low, text, 0);
+}
+
+static void st_run_switch(bool sel, bool oe)
+{
+    char text[ST_TEXT_MAX + 8];
+
+    if ((esp_selftest_opts & SELFTEST_OPT_SWITCH) == 0)
+    {
+        st_send(ST_RP_USB_MUX, SELFTEST_SKIP, 0, 0, "not requested", 0);
+        st_send(ST_RP_SNIFF, SELFTEST_SKIP, 0, 0, "not requested", 0);
+
+        return;
+    }
+
+    gpio_init(USSEL_PIN);
+    gpio_set_dir(USSEL_PIN, GPIO_OUT);
+    gpio_init(USOE_PIN);
+    gpio_set_dir(USOE_PIN, GPIO_OUT);
+    gpio_put(USOE_PIN, 1);
+    sleep_ms(2);
+
+    uint32_t sniff_bad = 0;
+
+    const uint8_t sniff[2] = {DP_SNIFF_GPIO, DM_SNIFF_GPIO};
+
+    for (int i = 0; i < 2; ++i)
+    {
+        gpio_init(sniff[i]);
+        gpio_set_dir(sniff[i], GPIO_IN);
+        gpio_pull_up(sniff[i]);
+        sleep_us(500);
+
+        bool up = gpio_get(sniff[i]);
+
+        gpio_pull_down(sniff[i]);
+        sleep_us(500);
+
+        bool down = gpio_get(sniff[i]);
+
+        if (!up || down)
+        {
+            sniff_bad |= 1u << sniff[i];
+        }
+
+        gpio_disable_pulls(sniff[i]);
+    }
+
+    gpio_put(USOE_PIN, oe);
+    gpio_put(USSEL_PIN, sel);
+
+    snprintf(text, sizeof(text), "U1 SEL %u OE %u restored", sel ? 1u : 0u, oe ? 1u : 0u);
+    st_send(ST_RP_USB_MUX, SELFTEST_PASS, sel ? 1 : 0, oe ? 1 : 0, text, 0);
+
+    snprintf(text, sizeof(text), "%s", sniff_bad ? "a sniff line will not move" : "both lines follow");
+    st_send(ST_RP_SNIFF, sniff_bad ? SELFTEST_FAIL : SELFTEST_PASS, sniff_bad, 0, text, 0);
+}
+
+static void st_blink_led(void)
+{
+    gpio_init(RP_LED_GPIO);
+    gpio_set_dir(RP_LED_GPIO, GPIO_OUT);
+
+    for (int i = 0; i < 12; ++i)
+    {
+        OTA_WATCHDOG_UPDATE();
+
+        gpio_put(RP_LED_GPIO, i & 1);
+        sleep_ms(250);
+    }
+
+    gpio_put(RP_LED_GPIO, 0);
+    gpio_set_dir(RP_LED_GPIO, GPIO_IN);
+}
+
+static void ota_run_selftest(void)
+{
+    char text[ST_TEXT_MAX + 8];
+
+    st_aborted = false;
+    st_pin_count = 0;
+
+    bool saved_sel = gpio_get_out_level(USSEL_PIN);
+    bool saved_oe = gpio_get_out_level(USOE_PIN);
+
+    // The two sniff pins are D+ and D- on the usb board and DATA and CLOCK on
+    // the ps2 one, where the bus is held up by the internal pull ups. Both the
+    // gpio sweep and the switch check drive them and end with the pulls off,
+    // so the state they were found in is recorded here and put back below.
+    const uint8_t saved_sniff[2] = {DP_SNIFF_GPIO, DM_SNIFF_GPIO};
+    bool saved_sniff_up[2];
+    bool saved_sniff_down[2];
+
+    for (uint32_t i = 0; i < 2; ++i)
+    {
+        saved_sniff_up[i] = gpio_is_pulled_up(saved_sniff[i]);
+        saved_sniff_down[i] = gpio_is_pulled_down(saved_sniff[i]);
+    }
+
+    for (uint32_t i = 0; i < ST_FREE_COUNT; ++i)
+    {
+        st_pins[st_pin_count++] = st_free_pins[i];
+    }
+
+    if ((esp_selftest_opts & SELFTEST_OPT_SWITCH) != 0)
+    {
+        for (uint32_t i = 0; i < ST_SWITCH_COUNT; ++i)
+        {
+            st_pins[st_pin_count++] = st_switch_pins[i];
+        }
+    }
+
+    printf("self test run %u: capture SUSPENDED, options %02x\r\n", (unsigned)esp_selftest_run,
+           (unsigned)esp_selftest_opts);
+
+    snprintf(text, sizeof(text), "v%s %s", FIRMV_STR, RP_VARIANT);
+    st_send(ST_RP_FIRMWARE, SELFTEST_INFO, FIRMV, 0, text, 0);
+
+    snprintf(text, sizeof(text), "straps read %s", hwver_name);
+    st_send(ST_RP_HWVER, hwver == VERSION_UNKNOWN ? SELFTEST_WARN : SELFTEST_PASS, (uint32_t)hwver, 0, text, 0);
+
+    st_run_flash();
+
+    st_report_clock(ST_RP_XOSC, "U4 TCXO", CLOCKS_FC0_SRC_VALUE_XOSC_CLKSRC, 12000, 60);
+    st_report_clock(ST_RP_CLK_SYS, "clk_sys", CLOCKS_FC0_SRC_VALUE_CLK_SYS, clock_get_hz(clk_sys) / 1000, 500);
+    st_report_clock(ST_RP_CLK_PERI, "clk_peri", CLOCKS_FC0_SRC_VALUE_CLK_PERI, clock_get_hz(clk_peri) / 1000, 500);
+    st_report_clock(ST_RP_CLK_USB, "clk_usb", CLOCKS_FC0_SRC_VALUE_CLK_USB, 48000, 500);
+    st_report_clock(ST_RP_CLK_ADC, "clk_adc", CLOCKS_FC0_SRC_VALUE_CLK_ADC, 48000, 500);
+    st_report_clock(ST_RP_ROSC, "rosc", CLOCKS_FC0_SRC_VALUE_ROSC_CLKSRC, 0, 0);
+
+    st_run_analog();
+
+    ota_meta_t meta;
+
+    ota_meta_read(&meta);
+
+    snprintf(text, sizeof(text), "%s", ota_meta_valid(&meta) ? "valid" : "blank or stale");
+    st_send(ST_RP_OTA_META, SELFTEST_INFO, meta.state, meta.boot_attempts, text, 0);
+
+    st_run_gpio();
+    st_run_chip_pu();
+    st_run_eboot();
+    st_run_elog();
+    st_run_switch(saved_sel, saved_oe);
+
+    for (uint32_t i = 0; i < 2; ++i)
+    {
+        gpio_set_pulls(saved_sniff[i], saved_sniff_up[i], saved_sniff_down[i]);
+    }
+
+    gpio_init(USSEL_PIN);
+    gpio_set_dir(USSEL_PIN, GPIO_OUT);
+    gpio_put(USSEL_PIN, saved_sel);
+
+    gpio_init(USOE_PIN);
+    gpio_set_dir(USOE_PIN, GPIO_OUT);
+    gpio_put(USOE_PIN, saved_oe);
+
+    gpio_init(SPI_CS_PIN);
+    gpio_set_dir(SPI_CS_PIN, GPIO_OUT);
+    gpio_put(SPI_CS_PIN, true);
+
+    gpio_init(EBOOT_MASTERDATAREADY_GPIO);
+    gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_OUT);
+    gpio_put(EBOOT_MASTERDATAREADY_GPIO, false);
+
+    gpio_init(ELOG_SLAVEREADY_GPIO);
+    gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
+    gpio_pull_up(ELOG_SLAVEREADY_GPIO);
+
+    st_send(ST_RP_LED, SELFTEST_ASK, 0, 0, "LED2, RP GPIO26", 0);
+    st_send(0, SELFTEST_INFO, 0, 0, "", st_aborted ? SPI_SELFTEST_FLAG_LAST | SPI_SELFTEST_FLAG_ABORTED
+                                                   : SPI_SELFTEST_FLAG_LAST);
+
+    printf("self test done, capture RESUMED\r\n");
+}
+
+static void ota_run_bench(void)
+{
+    uint32_t duration_ms = esp_bench_ms;
+    uint32_t coarse_steps = esp_bench_max_steps;
+    uint32_t soak_ms = esp_bench_soak_ms;
+    uint32_t stepdowns = esp_bench_stepdowns;
+
+    if (duration_ms < SPI_BENCH_MIN_MS)
+    {
+        duration_ms = SPI_BENCH_MIN_MS;
+    }
+
+    if (duration_ms > SPI_BENCH_MAX_MS)
+    {
+        duration_ms = SPI_BENCH_MAX_MS;
+    }
+
+    if (coarse_steps == 0 || coarse_steps > SPI_BENCH_MAX_STEPS)
+    {
+        coarse_steps = SPI_BENCH_MAX_STEPS;
+    }
+
+    if (soak_ms != 0 && soak_ms < SPI_BENCH_MIN_SOAK_MS)
+    {
+        soak_ms = 0;
+    }
+
+    if (soak_ms > SPI_BENCH_MAX_SOAK_MS)
+    {
+        soak_ms = SPI_BENCH_MAX_SOAK_MS;
+    }
+
+    if (stepdowns > SPI_BENCH_MAX_STEPDOWNS)
+    {
+        stepdowns = SPI_BENCH_MAX_STEPDOWNS;
+    }
+
+    uint32_t min_hz = (uint32_t)esp_bench_min_khz * 1000u;
+    uint32_t max_hz = (uint32_t)esp_bench_max_khz * 1000u;
+
+    bool uart_kind = esp_bench_kind == SPI_BENCH_KIND_UART;
+
+    bench_native_auxsrc = bench_peri_auxsrc();
+    bench_native_peri_hz = clock_get_hz(clk_peri);
+    bench_native_sys_hz = clock_get_hz(clk_sys);
+    bench_slot = 0;
+
+    bench_save_usb_pll();
+    bench_build_variants();
+
+    bench_tx_seq = 0;
+    bench_last_miso_seq = 0;
+
+    bool overclocked = false;
+
+    // The overclock, not the SPI clock, is what draws the current that can brown
+    // the board out, so only raise it when the run actually needs to go past
+    // clk_peri / 2. On a resume that is the resume clock; on a fresh run it is
+    // the top of the range. This is what makes the resilient descent converge:
+    // once it drops below clk_peri / 2 it re-arms WITHOUT the overclock, the
+    // draw falls back to normal, and a clock that only reset from a thermal
+    // brownout now survives. clk_peri / 2 is always reachable without help.
+    uint32_t oc_target_khz = esp_bench_resume_khz != 0 ? (uint32_t)esp_bench_resume_khz : esp_bench_max_khz;
+    bool need_oc = esp_bench_overclock != 0 && (uint64_t)oc_target_khz * 1000ull * 2ull > bench_native_peri_hz;
+
+    if (!uart_kind && need_oc && bench_native_sys_hz != 0)
+    {
+        bench_uart_drain();
+
+        // Doubling clk_sys to 240 MHz is roughly 2x the RP2040's rated 133 MHz.
+        // It runs, but at the stock 1.10 V core it is marginal and reboots at
+        // random, which showed up as the reset counter climbing mid sweep. The
+        // community-standard fix is to raise the core voltage for the run; 240
+        // MHz is comfortable at 1.30 V (the SDK maximum) and flash stays safe
+        // because at clkdiv 2 the QSPI only misbehaves past ~250 MHz. Give the
+        // regulator a moment to settle before asking for the higher clock.
+        vreg_set_voltage(VREG_VOLTAGE_1_30);
+        sleep_ms(3);
+
+        overclocked = set_sys_clock_khz((bench_native_sys_hz / 1000u) * 2u, false);
+
+        bench_uart_reclock();
+
+        if (!overclocked)
+        {
+            vreg_set_voltage(VREG_VOLTAGE_1_10);
+        }
+
+        printf("spi bench: system clock %s, now %u Hz, core %s\r\n",
+               overclocked ? "DOUBLED for this run" : "could NOT be doubled",
+               (unsigned)clock_get_hz(clk_sys), overclocked ? "1.30 V" : "1.10 V");
+    }
+
+    bench_go_safe();
+
+    bench_step_stat_t stat;
+    bench_rate_t rate;
+    bench_rate_t best;
+
+    memset(&best, 0, sizeof(best));
+
+    printf("%s bench run %u: capture SUSPENDED, %u coarse steps of %u ms over %u-%u kHz, confirm %u ms, "
+           "%u step downs, clk_sys %u Hz, clk_peri normally %u Hz\r\n",
+           uart_kind ? "uart" : "spi", (unsigned)esp_bench_run_id, (unsigned)coarse_steps, (unsigned)duration_ms,
+           (unsigned)esp_bench_min_khz,
+           (unsigned)esp_bench_max_khz, (unsigned)soak_ms, (unsigned)stepdowns, (unsigned)clock_get_hz(clk_sys),
+           (unsigned)bench_native_peri_hz);
+
+    if (uart_kind)
+    {
+        min_hz = esp_uart_min_baud != 0 ? esp_uart_min_baud : uart_baud_ladder[0];
+        max_hz = esp_uart_max_baud != 0 ? esp_uart_max_baud : uart_baud_ladder[UART_BAUD_LADDER_LEN - 1];
+
+        if (min_hz < uart_baud_ladder[0])
+        {
+            min_hz = uart_baud_ladder[0];
+        }
+
+        if (max_hz > uart_baud_ladder[UART_BAUD_LADDER_LEN - 1])
+        {
+            max_hz = uart_baud_ladder[UART_BAUD_LADDER_LEN - 1];
+        }
+
+        uint32_t usable = 0;
+
+        for (uint32_t i = 0; i < UART_BAUD_LADDER_LEN; ++i)
+        {
+            if (uart_baud_ladder[i] >= min_hz && uart_baud_ladder[i] <= max_hz)
+            {
+                usable++;
+            }
+        }
+
+        if (usable == 0)
+        {
+            usable = 1;
+        }
+
+        if (coarse_steps > usable)
+        {
+            coarse_steps = usable;
+        }
+    }
+
+    bool linked = uart_kind ? uart_setup_peer(0, 0, false) : bench_warmup();
+
+    if (min_hz == 0 || max_hz < min_hz || !linked)
+    {
+        memset(&stat, 0, sizeof(stat));
+
+        printf("%s bench aborted: %s\r\n", uart_kind ? "uart" : "spi",
+               max_hz < min_hz ? "the requested range is empty" : "the esp never answered");
+
+        bench_send_result(SPI_BENCH_NO_STEP, 0, SPI_BENCH_RESULT_FLAG_LAST | SPI_BENCH_RESULT_FLAG_ABORTED,
+                          SPI_BENCH_PHASE_SWEEP, &stat);
+    }
+    else
+    {
+        uint32_t first_bad_hz = 0;
+        uint32_t last_hz = 0;
+        bool have_best = false;
+        bool unwound = false;
+
+        // Resuming after a reset that a marginal soak triggered: skip the whole
+        // sweep and refine, and drop straight into confirming just below the
+        // clock that browned the board out. The step-down loop then walks down
+        // from here until one clock survives a full soak, so the search
+        // converges across as many resets as it takes.
+        if (!uart_kind && esp_bench_resume_khz != 0 &&
+            bench_resolve_rate((uint32_t)esp_bench_resume_khz * 1000u, &rate) && rate.hz >= min_hz)
+        {
+            best = rate;
+            have_best = true;
+
+            printf("spi bench: RESUMING confirmation from %u Hz after a reset\r\n", (unsigned)best.hz);
+        }
+        else
+        for (uint32_t i = 0; i < coarse_steps && bench_slot < SPI_BENCH_MAX_STEPS; ++i)
+        {
+            bool resolved;
+
+            if (uart_kind)
+            {
+                uint32_t seen = 0;
+                uint32_t want = 0;
+
+                for (uint32_t k = 0; k < UART_BAUD_LADDER_LEN; ++k)
+                {
+                    if (uart_baud_ladder[k] < min_hz || uart_baud_ladder[k] > max_hz)
+                    {
+                        continue;
+                    }
+
+                    if (seen == i)
+                    {
+                        want = uart_baud_ladder[k];
+                        break;
+                    }
+
+                    seen++;
+                }
+
+                resolved = want != 0 && uart_resolve_rate(want, &rate);
+            }
+            else
+            {
+                uint32_t span = max_hz - min_hz;
+                uint32_t want =
+                    coarse_steps == 1 ? max_hz : min_hz + (uint32_t)(((uint64_t)span * i) / (coarse_steps - 1));
+
+                resolved = bench_resolve_rate(want, &rate);
+            }
+
+            if (!resolved || rate.hz < min_hz)
+            {
+                continue;
+            }
+
+            if (rate.hz <= last_hz)
+            {
+                continue;
+            }
+
+            last_hz = rate.hz;
+
+            int mres = bench_measure(&rate, duration_ms, SPI_BENCH_PHASE_SWEEP, "step", &stat);
+
+            if (mres < 0)
+            {
+                unwound = true;
+                break;
+            }
+
+            if (bench_esp_gone())
+            {
+                unwound = true;
+                break;
+            }
+        }
+
+        for (uint8_t i = 0; i < bench_slot; ++i)
+        {
+            if (bench_ladder_pass[i] && (!have_best || bench_ladder[i].hz > best.hz))
+            {
+                best = bench_ladder[i];
+                have_best = true;
+            }
+        }
+
+        for (uint8_t i = 0; i < bench_slot; ++i)
+        {
+            if (!bench_ladder_pass[i] && have_best && bench_ladder[i].hz > best.hz &&
+                (first_bad_hz == 0 || bench_ladder[i].hz < first_bad_hz))
+            {
+                first_bad_hz = bench_ladder[i].hz;
+            }
+        }
+
+        if (have_best)
+        {
+            printf("%s bench: highest clean rate %u Hz%s\r\n", uart_kind ? "uart" : "spi", (unsigned)best.hz,
+                   first_bad_hz != 0 ? ", the next one up failed" : ", nothing above it failed");
+        }
+
+        while (!uart_kind && !unwound && have_best && first_bad_hz > best.hz + SPI_BENCH_REFINE_KHZ * 1000u &&
+               bench_slot < SPI_BENCH_MAX_STEPS)
+        {
+            uint32_t want = best.hz + (first_bad_hz - best.hz) / 2u;
+
+            if (!bench_resolve_rate(want, &rate) || rate.hz <= best.hz || rate.hz >= first_bad_hz)
+            {
+                break;
+            }
+
+            int result = bench_measure(&rate, duration_ms, SPI_BENCH_PHASE_REFINE, "refine", &stat);
+
+            if (result < 0)
+            {
+                unwound = true;
+                break;
+            }
+
+            if (result == 1)
+            {
+                best = rate;
+            }
+            else
+            {
+                first_bad_hz = rate.hz;
+            }
+
+            if (bench_esp_gone())
+            {
+                unwound = true;
+                break;
+            }
+        }
+
+        bool closed = false;
+
+        if (!unwound && have_best && soak_ms != 0)
+        {
+            for (uint32_t attempt = 0; attempt <= stepdowns && bench_slot < SPI_BENCH_MAX_STEPS; ++attempt)
+            {
+                bench_ladder[bench_slot] = best;
+
+                uint8_t step = bench_slot++;
+
+                if (bench_run_soak(step, &best, soak_ms, &stat))
+                {
+                    printf("spi bench: CONFIRMED %u Hz over %u ms, %u frames, nothing lost\r\n", (unsigned)best.hz,
+                           (unsigned)soak_ms, (unsigned)stat.frames);
+                    closed = true;
+                    break;
+                }
+
+                if (bench_esp_gone())
+                {
+                    unwound = true;
+                    break;
+                }
+
+                printf("spi bench: %u Hz did NOT survive the confirmation, dropping a step\r\n", (unsigned)best.hz);
+
+                if (attempt == stepdowns || best.hz <= min_hz)
+                {
+                    break;
+                }
+
+                bool dropped;
+
+                if (uart_kind)
+                {
+                    dropped = uart_resolve_rate(best.hz - 1u, &rate);
+                }
+                else
+                {
+                    dropped = best.hz > SPI_BENCH_REFINE_KHZ * 1000u &&
+                              bench_resolve_rate(best.hz - SPI_BENCH_REFINE_KHZ * 1000u, &rate);
+                }
+
+                if (!dropped || rate.hz >= best.hz || rate.hz < min_hz)
+                {
+                    break;
+                }
+
+                best = rate;
+            }
+        }
+
+        if (!closed)
+        {
+            uint8_t flags = SPI_BENCH_RESULT_FLAG_LAST;
+
+            if (unwound)
+            {
+                flags |= SPI_BENCH_RESULT_FLAG_ABORTED;
+            }
+
+            memset(&stat, 0, sizeof(stat));
+            bench_send_result(SPI_BENCH_NO_STEP, bench_slot, flags, SPI_BENCH_PHASE_CONFIRM, &stat);
+        }
+        else
+        {
+            memset(&stat, 0, sizeof(stat));
+            bench_send_result(SPI_BENCH_NO_STEP, bench_slot, SPI_BENCH_RESULT_FLAG_LAST, SPI_BENCH_PHASE_CONFIRM,
+                              &stat);
+        }
+    }
+
+    bench_peri_to_sys();
+    bench_restore_usb_pll();
+
+    if (overclocked)
+    {
+        bench_uart_drain();
+        set_sys_clock_khz(bench_native_sys_hz / 1000u, false);
+        bench_uart_reclock();
+
+        // Back to the stock clock, so drop the core voltage back to its default.
+        vreg_set_voltage(VREG_VOLTAGE_1_10);
+    }
+
+    bench_uart_drain();
+    clock_configure_undivided(clk_peri, 0, bench_native_auxsrc, bench_native_peri_hz);
+    bench_uart_reclock();
+
+    uint32_t restored = spi_set_baudrate(SPI_ID, SPI_BAUD);
 
     esp_bench_armed = false;
+
+    printf("spi bench done, capture RESUMED, clk_sys %u Hz, clk_peri %u Hz, spi %u Hz\r\n",
+           (unsigned)clock_get_hz(clk_sys), (unsigned)clock_get_hz(clk_peri), (unsigned)restored);
 }
 
 static void poll_esp_if_due(void)
@@ -891,6 +2967,18 @@ static void poll_esp_if_due(void)
     poll_esp();
 
     spi_next_poll_us = now + (esp_link_up ? SPI_POLL_INTERVAL_US : SPI_POLL_BACKOFF_US);
+
+    if (esp_link_up && (esp_wifi_ip != esp_wifi_reported || (int)esp_wifi_mode != esp_wifi_mode_reported))
+    {
+        esp_wifi_reported = esp_wifi_ip;
+        esp_wifi_mode_reported = (int)esp_wifi_mode;
+
+        static const char *modes[3] = {"access point", "client", "joining"};
+
+        printf("esp wifi %s, address %u.%u.%u.%u\r\n", modes[esp_wifi_mode <= 2 ? esp_wifi_mode : 0],
+               (unsigned)(esp_wifi_ip & 0xff), (unsigned)((esp_wifi_ip >> 8) & 0xff),
+               (unsigned)((esp_wifi_ip >> 16) & 0xff), (unsigned)((esp_wifi_ip >> 24) & 0xff));
+    }
 
     if ((int)esp_link_up != esp_link_reported)
     {
@@ -925,9 +3013,35 @@ static void poll_esp_if_due(void)
         }
     }
 
-    if (esp_link_up && esp_bench_armed)
+    if (esp_link_up && esp_rp_reset_requested)
     {
-        ota_run_bench(esp_bench_ms > 20000 ? 20000 : esp_bench_ms);
+        printf("web requested a reset, rebooting the RP (this resets the ESP too)\r\n");
+        fflush(stdout);
+        watchdog_reboot(0, 0, 0);
+
+        while (1)
+        {
+            tight_loop_contents();
+        }
+    }
+
+    if (esp_link_up && esp_selftest_blink != 0)
+    {
+        st_blink_led();
+        spi_next_poll_us = time_us_64() + SPI_POLL_INTERVAL_US;
+    }
+
+    if (esp_link_up && esp_selftest_armed && esp_selftest_last_run != (int)esp_selftest_run)
+    {
+        esp_selftest_last_run = (int)esp_selftest_run;
+        ota_run_selftest();
+        spi_next_poll_us = time_us_64() + SPI_POLL_INTERVAL_US;
+    }
+
+    if (esp_link_up && esp_bench_armed && esp_bench_last_run != (int)esp_bench_run_id)
+    {
+        esp_bench_last_run = (int)esp_bench_run_id;
+        ota_run_bench();
         spi_next_poll_us = time_us_64() + SPI_POLL_INTERVAL_US;
     }
 

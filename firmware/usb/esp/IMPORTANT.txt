@@ -219,6 +219,539 @@ boot clock" line is computed against a clk_peri that no longer exists.
 
 
 ------------------------------------------------------------------------
+7d. The SPI clock sweep, and how to read it
+------------------------------------------------------------------------
+SPI_BAUD in usb/rp/okhi.c is a number somebody picked once. /spibench
+measures what the board in your hand actually survives, so the number can
+be picked from evidence instead.
+
+    GET /spibench                       the last result table
+    GET /spibench?from=N                the rest of it, see below
+    GET /spibench?start=1&kind=0&ms=250&min=1000&max=24000&steps=30
+                 &soak=120000&down=3&oc=0
+    GET /spibench?abort=1
+
+kind is 0 for the SPI link and 1 for the UART between the two chips. The
+endpoint kept its name because the SPI link is still what carries every
+control frame and every result, whichever wire is being measured.
+
+A table of forty rows does not fit in one reply and growing the buffers
+to make it would cost more RAM than the benchmark. A reply that had to
+stop early ends with more=N and the page fetches ?from=N until it does
+not.
+
+ms is per step (50 to 2000), min and max are kHz, steps is at most
+SPI_BENCH_MAX_STEPS = 16, soak is the confirmation time in ms (0 to
+disable, otherwise 2000 to 10800000, three hours). The page drives it from
+the "SPI benchmark" card, which polls /spibench while the run is in
+flight and reattaches to a run that is still going if the page is
+reloaded.
+
+The ESP cannot start a sweep by itself: it can only ADVERTISE one. It
+raises SPI_FLAG_BENCH_ARMED in the status frame and writes the parameters
+into the reserved bytes of the header, and the RP picks them up on its
+next poll, within SPI_POLL_INTERVAL_US. The RP then owns the whole run,
+because the RP is the master and only the master can change the clock.
+
+What one step does:
+
+  - spi_set_baudrate() to the target, which ALWAYS rounds DOWN, so the
+    rate that gets reported is the one the PL022 really produced
+  - hammer full duplex 256 byte frames for ms milliseconds
+  - the RP sends SPI_CTRL_TYPE_BENCH frames and the ESP validates them
+  - the ESP answers with SPI_FRAME_TYPE_BENCH frames and the RP
+    validates those, in the SAME transfer, which is the only way to be
+    sure both numbers describe the same electrical conditions
+  - drop back to SPI_BAUD and report the step in a
+    SPI_CTRL_TYPE_BENCH_RESULT frame, retried until the ESP acknowledges
+    it in SPI_BENCH_STATUS_ACK_OFF
+
+Both directions are measured in the SAME transfer, which is the only way
+to be sure the two numbers describe the same electrical conditions.
+
+Because the report frames travel at SPI_BAUD, a step that destroys the
+link cannot destroy the report of that step. The clock is restored on
+every exit path, and a watchdog reset re-runs rp_spi_master_init()
+anyway, so there is no way for a sweep to leave the link at a broken
+speed.
+
+A step PASSES only if all of this holds:
+
+    no CRC failure in either direction
+    no SLAVEREADY timeout (the ESP kept up with the master)
+    at least 99.9% of the frames the RP sent were accounted for by the
+      ESP, and vice versa
+    the magic offset stayed below SPI_MAGIC_SEARCH_MAX
+
+That last one is usually what bites first, and it is the reason the
+sweep reports the offset. Section 7b explains it: MISO arrives shifted,
+the protocol absorbs the shift with a 32 byte search window, and the
+shift GROWS with the clock. The link starts losing frames when the
+window runs out, not when the bits themselves go wrong, so a step can
+fail with a perfectly clean CRC and an offset of 32.
+
+The reported KB/s includes the CRC32 over 160 bytes that each side does
+on every frame, so it is a floor for the usable throughput, not a
+measurement of the bus on its own. The pass/fail column does not depend
+on it.
+
+Capture is SUSPENDED for the whole run, and the confirmation goes up to
+three hours, so that is however long you asked for with no keystroke
+recorded. The tap itself is passive on both variants, so the keyboard
+keeps working throughout: what stops is the recording, not the bus. The
+page says so, and the RP prints it on its debug UART, uart_default at
+921600 baud on GPIO 4 and 5. The link to the ESP, uart0 at 74880 baud,
+only ever carries the packet counter line, so the sweep log does NOT
+show up in the "RP debug data" box.
+
+The bench is refused with 409 while an OTA is staged or in flight,
+because spi_fill_frame() cannot serve an image block and a bench pattern
+in the same frame.
+
+Old firmware on the other side degrades cleanly rather than lying. A new
+ESP paired with an RP that predates the sweep gets no answer and reports
+"timeout" on the page. A new RP paired with an old ESP never sees the
+flag and simply never sweeps.
+
+
+------------------------------------------------------------------------
+7d2. What "the frame arrived intact" actually checks
+------------------------------------------------------------------------
+Three independent tests, applied to EVERY frame in BOTH directions. Any
+one of them failing marks the frame bad; none of them is sampled.
+
+1. A CRC32 over every byte that can be covered. Not just the payload:
+   the header and the identity string are in it too, because a frame
+   whose identity rotted is a corrupted frame and the point is to
+   notice. MOSI covers 216 of 256 bytes: the header (minus the magic
+   that locates the frame and the checksum field) plus the identity and
+   the first 144 bytes of the payload. The last 32 bytes are left out on
+   purpose, exactly like MISO leaves out its tail, because the ESP slave
+   truncates the final few bytes of every MOSI frame in full duplex,
+   about 8 on this board (the PL022 master TX FIFO depth), so covering
+   them would fail every frame. SPI_BENCH_MOSI_CRC_A_LEN is that budget.
+   MISO covers 220 of the 240 the ESP writes, the exception being the
+   lead pad, which exists to be overwritten by the shift, and the last
+   16 bytes, which at the worst shift never reach the RP at all.
+
+2. The transaction length is RECORDED but NOT used to reject a frame.
+   The ESP-IDF v6.0.2 slave reports a trans_len that is short, and often
+   zero, in full duplex on this platform even when all 256 bytes arrive
+   and pass CRC. Trusting it (trans_len == SPI_FRAME_SIZE * 8) marked
+   every single MOSI frame bad and the sweep could never find a passing
+   step. Integrity rests on the CRC and the sequence number instead, the
+   same robust pair the RP already uses for MISO via spi_find_frame
+   rather than a length. The mismatch is still counted and shown as
+   badlen, purely for information.
+
+3. A free running sequence number that has to advance. This is what
+   makes it safe for the payload to repeat.
+
+That last point is the design compromise worth understanding. Generating
+a fresh random payload per frame costs more CPU than the transfer does
+past a few megahertz, so the sweep would end up measuring the cores
+rather than the link. Both sides build SPI_BENCH_TX_VARIANTS payloads
+once per run and rotate through them, which is a memcpy per frame, and
+the checksum splits into a constant half that is precomputed with the
+variant and eight header bytes chained per frame. Full coverage for
+about a microsecond. The recurring payload would let a stale or repeated
+frame slip through on the checksum alone, which is exactly the hole the
+sequence number closes.
+
+Modelled against the real offsets in com.h: every single bit flip
+anywhere in a MOSI frame is caught, and of 20000 frames hit with one to
+eight random byte corruptions the only ones that pass are those where
+the corruption happened to write back the value that was already there.
+MISO is the same except for the 32 filler bytes described above.
+
+The result frames get their own CRC32 over everything from the version
+byte to the clock recipe. They travel at the safe clock where nothing is
+expected to go wrong, but a result frame carries the only copy of a
+measurement that may have taken three hours, and the RP retries until it
+is acknowledged, so rejecting a bad one costs a millisecond while
+believing one would poison the answer permanently.
+
+------------------------------------------------------------------------
+7e. Why the sweep is only a screening pass
+------------------------------------------------------------------------
+250 ms at 12 MHz is about 1500 frames. A link that drops one frame in
+ten thousand looks perfect at that sample size, and picking SPI_BAUD off
+a number like that is how a board ends up losing a keystroke every few
+minutes in the field.
+
+So the sweep does not produce the answer, it produces a CANDIDATE: the
+fastest step that came back clean. The RP then re-runs that one clock for
+the confirmation time, two minutes by default, and THAT is the number to
+act on. At 12 MHz two minutes is roughly 600 000 frames, three orders of
+magnitude more evidence.
+
+Every step warms the pipeline at its own clock before it starts counting.
+bench_run_step() sends BENCH_STEP_WARMUP_OK good frames (capped at
+BENCH_WARMUP_FRAMES) as NO_STEP frames, which the ESP ignores, right after
+bench_apply_rate(). Without it the FIRST step of a sweep was scored on the
+worst-case MISO shift that always follows a clock change (section 7b) and
+failed even when its clock was rock solid, which would silently throw away
+a candidate if a sweep ever started near the ceiling. With it a sweep that
+begins at 20 MHz passes its first step and bad_magic stays 0.
+
+The two phases are scored differently on purpose, in bench_step_passed():
+
+    sweep step     tolerates a 0.1% shortfall, SPI_BENCH_MIN_PASS_PERMIL
+    confirmation   miso_ok == frames AND mosi_ok == frames, exactly
+
+The strict count is only sound because the frame accounting is exact.
+Every transfer the RP completes is one transaction the ESP dequeues, in
+order, and the report frames are acknowledged, so all of step N is
+accounted for before the report for step N is taken. A transfer that
+never happened, because SLAVEREADY timed out before a single clock edge,
+is counted by neither side. There is no legitimate reason for the two
+totals to differ.
+
+The confirmation runs in SPI_BENCH_SOAK_CHUNK_MS slices so the page can
+show progress and so an abort is picked up within a couple of seconds.
+Each slice boundary costs one acknowledged report, roughly 5 ms, which is
+0.25% of any run length. The slice returns to SPI_BAUD to send it, for
+the same reason the sweep does: the report of a failure must not travel
+at the clock that is failing.
+
+Two things follow from allowing runs of hours.
+
+The elapsed figure on the wire is MILLISECONDS. Three hours is 1.08e10
+microseconds, which does not fit in 32 bits, and the old field would have
+wrapped somewhere past 71 minutes and quietly ruined the throughput
+column of exactly the longest, most expensive runs. The RP still counts
+microseconds in a uint64 and divides on the way out.
+
+The ESP deadline scales with the soak instead of adding a flat margin: a
+three hour confirmation is 5400 slices, and 5400 reports is about half a
+minute of overhead all by itself. That deadline is only a backstop
+anyway. A run that really stalls is caught by BENCH_STALL_MS, three
+seconds without a frame, whatever the total length.
+
+One log line is expected rather than alarming. spi_task runs at
+configMAX_PRIORITIES - 1, so a step fast enough to saturate this chip
+starves IDLE0, and the IDF task watchdog says so every five seconds:
+
+    Task watchdog got triggered ... did not reset the watchdog in time: IDLE0
+
+CONFIG_ESP_TASK_WDT_PANIC is off by default, so it only prints, it never
+reboots. It shows up at the steps that are already failing, which is the
+same information the table is reporting, and adding a yield to make it go
+away would slow the very loop the sweep exists to measure.
+
+Nothing else overflows at that scale. Three hours at 30 MHz is roughly
+110 million frames per direction against a 32 bit counter that holds
+4.3 billion, and the result sequence byte wrapping every 255 reports is
+harmless because an acknowledgement can only lag by the eight frame
+queue depth.
+
+Results are acknowledged by SEQUENCE, not by step index. The confirmation
+reports the same step over and over, so an ack that only echoed the step
+would still be true from the previous report and the RP would run ahead
+of the ESP. SPI_BENCH_RESULT_SEQ_OFF exists for exactly that.
+
+
+------------------------------------------------------------------------
+7f. Reaching past clk_peri / 2
+------------------------------------------------------------------------
+Section 7c is the constraint: on the usb variant clk_peri is 48 MHz, so
+the PL022 cannot be asked for more than 24 MHz no matter what the sweep
+requests. The ps2 variant never moves the system clock, so its clk_peri
+is 125 MHz and it reaches 62.5 MHz without help.
+
+When the requested max is above clk_peri / 2 and clk_sys is higher, the
+RP moves clk_peri onto clk_sys for the duration of the run and puts it
+back at the end, on every exit path. bench_set_peri_clock() does it, and
+it also reprograms BOTH UART dividers, because they hang off clk_peri
+too: uart0 is the 74880 baud link the ESP reads, uart_default is the
+921600 baud debug header. Their transmitters are drained first, since a
+byte still shifting out when the divider moves comes out as garbage.
+
+The overclock also RAISES THE CORE VOLTAGE. Doubling clk_sys to 240 MHz
+is about 2x the RP2040's rated 133 MHz; it runs at the stock 1.10 V but is
+marginal, and the symptom was the board rebooting at random in the middle
+of a sweep (the reset_times counter climbing). ota_run_bench() now calls
+vreg_set_voltage(VREG_VOLTAGE_1_30) before raising clk_sys, waits a few ms
+for the regulator, and drops back to VREG_VOLTAGE_1_10 when it restores the
+clock. 1.30 V is the SDK maximum and 240 MHz is comfortable there. Flash is
+NOT a concern at this clock: with the stock boot2 QSPI divider of 2 the XIP
+flash only misbehaves past ~250 MHz, so nothing needs copy_to_ram or a
+custom boot2 here. This only matters with overclock on; a normal run never
+touches the voltage.
+
+A watchdog reset re-runs rp_board_boot_init() and rp_spi_master_init()
+from scratch, and a hardware reset returns the core voltage to its 1.10 V
+default, so even a reset in the middle cannot leave the clock tree raised
+or the regulator stuck high.
+
+Read the result with that in mind. Every run reports both clocks:
+
+    clk_peri_khz      what the sweep actually ran at
+    native_peri_khz   what the firmware runs at normally
+
+If they differ, a winning clock above native_peri_khz / 2 is NOT
+something the shipped firmware can produce. It is a measurement of what
+the wiring and the ESP slave could take, and acting on it means raising
+clk_peri in the variant too, which has its own cost: 7c documents that
+the SDK parks clk_peri on PLL_USB precisely to keep peripheral timing
+continuous across a system clock change.
+
+------------------------------------------------------------------------
+7g. The UART test, and the console problem
+------------------------------------------------------------------------
+The other wire between the chips is a UART: RP uart0 on GPIO 16 and 17,
+ESP UART0 on GPIO 20 and 19, 74880 baud, 8N1. Today it carries one thing,
+the "HWv... packets sended" line that report_packets_sent() pushes and
+that the ESP turns into /rp. kind=1 measures what that wire can actually
+do.
+
+THE THING TO KNOW FIRST: on the ESP that UART is ALSO THE CONSOLE.
+CONFIG_ESP_CONSOLE_UART_NUM is 0 at 74880 baud, the same port and the
+same two pins. Every ESP_LOG line the firmware writes is traffic on the
+wire under test, so the benchmark calls esp_log_level_set("*",
+ESP_LOG_NONE) for its duration and restores CONFIG_LOG_DEFAULT_LEVEL
+afterwards. Without that the ESP would be corrupting its own measurement
+of the direction it is trying to prove.
+
+The control channel stays on SPI from beginning to end. The two chips
+agree on the next baud rate over a wire that is NOT the one being tested,
+which is what makes it safe to try a rate that destroys the link: a step
+that fails cannot take the run with it, and the result of that step still
+gets home. The RP asks with SPI_CTRL_TYPE_UART_SETUP and waits for the
+ESP to say it is there; the ESP answers with SPI_FRAME_TYPE_UART_STATS
+frames carrying its live counters, which is also how the RP collects the
+far side of the measurement, since each chip can only count what it
+received.
+
+On the wire it is 60 byte frames, magic 'OKUB' then a sequence number,
+48 bytes of payload and a CRC32 over the two. Both ends stream
+continuously and neither waits for the other; UART is full duplex, so one
+step measures both directions at once under the same conditions.
+
+Framing without a chip select means hunting for the magic. The receiver
+slides one byte at a time, so a corrupted frame costs one resync rather
+than the rest of the step, and every byte thrown away that way is counted
+separately from frames that arrived and failed their checksum. Loss and
+corruption are different faults. The sequence number is contiguous by
+construction, so how many frames went missing is derived from the gaps
+rather than being taken on trust.
+
+Modelled against the real constants: 3000 out of 3000 streams hit with
+one to four random byte corruptions were caught, a stream with three
+bytes deleted mid flight loses two frames and resynchronises onto the
+rest, and the same frame replayed three times is accepted once.
+
+Two smaller things this test needed. The RP turns its UART FIFOs ON for
+the duration and off again afterwards, because at 3 Mbaud a byte arrives
+every 3.3 us and the point is to measure the wire, not a polling loop.
+UART_RXBUF_SZ went from 256 to 2048 bytes for the same reason, which also
+makes the production path lose less.
+
+No overclock and no PLL work here, and the refinement pass is skipped:
+baud rates are a standard list, not a continuum, and the two chips derive
+their dividers from different clocks. A rate off the standard grid risks
+the two ends rounding far enough apart to break framing, which would look
+like a bad wire when it is really a bad choice of number.
+
+BENCH_STALL_MS had to go up to 8 s for this. A UART step is the RP in a
+tight loop on the other wire for a whole slice, not touching SPI at all,
+and the old 3 s would have aborted every run.
+
+------------------------------------------------------------------------
+7h. The hardware self test
+------------------------------------------------------------------------
+    GET /selftest                       the findings so far
+    GET /selftest?from=N                the rest of them
+    GET /selftest?start=1&flash=1&sw=0
+    GET /selftest?blink=1|2             1 blinks LED2 on the RP, 2 LED1
+    GET /selftest?led=1|2&ok=0|1        record what the human saw
+    GET /selftest?abort=1
+
+This is not a test that the firmware works. It is a hunt for a board that
+was assembled badly: a joint that never wetted, a bridge between two
+pads, a part sitting at an angle. Those faults do not announce
+themselves, they turn up weeks later as one keystroke lost an hour, so
+every check reports the raw numbers it measured and names the part or the
+net to inspect rather than printing a bare verdict.
+
+The ESP tests itself, the RP tests itself and reports over SPI using the
+same checksummed control frame as a benchmark result, and the nets
+BETWEEN the two chips need both ends at once.
+
+WHAT DECIDES WHAT MAY BE TOUCHED. Three rules, and all three come from
+the pin map rather than from guesswork.
+
+A pin something else drives is READ ONLY. MISO, ELOG, the ESP UART TX and
+CHIP_PU all have a driver or a pull at the far end. Driving into that is
+how a self test damages the board it was meant to check.
+
+GPIO14 is the ESP BOOT STRAP as well as the master-data-ready handshake.
+rp_board_boot_init() deliberately leaves it an INPUT while the ESP comes
+out of reset, so the ESP internal pull-up wins and it boots normally;
+esp_link_master_init() only makes it an output afterwards. Anything that
+resets the ESP while GPIO14 is driven low drops it into DOWNLOAD MODE.
+That is why this test never drives CHIP_PU at all. Instead it reads it:
+R7 pulls the net to 3V3 at the ESP end, and 10k against the RP internal
+50k still reads high when the net is intact and collapses to the internal
+pull when the joint is open. Same evidence, no reset, and the report
+survives to be read.
+
+GPIO20 and GPIO21 reach the target bus through U1. They are only safe to
+drive with the switch disabled, and disabling it drops the pass-through
+long enough for a host to notice, so that whole group sits behind ?sw=1
+and the switch is put back exactly as it was found. Read the SEL and OE
+levels BEFORE the pin tests borrow those pins: the walking-zero leaves
+every pin an input with its output latch cleared, and restoring from the
+latch afterwards would park the switch on the wrong throw.
+
+THE THREE PIN TESTS, in order, because each finds what the previous one
+cannot:
+
+  pull follow    input with pull-up then pull-down. A pin welded to a
+                 rail cannot follow both.
+  drive readback drive high, drive low, read the pad back each time.
+  walking zero   every pin pulled up, then one at a time driven low while
+                 all the others are read. This is the ONLY one that finds
+                 a bridge between two pads, which is the single most
+                 common thing wrong with a hand assembled board.
+
+Order matters at the end of that sequence. The walking zero leaves every
+pin an input, and reporting the result goes over SPI, which needs its
+chip select DRIVEN. GPIO13 and GPIO14 are put back before the first
+result frame is sent, not with the rest of the restores.
+
+The two LEDs are the only things on this board no amount of firmware can
+verify, so they are asked instead of guessed. The page blinks one, asks,
+and offers to blink again; the answer is recorded as an ordinary finding
+with the same id as any other.
+
+Flash gets an erase, program and verify of one spare sector at 0x700000,
+well past OTA_MAP_END. Booting already proved the read path, so this is
+aimed at the write path and at a marginal QSPI joint. It is behind
+?flash=1 because a genuinely dead flash makes flash_range_erase spin,
+and the watchdog reboot that follows is itself the answer.
+
+The clocks are measured with the RP2040 frequency counter rather than
+assumed. Note what that can and cannot show: the counter references
+clk_ref, which IS the crystal, so it cannot detect a TCXO running at the
+wrong frequency. A dead TCXO is proven absent by the fact that the RP
+booted at all. What the counter does catch is a PLL that failed to lock
+or a clock left on the wrong source.
+------------------------------------------------------------------------
+7i. Network settings, and why a reflash wipes them
+------------------------------------------------------------------------
+    GET /wifi                           mode, state, ssid, address, build
+    GET /wifi?save=1&mode=0|1&ssid=&pass=
+
+mode 0 is the built in access point, mode 1 joins an existing network.
+Saving reboots after about a second, long enough for the reply to leave.
+The password is never returned by the GET, only whether one is set.
+
+STORED SETTINGS DIE WITH THE FIRMWARE THAT WROTE THEM. The ESP writes the
+build date and time of the running image into NVS and compares on every
+boot. A mismatch erases the WHOLE of NVS, not just the WiFi keys, and
+starts again from the compiled default.
+
+That is deliberate. Settings that outlive the firmware which understood
+them are how a board ends up joined to a network nobody remembers
+configuring, with no way back except a serial cable. Reflashing is the
+escape hatch, so it has to actually reset things. Note that rebuilding
+the same source twice produces two different stamps, so a rebuild resets
+it too, which is what you want while developing and worth knowing before
+it surprises you.
+
+TWO FAILURES AND IT COMES BACK AS AN ACCESS POINT. A station that cannot
+get an address within WIFI_STA_GIVE_UP_MS counts the attempt in NVS and
+reboots. At WIFI_STA_MAX_FAILS the next boot ignores the stored mode and
+brings up the access point, keeping the setting on record so the owner
+can see what it was trying to join. Without that, one typo in an SSID
+locks the board out until it is reflashed.
+
+The compiled default comes from firmware/<variant>/esp/src/wifi_secret.h
+when that file exists. It is in .gitignore and deliberately does NOT
+share a name with the tracked wifi_client.h, so it has never been in the
+index and cannot be committed by accident. A fresh clone has no such
+file, __has_include says so, and the build falls back to the access
+point, which is what make_release.bat has to keep producing.
+
+THE ADDRESS GOES TO THE RP. Whichever mode came up, the address and the
+mode ride in every SPI status frame, and the RP prints them on its debug
+UART when they change:
+
+    esp wifi client, address 192.168.1.57
+
+That is uart1 on GPIO 4 and 5 at 921600 baud, the TP1/TP2 header, NOT the
+74880 baud link to the ESP. It saves going to look in a router.
+
+
+------------------------------------------------------------------------
+7j. The sweep runs to the top, and only then picks a winner
+------------------------------------------------------------------------
+The coarse pass used to stop at the first failing step and call that the
+ceiling. It no longer does, and the reason is worth writing down: a link
+is not guaranteed to be monotonic. A rate can fail for a reason that has
+nothing to do with being fast, a resonance, a divider that lands badly,
+an unlucky ratio against something else on the board, while a HIGHER rate
+is perfectly clean. Stopping at the first failure reports that failure as
+the ceiling and hides everything above it.
+
+So every step runs, all the way to the maximum that was asked for. Only
+afterwards is the ceiling worked out: the highest rate that passed, and
+then the lowest rate ABOVE it that failed, which is what the refinement
+pass then bisects. The confirmation soak still settles on the winner and
+still steps down if it does not survive, so the number at the end is the
+fastest rate the board actually held, not the first one it stumbled on.
+
+Duplicate rates are skipped rather than measured twice. Consecutive
+coarse targets frequently resolve onto the same achievable clock, and
+with no early exit that dedup is the only thing keeping the ladder
+ascending.
+------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------
+7k. Resilient soak: surviving a reset the benchmark itself triggers
+------------------------------------------------------------------------
+A soak at a marginal overclocked rate can BROWN THE BOARD OUT. The draw at
+clk_sys 240 MHz, core 1.30 V and a very fast SPI can exceed what the supply
+delivers, and the board reboots (reset_reason poweron, not a watchdog or a
+panic, and reset_times climbs). It is intermittent and gets worse as the
+board heats up: a rate that soaks clean for a minute when cold will reboot
+in seconds after an hour of back-to-back runs. It is the SUPPLY, not the
+silicon or the flash: RP2040 runs 200-240 MHz per Raspberry Pi, and the
+QSPI at clkdiv 2 is fine below ~250 MHz. Signal integrity is not the issue
+either, every rate that does NOT reboot soaks with zero errors.
+
+So the run has to survive its own reset. The whole state lives in the ESP's
+NVS (namespace "rbench"): route_spibench stores the parameters when a SPI
+soak run is armed, and bench_accept_result records the exact clock the RP is
+about to hammer on every SOAK_BEGIN, BEFORE it can brown out. On the next
+boot rbench_resume_after_boot() re-arms the run and hands the RP a resume
+clock in SPI_BENCH_STATUS_RESUME_OFF: one refine step below the clock that
+reset the board. The RP sees it, SKIPS the sweep, and drops straight into
+confirming downward from there. Across as many resets as it takes, the
+search walks down until a clock survives a full soak.
+
+Two things make it actually converge instead of resetting forever:
+
+  - The overclock is only raised when the target clock needs it, i.e. above
+    clk_peri / 2 (24 MHz on usb). The current, not the SPI rate, is what
+    browns out, so once the descent drops to 24 MHz or below it re-arms
+    WITHOUT the overclock, the draw returns to normal, and the soak passes.
+    clk_peri / 2 is always reachable with no overclock, so there is always a
+    floor that cannot brown out. bench_arm() re-evaluates this on the resume
+    clock, so the very reset that a marginal rate caused is what pushes the
+    next attempt below the overclock threshold.
+  - The descent stops at min_khz. If every rate in the range browns out it
+    ends idle rather than looping; give it a min at or below 24 MHz for a
+    guaranteed convergent result.
+
+Verified end to end: forced into a hot-board brownout on every rate, the
+firmware re-armed and stepped 35 -> 24 MHz on its own across 12 resets, then
+confirmed 24 MHz over a full soak with zero errors, no host intervention. To
+measure the true ceiling (about 35-36 MHz on hw v0F) rather than the thermal
+floor, let the board cool between runs.
+------------------------------------------------------------------------
 8. HTTP server: non-blocking, select() based
 ------------------------------------------------------------------------
 The old server was a serial accept loop with a 2 s header timeout and a
@@ -240,7 +773,19 @@ Endpoints:
     /hwver      hardware version, parsed out of the RP status line
     /stats      full counter dump, one key=value per line
     /versions   build identity of both chips, plus the SPI link state
-    /spibench   ?ms=N, suspends capture and measures SPI throughput
+                and reset_times (see /rpreset)
+    /wifi       network settings, see section 7i
+    /selftest   hardware self test, see section 7h
+    /spibench   SPI clock sweep, see section 7d. No query string
+                returns the last result table, ?start=1 runs a new
+                sweep, ?abort=1 stops one
+    /rpreset    ask the RP to reboot, which pulls the ESP's CHIP_PU
+                low so the WHOLE board restarts. The ESP raises
+                SPI_FLAG_RP_RESET, the RP sees it on its next poll and
+                calls watchdog_reboot. reset_times in /versions is a
+                boot counter in NVS: it climbs on every restart but
+                resets to 1 on a firmware change (NVS is wiped), so a
+                rising count proves the board really rebooted.
 
 /buffer answers with these headers:
     X-Okhi-Next     cursor to pass as ?from= on the next request

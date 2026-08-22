@@ -53,6 +53,63 @@
         .hint{margin:9px 0 0;font-size:.79rem;line-height:1.45;color:var(--muted)}
         #otaStatus{margin-top:11px;font-size:.86rem;line-height:1.5}
         #otaStatus:empty{display:none}
+        #resetTimes{margin:9px 0 0;font-size:.95rem;font-weight:650}
+        #resetTimes:empty{display:none}
+        #rpResetStatus{margin-top:11px;font-size:.86rem;line-height:1.5}
+        #rpResetStatus:empty{display:none}
+        .fields{display:flex;flex-wrap:wrap;gap:8px}
+        .fields label{flex:1 1 110px;font-size:.71rem;font-weight:700;letter-spacing:.09em;
+            text-transform:uppercase;color:var(--muted)}
+        .fields select{margin-top:5px}
+        .scroll{overflow-x:auto}
+        table{width:100%;border-collapse:collapse;
+            font:11px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+        th,td{padding:4px 7px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+        th:first-child,td:first-child{text-align:left}
+        th{color:var(--muted);font-weight:650}
+        .pass{color:#2ecc71}
+        .fail{color:#e74c3c}
+        .check{display:flex;align-items:center;gap:8px;margin:11px 0 0;font-size:.83rem;color:var(--muted)}
+        .check input{width:18px;height:18px;flex:none}
+        .lbl{display:block;margin:11px 0 5px;font-size:.71rem;font-weight:700;letter-spacing:.09em;
+            text-transform:uppercase;color:var(--muted)}
+        input[type=text],input[type=password]{width:100%;padding:10px;border:1px solid var(--line);
+            border-radius:9px;background:var(--field);color:var(--fg);font-size:16px}
+        #wifiNow{margin:0 0 4px;padding:10px 12px;overflow-x:auto;background:var(--field);
+            border:1px solid var(--line);border-radius:10px;color:var(--muted);
+            font:11px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+        #wifiNow:empty{display:none}
+        #wifiStatus{margin-top:11px;font-size:.86rem;line-height:1.5}
+        #wifiStatus:empty{display:none}
+        #benchRecipe{margin:9px 0 0;padding:9px 11px;border-left:3px solid #2ecc71;border-radius:0 8px 8px 0;
+            background:var(--field);
+            font:11px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap}
+        #benchRecipe:empty{display:none}
+        .st{border-bottom:1px solid var(--line);padding:7px 2px;display:flex;gap:9px;align-items:baseline}
+        .st:last-child{border-bottom:0}
+        .st b{flex:none;width:52px;font-size:.68rem;letter-spacing:.06em;font-weight:700}
+        .st span{flex:1 1 auto;font-size:.83rem}
+        .st i{display:block;font-style:normal;color:var(--muted);
+            font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+        .ask{margin:11px 0 0;padding:12px;border:1px solid var(--accent);border-radius:10px;background:var(--field)}
+        .ask p{margin:0 0 10px;font-size:.9rem;font-weight:650}
+        .ask .row{display:flex;flex-wrap:wrap;gap:8px}
+        .ask button{width:auto;min-width:0;flex:1 1 90px;min-height:40px;font-size:.85rem}
+        .ask button.no{background:#e74c3c}
+        .ask button.again{background:transparent;border:1px solid var(--line);color:var(--fg)}
+        #stVerdict{margin:9px 0 0;font-size:.95rem;font-weight:650}
+        #stVerdict:empty{display:none}
+        #benchStatus{margin-top:11px;font-size:.86rem;line-height:1.5}
+        #benchStatus:empty{display:none}
+        #benchSummary{margin:9px 0 0;font-size:.92rem;font-weight:650}
+        #benchSummary:empty{display:none}
+        #benchWhy{margin:9px 0 0;padding:9px 11px;border-left:3px solid #e74c3c;border-radius:0 8px 8px 0;
+            background:var(--field);color:#e74c3c;
+            font:11px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap}
+        #benchWhy:empty{display:none}
+        #benchNote{margin:9px 0 0;font-size:.79rem;line-height:1.45;color:var(--muted)}
+        #benchNote:empty{display:none}
+        tr.soakrow td{font-weight:700}
         @media (min-width:620px){
             body{padding:0 22px 56px}
             h1{font-size:1.42rem}
@@ -115,15 +172,147 @@
                         <a href="/rp" target="_blank" rel="noopener">rp status</a>
                         <a href="/esp" target="_blank" rel="noopener">esp status</a>
                         <a href="/buffer?from=0" target="_blank" rel="noopener">raw buffer</a>
-                        <a href="/spibench?ms=3000" target="_blank" rel="noopener"
-                           title="Measures SPI throughput. Keystroke capture is suspended while it runs.">spi benchmark 3s</a>
+                        <a href="/spibench" target="_blank" rel="noopener"
+                           title="Raw result table of the last SPI sweep.">spi benchmark</a>
                     </div>
-                    <p class="hint">Raw endpoints, they open in a new tab. The benchmark suspends capture while it runs.</p>
+                    <p class="hint">Raw endpoints, they open in a new tab.</p>
                 </details>
             </section>
             <section class="card">
+                <details>
+                    <summary>Link benchmark</summary>
+                    <div class="fields">
+                        <label for="benchKind">Link
+                            <select id="benchKind">
+                                <option value="0" selected>SPI</option>
+                                <option value="1">UART</option>
+                            </select>
+                        </label>
+                        <label for="benchMs">Time per step
+                            <select id="benchMs">
+                                <option value="100">100 ms</option>
+                                <option value="250" selected>250 ms</option>
+                                <option value="500">500 ms</option>
+                                <option value="1000">1 s</option>
+                            </select>
+                        </label>
+                        <label for="benchMin">Slowest step
+                            <select id="benchMin"></select>
+                        </label>
+                        <label for="benchMax">Fastest step
+                            <select id="benchMax"></select>
+                        </label>
+                        <label for="benchSteps">Coarse steps
+                            <select id="benchSteps">
+                                <option value="12">12</option>
+                                <option value="20">20</option>
+                                <option value="30" selected>30</option>
+                                <option value="40">40</option>
+                            </select>
+                        </label>
+                        <label for="benchDown">Drop and retry
+                            <select id="benchDown">
+                                <option value="0">never</option>
+                                <option value="1">once</option>
+                                <option value="3" selected>3 times</option>
+                                <option value="5">5 times</option>
+                                <option value="8">8 times</option>
+                            </select>
+                        </label>
+                        <label for="benchSoak">Confirm winner for
+                            <select id="benchSoak">
+                                <option value="0">off</option>
+                                <option value="30000">30 s</option>
+                                <option value="120000" selected>2 min</option>
+                                <option value="300000">5 min</option>
+                                <option value="600000">10 min</option>
+                                <option value="1200000">20 min</option>
+                                <option value="2400000">40 min</option>
+                                <option value="5400000">1 h 30</option>
+                                <option value="10800000">3 h</option>
+                            </select>
+                        </label>
+                    </div>
+                    <label class="check"><input type="checkbox" id="benchOc"> Overclock the RP to twice its normal
+                        system clock for the run, then put it back</label>
+                    <button id="benchButton">Run the sweep</button>
+                    <p class="hint">Climbs the SPI clock to bracket the ceiling, halves the bracket down to 1 MHz,
+                        then hammers the winner for the confirmation time to prove it does not drop a single frame in
+                        either direction. If the confirmation fails it drops a megahertz and tries again. A 250 ms
+                        step only screens; the confirmation is the number worth trusting.</p>
+                    <p class="hint">The PL022 only divides clk_peri by an even number, so reaching every megahertz
+                        means moving clk_peri, and above the stock rate that means reprogramming the USB PLL. That is
+                        free here because nothing else uses it. Every result says which clock recipe produced it, and
+                        the clock tree is put back on every exit path. Keystroke capture is suspended for the WHOLE
+                        run.</p>
+                    <p class="hint">On UART the two chips step through the standard baud rates together, agreeing on
+                        the next one over SPI so a rate that breaks the line cannot take the run with it. The slowest
+                        and fastest pickers, the overclock and the refinement do not apply there. That port is also
+                        the ESP console, so its logging is silenced while the test runs.</p>
+                    <div id="benchStatus"></div>
+                    <p id="benchSummary"></p>
+                    <div id="benchRecipe"></div>
+                    <div id="benchWhy"></div>
+                    <p id="benchNote"></p>
+                    <div class="scroll"><table id="benchTable"></table></div>
+                </details>
+            </section>
+            <section class="card">
+                <details>
+                    <summary>Hardware self test</summary>
+                    <p class="hint">Looks for a board that was assembled badly rather than for a bug: a joint that
+                        never wetted, a bridge between two pads, a part sitting at an angle. Every check reports the
+                        numbers it measured and names the part or the net to go and inspect, so an intermittent board
+                        can be told apart from a dead one.</p>
+                    <label class="check"><input type="checkbox" id="stFlash" checked> Erase and rewrite a spare flash
+                        sector, which is where a marginal QSPI joint shows up first</label>
+                    <label class="check"><input type="checkbox" id="stSwitch"> Test the USB switch and the two sniff
+                        lines. This drops the pass-through for a moment, so an attached keyboard will reconnect. Leave
+                        it off unless nothing is plugged into the sniff port.</label>
+                    <button id="stButton">Run the self test</button>
+                    <div id="stStatus"></div>
+                    <p id="stVerdict"></p>
+                    <div id="stAsk"></div>
+                    <div id="stRows"></div>
+                </details>
+            </section>
+            <section class="card">
+                <details>
+                    <summary>Network</summary>
+                    <pre id="wifiNow"></pre>
+                    <div class="fields">
+                        <label for="wifiMode">Mode
+                            <select id="wifiMode">
+                                <option value="0">Access point</option>
+                                <option value="1">Join a network</option>
+                            </select>
+                        </label>
+                    </div>
+                    <label class="lbl" for="wifiSsid">Network name</label>
+                    <input type="text" id="wifiSsid" maxlength="31" autocomplete="off" spellcheck="false">
+                    <label class="lbl" for="wifiPass">Password</label>
+                    <input type="password" id="wifiPass" maxlength="63" autocomplete="new-password">
+                    <button id="wifiSave">Save and reboot</button>
+                    <p class="hint">In access point mode the device makes its own network and the name above is
+                        ignored. Joining one is how it becomes reachable from your LAN. Either way the device reboots
+                        to apply it and you will have to reconnect.</p>
+                    <p class="hint">If it cannot join the network twice in a row it comes back as an access point on
+                        its own, with the setting still on record, so a typo cannot lock you out. Flashing any
+                        different firmware wipes this and everything else stored, by design.</p>
+                    <div id="wifiStatus"></div>
+                </details>
+            </section>
+            <section class="card">
+                <button id="rpResetButton">Reset the RP (reboots everything)</button>
+                <p class="hint">Reboots the RP2040, which pulls the ESP down with it, so the whole board restarts.
+                    RESET TIMES below counts every restart since the last flash, so a click that makes it climb is
+                    proof the board actually rebooted. The page reconnects on its own once it is back.</p>
+                <p id="resetTimes"></p>
+                <div id="rpResetStatus"></div>
+            </section>
+            <section class="card">
                 <label for="otaFile">Firmware update</label>
-                <input type="file" id="otaFile" accept=".pkg,.bin">
+                <input type="file" id="otaFile" accept=".pkg">
                 <button id="otaButton">Upload firmware</button>
                 <p class="hint">Pick the .pkg, it updates both chips. Do not power the device off during the update.</p>
                 <div id="otaStatus"></div>
@@ -131,6 +320,107 @@
         </main>
     </div>
     <script>
+        // Replaced by webgen.js when the page is generated. The token surviving
+        // into a served page means it was never generated at all, which is
+        // worth knowing on its own, so the display says so rather than hiding it.
+        const WEBGEN_STAMP = '@@WEBGEN@@';
+        // The stamp is baked into the page, so it can be shown the moment the
+        // page loads and stays up with no device to answer /versions. A page
+        // still carrying the raw token was served straight from the editor, so
+        // the firmware was built around an index.html nobody ran webgen.js over.
+        function webStampLine() {
+            return 'WEB  ' + (WEBGEN_STAMP.indexOf('@@') === 0
+                ? 'NOT GENERATED, run webgen.js and rebuild the ESP'
+                : WEBGEN_STAMP);
+        }
+        // Four things here take exclusive control of the device: an upload
+        // writes flash and reboots, a benchmark reprograms the clock tree, a
+        // self test drives pins the drivers own, and saving the network
+        // reboots. Starting any on top of another corrupts whichever was
+        // already running, so they all ask here first, and they say why rather
+        // than ignoring the click.
+        let rpResetInProgress = false;
+        function busyReason() {
+            if (otaInProgress) return 'a firmware upload is in progress';
+            if (benchInProgress) return 'a link benchmark is running';
+            if (stBusy) return 'a self test is running';
+            if (rpResetInProgress) return 'a reset is in progress';
+            return '';
+        }
+        function updateResetTimes(n) {
+            const el = document.getElementById('resetTimes');
+            if (el) {
+                el.textContent = 'RESET TIMES: ' + n;
+            }
+        }
+        function setRpResetStatus(text, color) {
+            const el = document.getElementById('rpResetStatus');
+            el.textContent = text;
+            el.style.color = color;
+        }
+        // The reset reboots the RP, which pulls the ESP's CHIP_PU low, so THIS
+        // page's device reboots too and the socket drops. The click is confirmed
+        // not by the reply (which may never arrive) but by reset_times climbing
+        // once the board is back, which is the whole point of the counter.
+        function waitForReset(before, tries) {
+            if (tries > 40) {
+                setRpResetStatus('The board did not come back in time. Reload the page by hand.', '#e74c3c');
+                rpResetInProgress = false;
+                document.getElementById('rpResetButton').disabled = false;
+                return;
+            }
+            setTimeout(function() {
+                fetch('/versions', { cache: 'no-store' })
+                    .then(response => response.text())
+                    .then(text => {
+                        const now = parseInt(parseKeyValues(text).reset_times || '0', 10);
+                        if (now > before) {
+                            updateResetTimes(now);
+                            setRpResetStatus('Rebooted. RESET TIMES is now ' + now + '.', '#2ecc71');
+                            rpResetInProgress = false;
+                            document.getElementById('rpResetButton').disabled = false;
+                        } else {
+                            waitForReset(before, tries + 1);
+                        }
+                    })
+                    .catch(() => waitForReset(before, tries + 1));
+            }, 1500);
+        }
+        document.getElementById('rpResetButton').addEventListener('click', function() {
+            if (rpResetInProgress) {
+                return;
+            }
+            const busy = busyReason();
+            if (busy) {
+                setRpResetStatus('Not now: ' + busy + '.', '#e67e22');
+                return;
+            }
+            const shown = document.getElementById('resetTimes').textContent.match(/\d+/);
+            const before = shown ? parseInt(shown[0], 10) : 0;
+            rpResetInProgress = true;
+            document.getElementById('rpResetButton').disabled = true;
+            setRpResetStatus('Resetting. The board reboots and the page reconnects on its own...', '#3498db');
+            fetch('/rpreset', { cache: 'no-store' })
+                .then(() => waitForReset(before, 0))
+                .catch(() => waitForReset(before, 0));
+        });
+        function escHtml(v) {
+            return String(v === undefined || v === null ? '' : v).replace(/[&<>"]/g, function(c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+            });
+        }
+        function numOr(v, dflt) {
+            const n = parseInt(v, 10);
+            return Number.isFinite(n) ? n : dflt;
+        }
+        // Every paged endpoint answers with more=N meaning "call again from N".
+        // A device that answered with the same or a lower N would spin this
+        // forever and never settle the promise, leaving the caller's button
+        // dead, so the follow up must strictly advance and is depth capped.
+        function pageNext(info, from) {
+            const next = numOr(info.more, -1);
+            return next > from && next < 4096 ? next : -1;
+        }
         document.getElementById('downloadButton').addEventListener('click', function() {
             const data = [];
             const fwVersion = document.getElementById('fwversion').textContent;
@@ -151,6 +441,7 @@
             document.body.appendChild(element);
             element.click();
             document.body.removeChild(element);
+            URL.revokeObjectURL(element.href);
         });
         let otaInProgress = false;
         function setOtaStatus(text, color) {
@@ -164,10 +455,15 @@
             if (otaInProgress) {
                 return;
             }
+            const busy = busyReason();
+            if (busy) {
+                setOtaStatus('Not now: ' + busy + '.', '#e67e22');
+                return;
+            }
             const input = document.getElementById('otaFile');
             const file = input && input.files && input.files[0];
             if (!file) {
-                setOtaStatus('Pick a firmware .bin first', '#e67e22');
+                setOtaStatus('Pick the .pkg file first', '#e67e22');
                 return;
             }
             const button = document.getElementById('otaButton');
@@ -176,6 +472,16 @@
             setOtaStatus('Uploading 0% - do not power off', '#3498db');
             const request = new XMLHttpRequest();
             request.open('POST', '/ota', true);
+            // Without this a device that accepts the body and never replies
+            // leaves otaInProgress true, and that flag suppresses every capture
+            // poll on the page until the OS gives up on the socket.
+            request.timeout = 180000;
+            request.ontimeout = function() {
+                otaInProgress = false;
+                button.disabled = false;
+                setOtaStatus('The device stopped responding during the upload. The old firmware is still ' +
+                    'running, nothing was damaged.', '#e74c3c');
+            };
             request.upload.onprogress = function(event) {
                 if (event.lengthComputable) {
                     const percent = Math.floor((event.loaded / event.total) * 100);
@@ -197,6 +503,710 @@
                 setOtaStatus('Upload failed, the connection dropped. The old firmware is still running, nothing was damaged.', '#e74c3c');
             };
             request.send(file);
+        });
+        let benchInProgress = false;
+        let benchTimer = null;
+        let benchToken = 0;
+        let benchMisses = 0;
+        const BENCH_PHASE = ['', ' ~', ' *'];
+        const BENCH_KIND_UART = 1;
+        function benchEl(id) {
+            return document.getElementById(id);
+        }
+        function setBenchStatus(text, color) {
+            const el = benchEl('benchStatus');
+            el.textContent = text;
+            el.style.color = color;
+        }
+        function benchMHz(khz) {
+            return (khz / 1000).toFixed(2) + ' MHz';
+        }
+        function benchTime(ms) {
+            const total = Math.round(ms / 1000);
+            const h = Math.floor(total / 3600);
+            const m = Math.floor((total % 3600) / 60);
+            const sec = total % 60;
+            if (h > 0) {
+                return h + ' h ' + ('0' + m).slice(-2) + ' m';
+            }
+            if (m > 0) {
+                return m + ' m ' + ('0' + sec).slice(-2) + ' s';
+            }
+            return sec + ' s';
+        }
+        function benchCell(value, bad) {
+            return '<td class="' + (bad ? 'fail' : '') + '">' + value + '</td>';
+        }
+        function benchRate(khz, uart) {
+            return uart ? (khz * 1000).toLocaleString() + ' bd' : benchMHz(khz);
+        }
+        // s = index, kHz, clk_peri kHz, frames, misoBad, misoLost, mosiBad, mosiLost,
+        //     espResync, offset, KB/s, pass, phase, rpResync
+        function benchReasons(s, uart) {
+            const out = [];
+            if (s[6] > 0) out.push(s[6] + ' corrupted RP->ESP');
+            if (s[7] > 0) out.push(s[7] + ' never reached the ESP');
+            if (s[4] > 0) out.push(s[4] + ' corrupted ESP->RP');
+            if (s[5] > 0) out.push(s[5] + ' never reached the RP');
+            if (uart) {
+                if (s[8] > 0) out.push(s[8] + ' bytes the ESP threw away resyncing');
+                if (s[13] > 0) out.push(s[13] + ' bytes the RP threw away resyncing');
+            } else {
+                if (s[8] > 0) out.push(s[8] + ' transfers the ESP was not ready for');
+                if (s[9] >= 32) out.push('magic offset hit ' + s[9] + '/32, the search window ran out');
+            }
+            if (!out.length) out.push('no error counted, the step never produced a frame');
+            return out.join(', ');
+        }
+        function benchRecipe(info) {
+            const khz = parseInt(info.best_khz || '0', 10);
+            const peri = parseInt(info.best_peri_khz || '0', 10);
+            const fbdiv = parseInt(info.best_fbdiv || '0', 10);
+            if (parseInt(info.kind || '0', 10) === BENCH_KIND_UART) {
+                return khz ? 'To ship this: RP_UART_BAUD ' + (khz * 1000) +
+                    ' in firmware/com/com.h, which both chips read.' : '';
+            }
+            if (!khz || !peri) {
+                return '';
+            }
+            const div = Math.round(peri / khz);
+            const pd1 = numOr(info.best_pd1, 0);
+            const pd2 = numOr(info.best_pd2, 0);
+            if (fbdiv > 0 && (pd1 === 0 || pd2 === 0)) {
+                return '';
+            }
+            let out = 'To ship ' + benchMHz(khz) + ': SPI_BAUD ' + (khz * 1000) + ', clk_peri ' + benchMHz(peri) +
+                ' divided by ' + div + '\n';
+            if (fbdiv > 0) {
+                out += 'clk_peri from the USB PLL: pll_init(pll_usb, 1, ' + (fbdiv * 12) + ' * MHZ, ' +
+                    pd1 + ', ' + pd2 + ')\n' +
+                    'then point clk_peri at CLKSRC_PLL_USB. Nothing else on this board uses that PLL.';
+            } else {
+                out += 'clk_peri straight from clk_sys, no PLL change needed.';
+            }
+            return out;
+        }
+        function renderBench(text, rows) {
+            const info = {};
+            const steps = rows || [];
+            text.split('\n').forEach(function(line) {
+                if (line.slice(0, 2) === 's=') {
+                    steps.push(line.slice(2).split(',').map(Number));
+                    return;
+                }
+                const sep = line.indexOf('=');
+                if (sep > 0) {
+                    info[line.slice(0, sep)] = line.slice(sep + 1).trim();
+                }
+            });
+            info.rows = steps;
+            if (info.more !== undefined) {
+                return info;
+            }
+            steps.sort(function(a, b) { return a[0] - b[0]; });
+            const soakStep = parseInt(info.soak_step || '255', 10);
+            const settled = info.state !== 'armed' && info.state !== 'running';
+            const uart = parseInt(info.kind || '0', 10) === BENCH_KIND_UART;
+            let html = '<tr><th>' + (uart ? 'baud' : 'SPI') + '</th><th>' + (uart ? 'resync' : 'clk_peri') +
+                '</th><th>frames</th><th>RP&rarr;ESP</th><th>ESP&rarr;RP</th>' +
+                '<th>' + (uart ? 'esp resync' : 'stalls') + '</th><th>' + (uart ? '&ndash;' : 'offset') +
+                '</th><th>KB/s</th><th>verdict</th></tr>';
+            const failures = [];
+            steps.forEach(function(s) {
+                // A row shorter than the format would put undefined into the
+                // markup and, on the confirmation row, throw out of the whole
+                // render and turn the poll into a permanent error loop.
+                if (s.length < 14 || !Number.isFinite(s[0])) {
+                    return;
+                }
+                const mosi = s[6] + s[7];
+                const miso = s[4] + s[5];
+                const soaked = s[0] === soakStep;
+                const pending = soaked && !settled;
+                const verdict = pending ? 'RUN' : (s[11] ? 'PASS' : 'FAIL');
+                html += '<tr class="' + (soaked ? 'soakrow' : '') + '">' +
+                    '<td>' + benchRate(s[1], uart) + (BENCH_PHASE[s[12]] || '') + '</td>' +
+                    (uart ? benchCell(s[13], s[13] > 0) : '<td>' + benchMHz(s[2]) + '</td>') +
+                    '<td>' + s[3] + '</td>' +
+                    benchCell(mosi, mosi > 0) +
+                    benchCell(miso, miso > 0) +
+                    benchCell(s[8], s[8] > 0) +
+                    (uart ? '<td>&ndash;</td>' : benchCell(s[9] + '/32', s[9] >= 32)) +
+                    '<td>' + s[10] + '</td>' +
+                    '<td class="' + (pending ? '' : (s[11] ? 'pass' : 'fail')) + '">' + verdict + '</td>' +
+                    '</tr>';
+                if (!s[11] && !pending) {
+                    failures.push(benchRate(s[1], uart) + (soaked ? ' (confirmation)' : '') + ' FAILED: ' +
+                        benchReasons(s, uart));
+                }
+            });
+            benchEl('benchTable').innerHTML = steps.length ? html : '';
+            benchEl('benchWhy').textContent = failures.join('\n');
+            const best = parseInt(info.best_khz || '0', 10);
+            const next = parseInt(info.next_khz || '0', 10);
+            const soakKhz = parseInt(info.soak_khz || '0', 10);
+            const soakMs = parseInt(info.soak_ms || '0', 10);
+            const soakDone = parseInt(info.soak_elapsed_ms || '0', 10);
+            const soakRow = steps.filter(function(s) { return s[0] === soakStep; })[0];
+            const summary = benchEl('benchSummary');
+            benchEl('benchRecipe').textContent = settled && best > 0 ? benchRecipe(info) : '';
+            if (settled && soakRow && soakRow[11]) {
+                summary.textContent = 'Confirmed: ' + benchRate(soakRow[1], uart) + ' held for ' + benchTime(soakDone) +
+                    ' and ' + numOr(soakRow[3], 0).toLocaleString() + ' frames without losing or corrupting a single one' +
+                    (next > 0 ? '. The next rate tried, ' + benchRate(next, uart) + ', failed.' : '.');
+                summary.style.color = '#2ecc71';
+            } else if (settled && soakRow) {
+                summary.textContent = 'NOT confirmed: ' + benchRate(soakRow[1], uart) + ' failed after ' +
+                    benchTime(soakDone) + ' of confirmation.';
+                summary.style.color = '#e74c3c';
+            } else if (settled && best > 0) {
+                summary.textContent = 'Highest clean step: ' + benchRate(best, uart) + ' (screened only, not confirmed)';
+                summary.style.color = '#e67e22';
+            } else if (settled && steps.length) {
+                summary.textContent = 'No step passed, this board is not reliable at any clock that was tried';
+                summary.style.color = '#e74c3c';
+            } else if (soakStep !== 255 && soakMs > 0) {
+                summary.textContent = 'Confirming ' + benchRate(soakKhz, uart) + ': ' + benchTime(soakDone) + ' of ' +
+                    benchTime(soakMs) + ', ' + Math.floor(soakMs ? soakDone * 100 / soakMs : 0) + '%';
+                summary.style.color = '';
+            } else if (best > 0) {
+                summary.textContent = 'Best so far: ' + benchRate(best, uart);
+                summary.style.color = '';
+            } else {
+                summary.textContent = '';
+            }
+            const sys = parseInt(info.sys_khz || '0', 10);
+            const native = parseInt(info.native_peri_khz || '0', 10);
+            let note = '';
+            if (uart) {
+                note = 'Both chips ran the standard baud ladder in lockstep, agreed over SPI. Rows marked * are ' +
+                    'the confirmation.';
+            } else if (sys > 0) {
+                note = 'RP system clock during the run ' + benchMHz(sys) + ', clk_peri normally ' + benchMHz(native) +
+                    '. Rows marked ~ come from the refinement search and * is the confirmation.';
+            }
+            benchEl('benchNote').textContent = note;
+            info.soakStep = soakStep;
+            return info;
+        }
+        // Forty rows do not fit in one reply, so the device pages them and says
+        // where to carry on. Everything is merged before anything is drawn.
+        function benchFetch(from, rows) {
+            const url = from ? '/spibench?from=' + from : '/spibench';
+            return fetch(url, { cache: 'no-store' })
+                .then(response => response.text())
+                .then(text => {
+                    const info = renderBench(text, rows);
+                    const next = pageNext(info, from);
+                    if (next >= 0) {
+                        return benchFetch(next, info.rows);
+                    }
+                    // A more= that does not advance is a device bug, not
+                    // something to chase. The table simply misses this tick and
+                    // the next poll tries again, which beats spinning forever.
+                    return info;
+                });
+        }
+        function benchStop() {
+            benchInProgress = false;
+            // Bumping the token orphans any poll already in flight. clearTimeout
+            // cannot reach a fetch that has already left, and without this the
+            // stale reply reschedules itself and a poll loop keeps running with
+            // nobody owning it.
+            benchToken++;
+            benchMisses = 0;
+            clearTimeout(benchTimer);
+            benchTimer = null;
+            const button = benchEl('benchButton');
+            button.disabled = false;
+            button.textContent = 'Run the sweep';
+        }
+        function benchFinish(info) {
+            benchStop();
+            if (info.state === 'done') {
+                setBenchStatus('Run finished, ' + numOr(info.done, 0) + ' points measured. Capture is running ' +
+                    'again.', '#2ecc71');
+            } else if (info.state === 'timeout') {
+                setBenchStatus('The RP stopped answering. It may be running older firmware that does not know this ' +
+                    'benchmark. Nothing was damaged, the clock tree is back to normal.', '#e74c3c');
+            } else if (info.state === 'aborted') {
+                setBenchStatus('Run stopped early. Whatever was measured is in the table below.', '#e67e22');
+            } else {
+                setBenchStatus('', '');
+            }
+        }
+        function benchSchedule(delay) {
+            clearTimeout(benchTimer);
+            benchTimer = setTimeout(pollBench, delay);
+        }
+        function pollBench() {
+            const mine = benchToken;
+            benchFetch(0, [])
+                .then(info => {
+                    if (mine !== benchToken) {
+                        return;
+                    }
+                    benchMisses = 0;
+                    const soaking = info.soakStep !== 255;
+                    if (info.state === 'armed') {
+                        setBenchStatus('Waiting for the RP to pick the run up...', '#3498db');
+                        benchSchedule(600);
+                        return;
+                    }
+                    if (info.state === 'running') {
+                        setBenchStatus(soaking
+                            ? 'Confirming the winner. Capture stays suspended for the whole time, and the run ' +
+                              'survives closing this page.'
+                            : 'Searching for the ceiling, ' + numOr(info.done, 0) +
+                              ' points measured - capture is suspended', '#3498db');
+                        benchSchedule(soaking ? 2000 : 600);
+                        return;
+                    }
+                    benchFinish(info);
+                })
+                .catch(error => {
+                    console.error('Error polling the benchmark:', error);
+                    if (mine !== benchToken) {
+                        return;
+                    }
+                    if (++benchMisses > 20) {
+                        benchStop();
+                        setBenchStatus('Lost contact with the device. Whatever was measured is below; the run ' +
+                            'may still be going on the device itself.', '#e74c3c');
+                        return;
+                    }
+                    benchSchedule(1500);
+                });
+        }
+        function benchAttach() {
+            benchInProgress = true;
+            const button = benchEl('benchButton');
+            button.disabled = false;
+            button.textContent = 'Stop the run';
+            benchSchedule(400);
+        }
+        benchEl('benchButton').addEventListener('click', function() {
+            if (otaInProgress) {
+                return;
+            }
+            const busy = busyReason();
+            if (busy && !benchInProgress) {
+                setBenchStatus('Not now: ' + busy + '.', '#e67e22');
+                return;
+            }
+            if (benchInProgress) {
+                benchEl('benchButton').disabled = true;
+                setBenchStatus('Stopping...', '#e67e22');
+                fetch('/spibench?abort=1', { cache: 'no-store' })
+                    .then(() => benchFetch(0, []))
+                    .then(info => benchFinish(info))
+                    .catch(() => benchStop());
+                return;
+            }
+            const query = '/spibench?start=1' +
+                '&ms=' + benchEl('benchMs').value +
+                '&min=' + benchEl('benchMin').value +
+                '&max=' + benchEl('benchMax').value +
+                '&steps=' + benchEl('benchSteps').value +
+                '&soak=' + benchEl('benchSoak').value +
+                '&down=' + benchEl('benchDown').value +
+                '&oc=' + (benchEl('benchOc').checked ? 1 : 0) +
+                '&kind=' + benchEl('benchKind').value;
+            benchEl('benchTable').innerHTML = '';
+            benchEl('benchSummary').textContent = '';
+            benchEl('benchWhy').textContent = '';
+            benchEl('benchRecipe').textContent = '';
+            benchEl('benchNote').textContent = '';
+            setBenchStatus('Arming the run...', '#3498db');
+            benchEl('benchButton').disabled = true;
+            fetch(query, { cache: 'no-store' })
+                .then(response => response.text().then(text => ({ ok: response.ok, text: text })))
+                .then(result => {
+                    if (!result.ok) {
+                        benchStop();
+                        setBenchStatus('Rejected: ' + result.text.trim(), '#e74c3c');
+                        return;
+                    }
+                    benchAttach();
+                })
+                .catch(error => {
+                    benchStop();
+                    setBenchStatus('Could not reach the device: ' + error, '#e74c3c');
+                });
+        });
+        // The two links measure different quantities, so the pickers are rebuilt
+        // rather than reinterpreted: kHz of SPI clock on one, baud on the other.
+        const BENCH_RANGE = {
+            0: {
+                min: [[500, '0.5 MHz'], [1000, '1 MHz'], [2000, '2 MHz'], [4000, '4 MHz']],
+                max: [[12000, '12 MHz'], [24000, '24 MHz'], [30000, '30 MHz'], [40000, '40 MHz'],
+                      [60000, '60 MHz']],
+                minDefault: 1000, maxDefault: 24000
+            },
+            1: {
+                min: [[9600, '9600 bd'], [19200, '19200 bd'], [38400, '38400 bd'], [74880, '74880 bd'],
+                      [115200, '115200 bd']],
+                max: [[115200, '115200 bd'], [230400, '230400 bd'], [460800, '460800 bd'], [921600, '921600 bd'],
+                      [1500000, '1.5 Mbd'], [2000000, '2 Mbd'], [3000000, '3 Mbd']],
+                maxDefault: 921600, minDefault: 9600
+            }
+        };
+        function benchFillSelect(el, items, chosen) {
+            let html = '';
+            items.forEach(function(it) {
+                html += '<option value="' + it[0] + '"' + (it[0] === chosen ? ' selected' : '') + '>' + it[1] +
+                    '</option>';
+            });
+            el.innerHTML = html;
+        }
+        function benchKindChanged() {
+            const kind = benchEl('benchKind').value === '1' ? 1 : 0;
+            const r = BENCH_RANGE[kind];
+            benchFillSelect(benchEl('benchMin'), r.min, r.minDefault);
+            benchFillSelect(benchEl('benchMax'), r.max, r.maxDefault);
+            benchEl('benchOc').disabled = kind === 1;
+            benchEl('benchMin').disabled = false;
+            benchEl('benchMax').disabled = false;
+        }
+        benchEl('benchKind').addEventListener('change', benchKindChanged);
+        benchKindChanged();
+        // A run outlives the page: a three hour confirmation keeps going if the tab
+        // is closed, so a fresh load has to notice one is still in flight.
+        function benchResume() {
+            benchFetch(0, [])
+                .then(info => {
+                    if (info.state === 'armed' || info.state === 'running') {
+                        benchAttach();
+                    }
+                })
+                .catch(() => {});
+        }
+        let stTimer = null;
+        let stBusy = false;
+        let stToken = 0;
+        let stMisses = 0;
+        let stBlinked = {};
+        const ST_STATUS = ['PASS', 'FAIL', 'WARN', 'SKIP', 'INFO', 'ASK'];
+        const ST_CLASS = ['pass', 'fail', 'fail', '', '', ''];
+        // id -> what it is, and where to look on the board when it fails
+        const ST_NAME = {
+            0x01: ['RP firmware', ''],
+            0x02: ['Hardware straps', 'GPIO4 and GPIO5, the version resistors'],
+            0x03: ['RP flash id', 'U3 W25Q128, its QSPI joints'],
+            0x04: ['RP flash size', 'U3 W25Q128'],
+            0x05: ['RP flash write', 'U3 W25Q128, marginal QSPI joint'],
+            0x06: ['clk_sys', 'U4 TCXO and the RP2040 PLL'],
+            0x07: ['clk_peri', ''],
+            0x08: ['clk_usb', ''],
+            0x09: ['clk_adc', ''],
+            0x0A: ['TCXO 12 MHz', 'U4 ATXAIG-H12, XIN'],
+            0x0B: ['Ring oscillator', ''],
+            0x0C: ['ADC on GPIO27', ''],
+            0x0D: ['RP die temperature', 'the ADC reference'],
+            0x0E: ['GPIO drive', 'a pin welded to a rail'],
+            0x0F: ['GPIO pulls', 'a pin welded to a rail'],
+            0x10: ['GPIO bridges', 'solder bridge between two RP pads'],
+            0x11: ['USB switch', 'U1 TS3USB3000, SEL and OE'],
+            0x12: ['Sniff lines', 'U1 TS3USB3000 outputs, GPIO20 and GPIO21'],
+            0x13: ['OTA metadata', ''],
+            0x14: ['LED2 near the RP', 'LED2 and its series resistor'],
+            0x40: ['EBOOT net', 'RP GPIO14 to ESP IO9'],
+            0x41: ['ELOG net', 'ESP IO8 to RP GPIO15'],
+            0x42: ['SPI link', 'SCLK, MOSI, MISO and CS between the chips'],
+            0x43: ['UART link', 'RP GPIO16/17 to ESP IO19/20'],
+            0x44: ['CHIP_PU net', 'R10, R7 and the ESP EN pin'],
+            0x80: ['ESP firmware', ''],
+            0x81: ['ESP chip', 'U6 ESP8684-MINI-1'],
+            0x82: ['ESP MAC', 'U6 efuses'],
+            0x83: ['ESP flash', 'U6 internal flash'],
+            0x84: ['ESP memory', ''],
+            0x85: ['ESP last reset', ''],
+            0x86: ['ESP partitions', ''],
+            0x87: ['ESP filesystem', ''],
+            0x88: ['WiFi', 'the antenna and its matching'],
+            0x89: ['ESP SPI counters', ''],
+            0x8A: ['LED1 near the ESP', 'LED1 and R8 470R']
+        };
+        function stEl(id) {
+            return document.getElementById(id);
+        }
+        function stFetch(from, rows) {
+            return fetch(from ? '/selftest?from=' + from : '/selftest', { cache: 'no-store' })
+                .then(response => response.text())
+                .then(text => {
+                    const info = {};
+                    const out = rows || [];
+                    text.split('\n').forEach(function(line) {
+                        if (line.slice(0, 2) === 't=') {
+                            const bits = line.slice(2).split(',');
+                            out.push({
+                                id: parseInt(bits[0], 10), status: parseInt(bits[1], 10),
+                                a: parseInt(bits[2], 10), b: parseInt(bits[3], 10),
+                                text: bits.slice(4).join(',')
+                            });
+                            return;
+                        }
+                        const sep = line.indexOf('=');
+                        if (sep > 0) {
+                            info[line.slice(0, sep)] = line.slice(sep + 1).trim();
+                        }
+                    });
+                    info.rows = out;
+                    const next = pageNext(info, from);
+                    if (next >= 0) {
+                        return stFetch(next, out);
+                    }
+                    delete info.more;
+                    return info;
+                });
+        }
+        function stRenderRows(info) {
+            let html = '';
+            info.rows.forEach(function(r) {
+                const known = ST_NAME[r.id] || ['test 0x' + r.id.toString(16), ''];
+                const bad = r.status === 1;
+                // r.text comes from the device. The firmware strips commas so
+                // the row parses, but not angle brackets, so one message worded
+                // with an arrow would swallow the rest of the list into a tag.
+                html += '<div class="st"><b class="' + (ST_CLASS[r.status] || '') + '">' +
+                    (ST_STATUS[r.status] || '?') + '</b><span>' + escHtml(known[0]) +
+                    '<i>' + escHtml(r.text) + (bad && known[1] ? ' &mdash; check ' + escHtml(known[1]) : '') +
+                    '</i></span></div>';
+            });
+            stEl('stRows').innerHTML = html;
+        }
+        function stAskBlock(info) {
+            // The two LEDs are the only things on this board no amount of firmware
+            // can check, so they are asked rather than guessed at.
+            const answered = {};
+            info.rows.forEach(function(r) {
+                if ((r.id === 0x14 || r.id === 0x8A) && r.status !== 5) {
+                    answered[r.id] = true;
+                }
+            });
+            const pending = [];
+            if (!answered[0x14]) pending.push([0x14, 1, 'LED2, the one next to the RP2040']);
+            if (!answered[0x8A]) pending.push([0x8A, 2, 'LED1, the one next to the ESP module']);
+            if (info.state !== 'done' || !pending.length) {
+                stEl('stAsk').innerHTML = '';
+                return;
+            }
+            const q = pending[0];
+            stEl('stAsk').innerHTML = '<div class="ask"><p>Is ' + q[2] + ' blinking?</p><div class="row">' +
+                '<button data-led="' + q[1] + '" data-ok="1">Yes</button>' +
+                '<button class="no" data-led="' + q[1] + '" data-ok="0">No</button>' +
+                '<button class="again" data-blink="' + q[1] + '">Blink again</button></div></div>';
+            stEl('stAsk').querySelectorAll('button').forEach(function(b) {
+                b.addEventListener('click', function() {
+                    const led = b.getAttribute('data-led');
+                    const url = led ? '/selftest?led=' + led + '&ok=' + b.getAttribute('data-ok')
+                                    : '/selftest?blink=' + b.getAttribute('data-blink');
+                    fetch(url, { cache: 'no-store' }).then(() => stPoll());
+                });
+            });
+            // pending is rebuilt from fresh literals on every render, so a
+            // latch stored on it never survives. Keyed outside, it does, and the
+            // LED stops restarting its pattern every time the table redraws.
+            if (!stBlinked[q[1]]) {
+                stBlinked[q[1]] = true;
+                fetch('/selftest?blink=' + q[1], { cache: 'no-store' }).catch(() => {});
+            }
+        }
+        function stRender(info) {
+            stRenderRows(info);
+            const fail = parseInt(info.fail || '0', 10);
+            const warn = parseInt(info.warn || '0', 10);
+            const pass = parseInt(info.pass || '0', 10);
+            const v = stEl('stVerdict');
+            if (info.state === 'running') {
+                v.textContent = 'Running, ' + numOr(info.count, 0) + ' checks so far. Capture is suspended.';
+                v.style.color = '';
+            } else if (info.state === 'timeout') {
+                v.textContent = 'The RP stopped answering part way through. That is itself a finding: the SPI link ' +
+                    'or the RP firmware is not healthy.';
+                v.style.color = '#e74c3c';
+            } else if (info.state === 'done' && fail === 0 && warn === 0) {
+                v.textContent = 'All ' + pass + ' checks passed. No assembly fault found.';
+                v.style.color = '#2ecc71';
+            } else if (info.state === 'done' && fail === 0) {
+                v.textContent = pass + ' passed, ' + warn + ' worth a look. Nothing is broken outright.';
+                v.style.color = '#e67e22';
+            } else if (info.state === 'done') {
+                v.textContent = fail + ' FAILED, ' + warn + ' warnings, ' + pass +
+                    ' passed. Read the failing lines below, each names what to inspect.';
+                v.style.color = '#e74c3c';
+            } else {
+                v.textContent = '';
+            }
+            stAskBlock(info);
+        }
+        function stPoll() {
+            const mine = stToken;
+            stFetch(0, [])
+                .then(info => {
+                    if (mine !== stToken) {
+                        return;
+                    }
+                    stMisses = 0;
+                    stRender(info);
+                    if (info.state === 'running') {
+                        clearTimeout(stTimer);
+                        stTimer = setTimeout(stPoll, 700);
+                        return;
+                    }
+                    stBusy = false;
+                    stEl('stButton').disabled = false;
+                    stEl('stStatus').textContent = '';
+                })
+                .catch(() => {
+                    if (mine !== stToken) {
+                        return;
+                    }
+                    // Without a cap this polls a dead device for the life of the
+                    // tab with the button disabled and nothing said about it.
+                    if (++stMisses > 20) {
+                        stBusy = false;
+                        stEl('stButton').disabled = false;
+                        stEl('stStatus').textContent = 'Lost contact with the device.';
+                        stEl('stStatus').style.color = '#e74c3c';
+                        return;
+                    }
+                    clearTimeout(stTimer);
+                    stTimer = setTimeout(stPoll, 1500);
+                });
+        }
+        stEl('stButton').addEventListener('click', function() {
+            if (stBusy) {
+                return;
+            }
+            const busy = busyReason();
+            if (busy) {
+                stEl('stStatus').textContent = 'Not now: ' + busy + '.';
+                stEl('stStatus').style.color = '#e67e22';
+                return;
+            }
+            stToken++;
+            stMisses = 0;
+            stBlinked = {};
+            stBusy = true;
+            stEl('stButton').disabled = true;
+            stEl('stRows').innerHTML = '';
+            stEl('stAsk').innerHTML = '';
+            stEl('stVerdict').textContent = '';
+            stEl('stStatus').textContent = 'Starting...';
+            stEl('stStatus').style.color = '#3498db';
+            const q = '/selftest?start=1&flash=' + (stEl('stFlash').checked ? 1 : 0) +
+                '&sw=' + (stEl('stSwitch').checked ? 1 : 0);
+            fetch(q, { cache: 'no-store' })
+                .then(response => response.text().then(text => ({ ok: response.ok, text: text })))
+                .then(result => {
+                    if (!result.ok) {
+                        stBusy = false;
+                        stEl('stButton').disabled = false;
+                        stEl('stStatus').textContent = 'Rejected: ' + result.text.trim();
+                        stEl('stStatus').style.color = '#e74c3c';
+                        return;
+                    }
+                    stPoll();
+                })
+                .catch(error => {
+                    stBusy = false;
+                    stEl('stButton').disabled = false;
+                    stEl('stStatus').textContent = 'Could not reach the device: ' + error;
+                    stEl('stStatus').style.color = '#e74c3c';
+                });
+        });
+        function wifiRender(info) {
+            const ip = info.ip && info.ip !== '0.0.0.0' ? info.ip : 'none yet';
+            const ssidText = info.ssid || '(none set)';
+            const line = info.state === 'connected'
+                ? 'Client on ' + ssidText + ', address ' + ip
+                : (info.state === 'connecting'
+                    ? 'Trying to join ' + ssidText + '...'
+                    : 'Access point ' + (info.ap_ssid || '?') + ', address ' + ip);
+            document.getElementById('wifiNow').textContent = line +
+                (info.forced_ap === '1'
+                    ? '\nCould not join ' + ssidText + ' twice, so it fell back to an access point.'
+                    : '') +
+                '\nSettings were stored by the firmware built ' + (info.build || '?');
+            const mode = document.getElementById('wifiMode');
+            if (document.activeElement !== mode && !mode.dataset.touched) {
+                mode.value = info.mode === 'sta' ? '1' : '0';
+            }
+            const passField = document.getElementById('wifiPass');
+            passField.placeholder = info.haspass === '1'
+                ? 'a password is stored, leave blank to keep it'
+                : 'no password stored';
+            const ssid = document.getElementById('wifiSsid');
+            if (document.activeElement !== ssid && !ssid.dataset.touched) {
+                ssid.value = info.ssid || '';
+            }
+        }
+        function wifiLoad() {
+            fetch('/wifi', { cache: 'no-store' })
+                .then(response => response.text())
+                .then(text => wifiRender(parseKeyValues(text)))
+                .catch(() => {});
+        }
+        document.getElementById('wifiSsid').addEventListener('input', function() {
+            this.dataset.touched = '1';
+        });
+        // Without this the 15 s refresh silently reverts the mode the moment
+        // focus moves to the name field, and Save then writes the old mode.
+        document.getElementById('wifiMode').addEventListener('change', function() {
+            this.dataset.touched = '1';
+        });
+        document.getElementById('wifiSave').addEventListener('click', function() {
+            const button = this;
+            const mode = document.getElementById('wifiMode').value;
+            const ssid = document.getElementById('wifiSsid').value;
+            const pass = document.getElementById('wifiPass').value;
+            const el = document.getElementById('wifiStatus');
+            if (button.disabled) {
+                return;
+            }
+            // This reboots the device about a second later. Doing that during an
+            // upload cuts the write off half way through.
+            const busy = busyReason();
+            if (busy) {
+                el.textContent = 'Not now: ' + busy + '. Saving reboots the device.';
+                el.style.color = '#e67e22';
+                return;
+            }
+            if (mode === '1' && ssid.trim() === '') {
+                el.textContent = 'A network name is needed to join one.';
+                el.style.color = '#e67e22';
+                return;
+            }
+            if (pass !== '' && pass.length < 8) {
+                el.textContent = 'A password must be at least 8 characters, or empty for an open network.';
+                el.style.color = '#e67e22';
+                return;
+            }
+            el.textContent = 'Saving...';
+            el.style.color = '#3498db';
+            button.disabled = true;
+            // An ABSENT pass keeps whatever is stored, an empty one clears it.
+            // The field is never pre-filled, so sending it blank every time
+            // would destroy the credential of anyone who only changed the mode.
+            const q = '/wifi?save=1&mode=' + mode + '&ssid=' + encodeURIComponent(ssid) +
+                (pass === '' ? '' : '&pass=' + encodeURIComponent(pass));
+            fetch(q, { cache: 'no-store' })
+                .then(response => response.text().then(text => ({ ok: response.ok, text: text })))
+                .then(result => {
+                    el.textContent = result.ok
+                        ? 'Saved. The device is rebooting, reconnect to it in a few seconds.'
+                        : 'Rejected: ' + result.text.trim();
+                    el.style.color = result.ok ? '#2ecc71' : '#e74c3c';
+                    if (!result.ok) {
+                        button.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    el.textContent = 'Could not reach the device: ' + error;
+                    el.style.color = '#e74c3c';
+                    button.disabled = false;
+                });
         });
         function parseKeyValues(text) {
             const out = {};
@@ -222,6 +1232,10 @@
                         ', idf ' + (v.esp_idf || '?') + ']';
                     const rpLine = 'RP   ' + (v.rp_identity ? v.rp_identity : 'NO LINK to the RP') +
                         (v.rp_hardware ? '  [hw ' + v.rp_hardware + ']' : '');
+                    const webLine = webStampLine();
+                    const resets = v.reset_times || '0';
+                    updateResetTimes(resets);
+                    const rstLine = 'RST  ' + resets + ' since the last flash';
                     let statusLine = '';
                     if (v.link === 'protocol mismatch') {
                         statusLine = '\nSPI PROTOCOL MISMATCH: esp speaks v' + v.esp_proto +
@@ -234,7 +1248,7 @@
                         statusLine = '\nVARIANT MISMATCH: the esp runs ' + v.esp_variant +
                             ' firmware and the rp runs ' + v.rp_variant + ' - one of them is the wrong build';
                     }
-                    el.textContent = espLine + '\n' + rpLine + statusLine;
+                    el.textContent = espLine + '\n' + rpLine + '\n' + webLine + '\n' + rstLine + statusLine;
                 })
                 .catch(error => {
                     console.error('Could not read the version info, retrying...', error);
@@ -271,7 +1285,7 @@
                 });
         }
         function fetchEsp() {
-            if (otaInProgress) {
+            if (otaInProgress || benchInProgress) {
                 return;
             }
             fetch('/esp')
@@ -279,7 +1293,7 @@
             .then(data => {
                 let espArea = document.getElementById('EspbufferData');
                 if (espArea && data.trim() !== '') {
-                    espArea.value = data + '\n' + espArea.value;
+                    areaAppend(espArea, data, true);
                 }
             })
             .catch(error => {
@@ -287,7 +1301,7 @@
             });
         }
         function fetchRp() {
-            if (otaInProgress) {
+            if (otaInProgress || benchInProgress) {
                 return;
             }
             fetch('/rp')
@@ -295,7 +1309,7 @@
             .then(data => {
                 let rpArea = document.getElementById('RpbufferData');
                 if (rpArea && data.trim() !== '') {
-                    rpArea.value = data + '\n' + rpArea.value;
+                    areaAppend(rpArea, data, true);
                 }
             })
             .catch(error => {
@@ -335,18 +1349,29 @@
                 el.style.color = '#2ecc71';
             }
         }
+        // The page is meant to be left open for hours, and a three hour soak is
+        // an offered option, so nothing here may grow without a ceiling. The two
+        // debug boxes PREPEND, which rebuilds the whole string every poll and
+        // costs the square of the session length if it is never trimmed.
+        const AREA_LIMIT = 400000;
+        function areaAppend(el, text, prepend) {
+            const merged = prepend ? text + '\n' + el.value : el.value + text;
+            el.value = merged.length > AREA_LIMIT
+                ? (prepend ? merged.slice(0, AREA_LIMIT) : merged.slice(-AREA_LIMIT))
+                : merged;
+        }
         function appendBufferData(data) {
             if (data.trim() === '') {
                 return;
             }
-            document.getElementById('HIDREPORTS').value += formatData(data);
+            areaAppend(document.getElementById('HIDREPORTS'), formatData(data), false);
             const parsed = parseKeyboardHID(data);
             if (parsed.trim() !== '') {
-                document.getElementById('KEYS').value += parsed;
+                areaAppend(document.getElementById('KEYS'), parsed, false);
             }
         }
         async function fetchBuffer() {
-            if (bufferBusy || otaInProgress) {
+            if (bufferBusy || otaInProgress || benchInProgress) {
                 return;
             }
             bufferBusy = true;
@@ -366,10 +1391,15 @@
                         }
                     }
                     bufferFirstPoll = false;
-                    showLinkStatus(head === null ? 0 : parseInt(head, 10), true);
-                    if (next !== null) {
-                        bufferCursor = parseInt(next, 10);
+                    showLinkStatus(numOr(head, 0), true);
+                    // A missing or unparsable cursor would leave bufferCursor
+                    // where it was and replay the same records into KEYS every
+                    // poll, forever. Stopping is the only safe reading of it.
+                    const nextCursor = numOr(next, -1);
+                    if (nextCursor < 0) {
+                        break;
                     }
+                    bufferCursor = nextCursor;
                     if (response.status !== 200) {
                         break;
                     }
@@ -542,6 +1572,15 @@
                 currentLayout = event.target.value;
             });
             fetchBuffer();
+            benchResume();
+            wifiLoad();
+            setInterval(wifiLoad, 15000);
+            // Paint the build stamp before the first /versions reply, so it is
+            // there on load and survives even when no device answers.
+            const bi = document.getElementById('buildinfo');
+            if (bi) {
+                bi.textContent = webStampLine();
+            }
             getVersions();
             setTimeout(getFirmVersion, 300);
             setTimeout(getHwVersion, 900);

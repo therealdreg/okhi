@@ -59,15 +59,15 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  27 .debug_line   0001b400  00000000  00000000  00051e00  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 28 .debug_str    00008e68  00000000  00000000  0006d200  2**0
+ 28 .debug_str    00008e9f  00000000  00000000  0006d200  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 29 .comment      00000045  00000000  00000000  00076068  2**0
+ 29 .comment      00000045  00000000  00000000  0007609f  2**0
                   CONTENTS, READONLY
- 30 .ARM.attributes 0000002a  00000000  00000000  000760ad  2**0
+ 30 .ARM.attributes 0000002a  00000000  00000000  000760e4  2**0
                   CONTENTS, READONLY
- 31 .debug_frame  000033d4  00000000  00000000  000760d8  2**2
+ 31 .debug_frame  000033d4  00000000  00000000  00076110  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 32 .debug_line_str 0000036c  00000000  00000000  000794ac  2**0
+ 32 .debug_line_str 0000036c  00000000  00000000  000794e4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 C:/Users/regue/Desktop/okhi/firmware/uart_bridge/build/uart_bridge.elf:     file format elf32-littlearm

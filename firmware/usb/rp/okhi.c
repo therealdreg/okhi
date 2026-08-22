@@ -118,6 +118,7 @@ WARNING: BULLSHIT CODE X-)
 #include "hardware/timer.h"
 #include "hardware/uart.h"
 #include "hardware/watchdog.h"
+#include "hardware/vreg.h"
 #include "okhi.pio.h"
 #include "pico/bootrom.h"
 #include "pico/multicore.h"
@@ -1108,6 +1109,8 @@ static void init_seq(void)
     delay_boot_if_esp_reset_detected();
 
     rp_board_boot_init();
+
+    report_last_fault();
 
     printf("\r\nokhi USB started! Hardware v%s\r\nBuild Date %s %s\r\n", hwver_name, __DATE__, __TIME__);
     fflush(stdout);

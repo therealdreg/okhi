@@ -3153,6 +3153,103 @@ The header word is `flags | byte_count`, with `CAPTURE_SIZE_MASK = 0xFFFF` in th
 
 # Developers doc
 
+## Putting the implant on your own WiFi
+
+By default the ESP runs its own access point and you join that. While you are
+working on it, it is far more convenient to have it join YOUR network instead:
+the web page then lives at an address on your LAN, it stays reachable while you
+keep your normal internet connection, and anything that can reach your LAN can
+poke the endpoints.
+
+Create the file below. It is in `.gitignore`, and it deliberately has a
+different name from the tracked `wifi_client.h` so it has **never been in the
+index** and cannot be committed by accident:
+
+```
+firmware/usb/esp/src/wifi_secret.h        (and/or the ps2 one)
+```
+
+```c
+#ifndef __WIFI_SECRET_H__
+#define __WIFI_SECRET_H__
+
+#define OKHI_DEV_STA_SSID "your network"
+#define OKHI_DEV_STA_PASS "your password"
+
+#endif
+```
+
+Rebuild the ESP and flash it. `wifi_client.h` is tracked and holds no secrets;
+all it does is `#include "wifi_secret.h"` when that file exists next to it.
+
+**Never put credentials in `wifi_client.h` itself.** That file IS tracked, and
+this repository is auto-committed, so anything written into it can end up in
+history where removing it means rewriting every SHA.
+
+### The trap: a build with the secret in it must not be committed
+
+Gitignoring the header is not the whole story. `firmware/*/esp/build/okhi.bin`
+and `okhi.elf` **are tracked on purpose**, so that a fresh clone can run
+`make_release.bat` with no build step. A build made with `wifi_secret.h` present
+has your SSID and password sitting in those binaries in clear text, and
+committing them publishes the password just as surely as committing the header
+would.
+
+The build prints a `#warning` saying exactly this whenever the secret is
+compiled in, so a developer build is impossible to mistake for a normal one.
+Before you commit or cut a release, delete or rename `wifi_secret.h`, rebuild,
+and check:
+
+```
+git grep -l "your-ssid" -- .
+```
+
+If you would rather not think about it at all, do not use the header. Set the
+network from the **Network** card on the web page instead: it stores to NVS,
+touches no build output, and is the same setting. The only thing the header buys
+you is surviving a reflash, and a reflash wipes stored settings by design
+anyway.
+
+### What those two defines actually change
+
+They change the FACTORY DEFAULT, nothing more. The order of precedence at boot
+is:
+
+1. Whatever is stored in NVS, if the build stamp matches. This is what the
+   Network card on the web page writes.
+2. Otherwise `OKHI_DEV_STA_SSID` / `OKHI_DEV_STA_PASS` if they were compiled in.
+3. Otherwise the access point.
+
+So a developer build comes up on your network the first time, and you can still
+change it from the web page afterwards without rebuilding.
+
+### Finding the address it landed on
+
+Two ways, and neither needs you to go hunting in your router:
+
+- The RP prints it on its debug UART whenever it changes, in either mode:
+  `esp wifi client, address 192.168.1.57`. That is uart1 on **GPIO 4 and 5 at
+  921600 baud**, the header marked TP1/TP2.
+- `GET /wifi` returns it, along with the mode and the build stamp the stored
+  settings belong to.
+
+### Settings are wiped by any firmware change, on purpose
+
+The ESP writes the build date and time of the running image into NVS. On every
+boot it compares. A mismatch erases the WHOLE of NVS and starts again from the
+factory default above.
+
+That is deliberate, not a limitation. Settings that outlive the firmware which
+understood them are how a board ends up joined to a network nobody remembers
+configuring, with no way back except a serial cable. Reflashing is the escape
+hatch, so it has to actually reset things. Rebuilding the same source twice
+produces two different stamps, so a rebuild resets it too.
+
+If a board cannot join the configured network twice in a row it gives up and
+comes back as an access point, keeping the setting on record so you can see
+what it was trying to join. A typo cannot lock you out.
+
+
 - https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf
 
 - https://datasheets.raspberrypi.com/pico/raspberry-pi-pico-c-sdk.pdf

@@ -5,9 +5,22 @@
 // npm install html-minifier
 const fs = require('fs');
 const zlib = require('zlib');
+const crypto = require('crypto');
+const path = require('path');
 const { minify } = require('html-minifier');
 
 const INPUT = 'index.html';
+
+// The page is EMBEDDED in the firmware, so a stale one is invisible: the implant
+// reports a healthy ESP and a healthy RP while serving whatever HTML happened to
+// be generated last. Editing index.html and forgetting to run this script is the
+// whole failure mode. Stamping the moment of generation and a hash of the source
+// into the page turns that from a hunt into a glance.
+const STAMP_TOKEN = '@@WEBGEN@@';
+
+// Only so this script can say whether the built firmware predates the page it is
+// about to write.
+const FIRMWARE_BIN = path.join('..', 'firmware', 'usb', 'esp', 'build', 'okhi.bin');
 
 const OUT_MIN = 'webuff.txt';           
 const OUT_GZ  = 'webuff_gz.txt';        
@@ -44,7 +57,43 @@ fs.readFile(INPUT, 'utf8', (err, data) => {
 
   const origBuf = Buffer.from(data, 'utf8');
 
-  const minified = minify(data, {
+  // Hashed BEFORE substitution, so the same source always produces the same hash
+  // no matter when it was generated. That is what makes it comparable: sha256
+  // the working copy and check it against the WEB line the implant is showing.
+  const srcHash = crypto.createHash('sha256').update(origBuf).digest('hex').slice(0, 12);
+
+  // Read the page the firmware is currently built around BEFORE overwriting it.
+  // Comparing its stamp against the source hash is what makes the staleness
+  // check able to say yes as well as no: a timestamp alone can only ever report
+  // that the file just written is newer than the binary, which it always is.
+  let prevSha = null;
+  let prevGzTime = 0;
+
+  try {
+    prevGzTime = fs.statSync(EXTRA_PATH_GZ_EMBED).mtimeMs;
+    const prev = zlib.gunzipSync(fs.readFileSync(EXTRA_PATH_GZ_EMBED)).toString('utf8');
+    const stampMatch = prev.match(/WEBGEN_STAMP = '([^']*)'/);
+    const shaMatch = stampMatch && stampMatch[1].match(/sha ([0-9a-f]+)/);
+
+    if (shaMatch) {
+      prevSha = shaMatch[1];
+    }
+  } catch (e) {
+    // No previous page, or one generated before stamping existed.
+  }
+  const now = new Date();
+  const stamp = now.toISOString().replace('T', ' ').slice(0, 19) + 'Z  src ' + origBuf.length +
+    ' B  sha ' + srcHash + '  node ' + process.version;
+
+  if (!data.includes(STAMP_TOKEN)) {
+    console.error('\nWARNING: ' + INPUT + ' has no ' + STAMP_TOKEN + ' token, so the page it');
+    console.error('generates cannot say when it was built or which source it came from.\n');
+  }
+
+  const shipped = data.split(STAMP_TOKEN).join(stamp);
+  const shippedBuf = Buffer.from(shipped, 'utf8');
+
+  const minified = minify(shipped, {
     removeAttributeQuotes: true,
     removeEmptyAttributes: true,
     collapseWhitespace: true,
@@ -60,6 +109,7 @@ fs.readFile(INPUT, 'utf8', (err, data) => {
   const minBuf = Buffer.from(minified, 'utf8');
 
   console.log('\n--- Sizes ---');
+  console.log('Build stamp:', stamp);
   console.log('Original size:', origBuf.length, 'bytes');
   console.log('Minified size:', minBuf.length, 'bytes');
   console.log('Saved:', origBuf.length - minBuf.length, 'bytes');
@@ -68,11 +118,11 @@ fs.readFile(INPUT, 'utf8', (err, data) => {
   fs.writeFile(OUT_MIN, cMin, e => e ? console.error(e) : console.log(`${OUT_MIN} written`));
   //fs.writeFile(EXTRA_MIN, cMin, e => e ? console.error(e) : console.log(`${EXTRA_MIN} written`));
 
-  const cOri = toCByteArray(origBuf, 'web_orig');
+  const cOri = toCByteArray(shippedBuf, 'web_orig');
   fs.writeFile(OUT_ORI, cOri, e => e ? console.error(e) : console.log(`${OUT_ORI} written`));
   //fs.writeFile(EXTRA_ORI, cOri, e => e ? console.error(e) : console.log(`${EXTRA_ORI} written`));
 
-  zlib.gzip(origBuf, { level: zlib.constants.Z_BEST_COMPRESSION }, (gzErr, gzBuf) => {
+  zlib.gzip(shippedBuf, { level: zlib.constants.Z_BEST_COMPRESSION }, (gzErr, gzBuf) => {
     if (gzErr) {
       console.error(gzErr);
       return;
@@ -98,5 +148,24 @@ fs.readFile(INPUT, 'utf8', (err, data) => {
     console.log('arrow functions. Switch to minBuf only if you load the page afterwards and');
     console.log('confirm the JS still runs.');
     console.log('\nNow rebuild the ESP: the page is linked into the binary, not flashed to SPIFFS.');
+
+    // The one check that actually catches the mistake this stamp exists for:
+    // does the firmware sitting in build/ carry THIS page, or an older one?
+    try {
+      const binTime = fs.statSync(FIRMWARE_BIN).mtimeMs;
+
+      if (prevSha === srcHash && binTime > prevGzTime) {
+        console.log('\nThe built firmware already carries this exact page, sha ' + srcHash + '.');
+        console.log('Only the timestamp inside it changed, so a rebuild is optional.');
+      } else if (prevSha === null) {
+        console.log('\n*** The page in build/ predates stamping, so it cannot be compared.');
+        console.log('*** Rebuild the ESP to be sure it carries this one.');
+      } else {
+        console.log('\n*** The firmware in build/ carries a DIFFERENT page, sha ' + prevSha + '.');
+        console.log('*** Rebuild the ESP or the implant will serve the old one.');
+      }
+    } catch (e) {
+      console.log('\nNo built firmware at ' + FIRMWARE_BIN + ', nothing to compare against.');
+    }
   });
 });

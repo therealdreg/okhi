@@ -1,18 +1,15 @@
 {
-  "effortLevel": "xhigh",
-  "includeCoAuthoredBy": false,
   "env": {
     "PICO_SDK_PATH": "C:\\Users\\regue\\.pico-sdk\\sdk\\2.3.0",
     "IDF_PATH": "C:\\Users\\regue\\esp\\.espressif\\v6.0.2\\esp-idf"
   },
+  "includeCoAuthoredBy": false,
   "permissions": {
-    "defaultMode": "acceptEdits",
     "allow": [
       "Agent",
       "Workflow",
       "WebSearch",
       "WebFetch",
-
       "Bash(cmake:*)",
       "Bash(ninja:*)",
       "Bash(make:*)",
@@ -22,7 +19,6 @@
       "Bash(arm-none-eabi-objdump:*)",
       "Bash(arm-none-eabi-nm:*)",
       "Bash(arm-none-eabi-readelf:*)",
-
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
@@ -32,7 +28,6 @@
       "Bash(git fetch:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-
       "Bash(ls:*)",
       "Bash(cat:*)",
       "Bash(head:*)",
@@ -46,7 +41,6 @@
       "Bash(xxd:*)",
       "Bash(strings:*)",
       "Bash(which:*)",
-
       "PowerShell(idf.py:*)",
       "PowerShell(Get-ChildItem:*)",
       "PowerShell(Get-Content:*)",
@@ -54,17 +48,27 @@
       "PowerShell(Test-Path:*)",
       "PowerShell(Select-String:*)",
       "PowerShell(Measure-Object:*)",
-
-      "PowerShell($cli = \"C:\\\\Users\\\\regue\\\\AppData\\\\Local\\\\Programs\\\\Arduino IDE\\\\resources\\\\app\\\\lib\\\\backend\\\\resources\\\\arduino-cli.exe\"; & $cli compile --warnings all --fqbn esp32:esp32:Geekble_ESP32C3 \"c:\\\\Users\\\\regue\\\\Desktop\\\\hc0n2027_ctf_hardware_hacking_priv\\\\code\" 2>&1 | Select-Object -Last 15)"
-    ],
-    "ask": [
-      "Bash(picotool:*)",
-      "Bash(esptool:*)",
-      "Bash(openocd:*)",
-      "Bash(make_release.bat:*)",
-      "PowerShell(picotool:*)",
-      "PowerShell(esptool:*)",
-      "PowerShell(openocd:*)"
+      "PowerShell($cli = \"C:\\\\Users\\\\regue\\\\AppData\\\\Local\\\\Programs\\\\Arduino IDE\\\\resources\\\\app\\\\lib\\\\backend\\\\resources\\\\arduino-cli.exe\"; & $cli compile --warnings all --fqbn esp32:esp32:Geekble_ESP32C3 \"c:\\\\Users\\\\regue\\\\Desktop\\\\hc0n2027_ctf_hardware_hacking_priv\\\\code\" 2>&1 | Select-Object -Last 15)",
+      "Bash(python \"C:/Users/regue/AppData/Local/Temp/claude/c--Users-regue-Desktop-okhi/6d585ccc-278c-4644-8511-829c06500632/scratchpad/f1_guards.py\")",
+      "Bash(node --check webusb/webgen.js)",
+      "Bash(python \"C:/Users/regue/AppData/Local/Temp/claude/c--Users-regue-Desktop-okhi/6d585ccc-278c-4644-8511-829c06500632/scratchpad/f2_web.py\" webusb/index.html)",
+      "Bash(python \"C:/Users/regue/AppData/Local/Temp/claude/c--Users-regue-Desktop-okhi/6d585ccc-278c-4644-8511-829c06500632/scratchpad/f3_web.py\" webusb/index.html)",
+      "Bash(python -c ' *)",
+      "Bash(node --check __TRACKED_VAR__/page.js)",
+      "Bash(node webgen.js)",
+      "PowerShell(. \"C:\\\\Espressif\\\\tools\\\\Microsoft.v6.0.2.PowerShell_profile.ps1\" | Out-Null; foreach \\($v in @\\(\"usb\",\"ps2\"\\)\\) { $o = Invoke-idfpy -C \"c:\\\\Users\\\\regue\\\\Desktop\\\\okhi\\\\firmware\\\\$v\\\\esp\" build 2>&1; Write-Output \"$v/esp : warnings $\\(\\($o | Select-String 'warning:'\\).Count\\) errors $\\(\\($o | Select-String 'error:'\\).Count\\)\"; $o | Select-String \"error:\" | Select-Object -First 6 | ForEach-Object { $_.Line }; $o | Select-String \"okhi.bin binary size\" | ForEach-Object { $_.Line } })",
+      "Bash(python3 -)",
+      "PowerShell(. \"C:\\\\Espressif\\\\tools\\\\Microsoft.v6.0.2.PowerShell_profile.ps1\" | Out-Null; $o = Invoke-idfpy -C \"c:\\\\Users\\\\regue\\\\Desktop\\\\okhi\\\\firmware\\\\usb\\\\esp\" build 2>&1; Write-Output \"warnings $\\(\\($o | Select-String 'warning:'\\).Count\\) errors $\\(\\($o | Select-String 'error:'\\).Count\\)\"; $o | Select-String \"error:\" | Select-Object -First 8 | ForEach-Object { $_.Line }; $o | Select-String \"CONTAINS YOUR WIFI\" | Select-Object -First 1 | ForEach-Object { \"pragma fired: yes\" }; $o | Select-String \"okhi.bin binary size\" | ForEach-Object { $_.Line })",
+      "PowerShell(. \"C:\\\\Espressif\\\\tools\\\\Microsoft.v6.0.2.PowerShell_profile.ps1\" | Out-Null; foreach \\($v in @\\(\"usb\",\"ps2\"\\)\\) { $o = Invoke-idfpy -C \"c:\\\\Users\\\\regue\\\\Desktop\\\\okhi\\\\firmware\\\\$v\\\\esp\" build 2>&1; Write-Output \"$v/esp : warnings $\\(\\($o | Select-String 'warning:'\\).Count\\) errors $\\(\\($o | Select-String 'error:'\\).Count\\)\"; $o | Select-String \"error:\" | Select-Object -First 6 | ForEach-Object { $_.Line }; $o | Select-String \"okhi.bin binary size\" | ForEach-Object { $_.Line } }; foreach \\($t in @\\(\"usb\\\\rp\",\"ps2\\\\rp\"\\)\\) { $o = & \"C:\\\\Users\\\\regue\\\\.pico-sdk\\\\ninja\\\\v1.13.2\\\\ninja.exe\" -C \"c:\\\\Users\\\\regue\\\\Desktop\\\\okhi\\\\firmware\\\\$t\\\\build\" 2>&1; Write-Output \"$t : warnings $\\(\\($o | Select-String 'warning:'\\).Count\\) errors $\\(\\($o | Select-String 'error:'\\).Count\\)\" })",
+      "Read(//c/Users/regue/Desktop/**)",
+      "Bash(curl -s --max-time 8 \"http://192.168.1.84/stats\")",
+      "Bash(curl -s --max-time 8 \"http://192.168.1.84/rp\")",
+      "Bash(curl -s --max-time 10 \"http://192.168.1.84/spibench?start=1&kind=0&ms=250&min=1000&max=60000&steps=30&soak=120000&down=3&oc=0\")",
+      "Bash(curl -s --max-time 10 \"http://192.168.1.84/spibench\")",
+      "Bash(curl -s --max-time 8 \"http://192.168.1.84/spibench?abort=1\")",
+      "PowerShell(. \"C:\\\\Espressif\\\\tools\\\\Microsoft.v6.0.2.PowerShell_profile.ps1\" | Out-Null; $o = Invoke-idfpy -C \"c:\\\\Users\\\\regue\\\\Desktop\\\\okhi\\\\firmware\\\\usb\\\\esp\" build 2>&1; Write-Output \"usb/esp : warnings $\\(\\($o | Select-String 'warning:'\\).Count\\) errors $\\(\\($o | Select-String 'error:'\\).Count\\)\"; $o | Select-String \"error:\" | Select-Object -First 5 | ForEach-Object { $_.Line })",
+      "Read(//c/Users/regue/.pico-sdk/openocd/**)",
+      "Read(//c/Users/regue/.pico-sdk/toolchain/15_2_Rel1/bin/**)"
     ],
     "deny": [
       "Bash(rm -rf:*)",
@@ -75,6 +79,17 @@
       "Read(**/id_rsa*)",
       "Read(**/.env)",
       "Read(**/*.pem)"
-    ]
-  }
+    ],
+    "ask": [
+      "Bash(picotool:*)",
+      "Bash(esptool:*)",
+      "Bash(openocd:*)",
+      "Bash(make_release.bat:*)",
+      "PowerShell(picotool:*)",
+      "PowerShell(esptool:*)",
+      "PowerShell(openocd:*)"
+    ],
+    "defaultMode": "acceptEdits"
+  },
+  "effortLevel": "xhigh"
 }

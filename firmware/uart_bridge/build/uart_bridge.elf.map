@@ -4923,104 +4923,104 @@ LOAD linker stubs
  .debug_line    0x00018ea7     0x1119 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/tusb.c.obj
  .debug_line    0x00019fc0     0x1440 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/common/tusb_fifo.c.obj
 
-.debug_str      0x00000000     0x8e68
- .debug_str     0x00000000     0x8e68 CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
+.debug_str      0x00000000     0x8e9f
+ .debug_str     0x00000000     0x8e9f CMakeFiles/uart_bridge.dir/uart-bridge.c.obj
                                0x124a (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/usb-descriptors.c.obj
                                0x1029 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_gpio/gpio.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_gpio/gpio.c.obj
                                 0xcd1 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2040/pico_platform/platform.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2040/pico_platform/platform.c.obj
                                 0x21f (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_platform_panic/panic.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_platform_panic/panic.c.obj
                                 0x1fb (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/common/hardware_claim/claim.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/common/hardware_claim/claim.c.obj
                                 0x3a4 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_sync/sync.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_sync/sync.c.obj
                                 0x33f (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
                                 0x265 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_irq/irq.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_irq/irq.c.obj
                                 0xaf4 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/common/pico_sync/lock_core.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/common/pico_sync/lock_core.c.obj
                                 0x223 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/common/pico_sync/mutex.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/common/pico_sync/mutex.c.obj
                                 0x80c (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/common/pico_sync/critical_section.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/common/pico_sync/critical_section.c.obj
                                 0x2e3 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/common/pico_time/time.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/common/pico_time/time.c.obj
                                0x1214 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_timer/timer.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_timer/timer.c.obj
                                 0xa4f (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_uart/uart.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_uart/uart.c.obj
                                0x1010 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_clocks/clocks.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_clocks/clocks.c.obj
                                 0xefc (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_pll/pll.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_pll/pll.c.obj
                                 0x490 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_ticks/ticks.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_ticks/ticks.c.obj
                                 0x2a5 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_bootrom/bootrom.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_bootrom/bootrom.c.obj
                                 0x35c (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_xosc/xosc.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_xosc/xosc.c.obj
                                 0x24c (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_runtime/runtime.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_runtime/runtime.c.obj
                                 0x29c (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_runtime_init/runtime_init.c.obj
                                 0x7cf (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
                                 0x4a4 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
                                  0x94 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_divider/divider_hardware.S.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_divider/divider_hardware.S.obj
                                  0x97 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_double/double_aeabi_rp2040.S.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_double/double_aeabi_rp2040.S.obj
                                  0x99 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_double/double_init_rom_rp2040.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_double/double_init_rom_rp2040.c.obj
                                 0x303 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_double/double_v1_rom_shim_rp2040.S.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_double/double_v1_rom_shim_rp2040.S.obj
                                  0x9f (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
                                  0x9d (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_float/float_aeabi_rp2040.S.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_float/float_aeabi_rp2040.S.obj
                                  0x97 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_float/float_init_rom_rp2040.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_float/float_init_rom_rp2040.c.obj
                                 0x2e8 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_float/float_v1_rom_shim_rp2040.S.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_float/float_v1_rom_shim_rp2040.S.obj
                                  0x9d (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_malloc/malloc.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_malloc/malloc.c.obj
                                 0x466 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
                                  0x94 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
                                 0x440 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_printf/printf.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_printf/printf.c.obj
                                 0x499 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_crt0/crt0.S.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_crt0/crt0.S.obj
                                  0x88 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
                                 0x7a9 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_stdio/stdio.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_stdio/stdio.c.obj
                                 0xb23 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_thread_local/thread_local.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_thread_local/thread_local.c.obj
                                 0x3a2 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_multicore/multicore.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/pico_multicore/multicore.c.obj
                                 0xd5b (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_flash/flash.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/src/rp2_common/hardware_flash/flash.c.obj
                                 0x7f9 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
                                0x137b (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
                                 0xbac (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/device/usbd.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/device/usbd.c.obj
                                0x1b3b (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/device/usbd_control.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/device/usbd_control.c.obj
                                 0x6e6 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/class/cdc/cdc_device.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/class/cdc/cdc_device.c.obj
                                0x1775 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/tusb.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/tusb.c.obj
                                 0xe27 (size before relaxing)
- .debug_str     0x00008e68        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/common/tusb_fifo.c.obj
+ .debug_str     0x00008e9f        0x0 CMakeFiles/uart_bridge.dir/C_/Users/regue/.pico-sdk/sdk/2.3.0/lib/tinyusb/src/common/tusb_fifo.c.obj
                                 0x633 (size before relaxing)
 
 .comment        0x00000000       0x45
