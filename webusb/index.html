@@ -2,133 +2,681 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
     <title>USB okhi - Open Keylogger Hardware Implant</title>
     <style>
-        :root {
-            --main-bg: #f4f4f4;
-            --card-bg: #fff;
-            --text-color: #333;
-            --heading-color: #2c3e50;
-            --link-color: #2980b9;
-            --link-hover: #3498db;
+        :root{--bg:#f5f6f8;--card:#fff;--fg:#1c2530;--muted:#69737f;--line:#e2e6ec;--accent:#2563eb;--field:#fbfcfd}
+        @media (prefers-color-scheme:dark){
+            :root{--bg:#0f1216;--card:#171b21;--fg:#e5e9ef;--muted:#939daa;--line:#252b33;--accent:#5b9dff;--field:#11151a}
         }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--main-bg);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-        }
-        h1, h2, h3 {
-            color: var(--heading-color);
-            text-align: center;
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-        a {
-            color: var(--link-color);
-            text-decoration: none;
-        }
-        a:hover {
-            color: var(--link-hover);
-            text-decoration: underline;
-        }
-        .container {
-            max-width: 960px;
-            margin: 20px auto;
-            background: var(--card-bg);
-            padding: 20px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-        }
-        header {
-            margin-bottom: 20px;
-        }
-        main section {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin: 20px 0 5px;
-            font-weight: bold;
-        }
-        textarea, select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            resize: none;
-        }
-        #HIDREPORTS {
-            height: 200px;
-        }
-        button {
-            display: inline-block;
-            padding: 10px 20px;
-            margin-top: 10px;
-            background: var(--link-color);
-            border: none;
-            border-radius: 5px;
-            color: #fff;
-            cursor: pointer;
-        }
-        button:hover {
-            background: var(--link-hover);
+        *{box-sizing:border-box}
+        body{margin:0;padding:0 14px 44px;background:var(--bg);color:var(--fg);
+            font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,Helvetica,Arial,sans-serif;
+            -webkit-text-size-adjust:100%}
+        .wrap{max-width:820px;margin:0 auto}
+        header{padding:26px 2px 4px;text-align:center}
+        h1{margin:0;font-size:1.15rem;font-weight:650;letter-spacing:-.01em}
+        .by{margin:6px 0 14px;font-size:.85rem;color:var(--muted)}
+        a{color:var(--accent);text-decoration:none}
+        a:hover{text-decoration:underline}
+        .badges{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+        .badges span{padding:3px 10px;border:1px solid var(--line);border-radius:999px;
+            background:var(--card);font-size:.76rem;color:var(--muted)}
+        .badges span:empty{display:none}
+        .status{margin:12px 0;font-size:.92rem;font-weight:650;min-height:1.3em}
+        #buildinfo{margin:0;padding:10px 12px;text-align:left;overflow-x:auto;background:var(--card);
+            border:1px solid var(--line);border-radius:10px;color:var(--muted);
+            font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+        #buildinfo:empty{display:none}
+        .card{margin:12px 0;padding:14px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+        .card>label,.card summary{font-size:.71rem;font-weight:700;letter-spacing:.09em;
+            text-transform:uppercase;color:var(--muted)}
+        .card>label{display:block;margin:0 0 9px}
+        summary{cursor:pointer;list-style:none;padding:1px 0}
+        summary::-webkit-details-marker{display:none}
+        summary::after{content:" +";font-weight:400}
+        details[open] summary::after{content:" \2212"}
+        details>*:not(summary){margin-top:9px}
+        textarea,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;
+            background:var(--field);color:var(--fg);font-size:16px}
+        textarea{font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;resize:vertical;display:block}
+        select{height:44px}
+        button{width:100%;min-height:46px;padding:12px 18px;border:0;border-radius:9px;background:var(--accent);
+            color:#fff;font-size:.95rem;font-weight:650;cursor:pointer}
+        button:disabled{opacity:.5}
+        .links{display:flex;flex-wrap:wrap;gap:8px}
+        .links a{display:flex;align-items:center;min-height:40px;padding:8px 13px;border:1px solid var(--line);
+            border-radius:9px;background:var(--field);font-size:.85rem}
+        input[type=file]{width:100%;margin-bottom:10px;padding:10px;font-size:.85rem;border:1px dashed var(--line);
+            border-radius:9px;background:var(--field);color:var(--muted)}
+        .hint{margin:9px 0 0;font-size:.79rem;line-height:1.45;color:var(--muted)}
+        #otaStatus{margin-top:11px;font-size:.86rem;line-height:1.5}
+        #otaStatus:empty{display:none}
+        #resetTimes{margin:9px 0 0;font-size:.95rem;font-weight:650}
+        #resetTimes:empty{display:none}
+        #rpResetStatus{margin-top:11px;font-size:.86rem;line-height:1.5}
+        #rpResetStatus:empty{display:none}
+        .fields{display:flex;flex-wrap:wrap;gap:8px}
+        .fields label{flex:1 1 110px;font-size:.71rem;font-weight:700;letter-spacing:.09em;
+            text-transform:uppercase;color:var(--muted)}
+        .fields select{margin-top:5px}
+        .scroll{overflow-x:auto}
+        table{width:100%;border-collapse:collapse;
+            font:11px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+        th,td{padding:4px 7px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+        th:first-child,td:first-child{text-align:left}
+        th{color:var(--muted);font-weight:650}
+        .pass{color:#2ecc71}
+        .fail{color:#e74c3c}
+        .check{display:flex;align-items:center;gap:8px;margin:11px 0 0;font-size:.83rem;color:var(--muted)}
+        .check input{width:18px;height:18px;flex:none}
+        .lbl{display:block;margin:11px 0 5px;font-size:.71rem;font-weight:700;letter-spacing:.09em;
+            text-transform:uppercase;color:var(--muted)}
+        input[type=text],input[type=password]{width:100%;padding:10px;border:1px solid var(--line);
+            border-radius:9px;background:var(--field);color:var(--fg);font-size:16px}
+        #wifiNow{margin:0 0 4px;padding:10px 12px;overflow-x:auto;background:var(--field);
+            border:1px solid var(--line);border-radius:10px;color:var(--muted);
+            font:11px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+        #wifiNow:empty{display:none}
+        #wifiStatus{margin-top:11px;font-size:.86rem;line-height:1.5}
+        #wifiStatus:empty{display:none}
+        #benchRecipe{margin:9px 0 0;padding:9px 11px;border-left:3px solid #2ecc71;border-radius:0 8px 8px 0;
+            background:var(--field);
+            font:11px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap}
+        #benchRecipe:empty{display:none}
+        .st{border-bottom:1px solid var(--line);padding:7px 2px;display:flex;gap:9px;align-items:baseline}
+        .st:last-child{border-bottom:0}
+        .st b{flex:none;width:52px;font-size:.68rem;letter-spacing:.06em;font-weight:700}
+        .st span{flex:1 1 auto;font-size:.83rem}
+        .st i{display:block;font-style:normal;color:var(--muted);
+            font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+        .ask{margin:11px 0 0;padding:12px;border:1px solid var(--accent);border-radius:10px;background:var(--field)}
+        .ask p{margin:0 0 10px;font-size:.9rem;font-weight:650}
+        .ask .row{display:flex;flex-wrap:wrap;gap:8px}
+        .ask button{width:auto;min-width:0;flex:1 1 90px;min-height:40px;font-size:.85rem}
+        .ask button.no{background:#e74c3c}
+        .ask button.again{background:transparent;border:1px solid var(--line);color:var(--fg)}
+        #stVerdict{margin:9px 0 0;font-size:.95rem;font-weight:650}
+        #stVerdict:empty{display:none}
+        #benchStatus{margin-top:11px;font-size:.86rem;line-height:1.5}
+        #benchStatus:empty{display:none}
+        #benchSummary{margin:9px 0 0;font-size:.92rem;font-weight:650}
+        #benchSummary:empty{display:none}
+        #benchWhy{margin:9px 0 0;padding:9px 11px;border-left:3px solid #e74c3c;border-radius:0 8px 8px 0;
+            background:var(--field);color:#e74c3c;
+            font:11px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap}
+        #benchWhy:empty{display:none}
+        #benchNote{margin:9px 0 0;font-size:.79rem;line-height:1.45;color:var(--muted)}
+        #benchNote:empty{display:none}
+        tr.soakrow td{font-weight:700}
+        @media (min-width:620px){
+            body{padding:0 22px 56px}
+            h1{font-size:1.42rem}
+            button{width:auto;min-width:220px}
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="wrap">
         <header>
-            <h1>USB Open Keylogger Hardware Implant by Dreg</h1>
-            <h2>
-                <a href="https://www.rootkit.es/">rootkit.es</a> - 
+            <h1>USB Open Keylogger Hardware Implant</h1>
+            <p class="by">by Dreg &middot;
+                <a href="https://www.rootkit.es/">rootkit.es</a> &middot;
                 <a href="https://github.com/therealdreg/okhi/">GitHub</a>
-            </h2>
-            <h3>
+            </p>
+            <div class="badges">
                 <span id="fwversion"></span>
                 <span id="hwversion"></span>
-            </h3>
+            </div>
+            <div class="status" id="linkstatus"></div>
+            <pre id="buildinfo"></pre>
         </header>
         <main>
-            <section>
-                <label for="keyboardType">KEYBOARD LANG</label>
+            <section class="card">
+                <label for="keyboardType">Keyboard layout</label>
                 <select id="keyboardType">
                     <option value="english" selected>english</option>
+                    <option value="spanish">spanish</option>
                 </select>
             </section>
-            <section>
-                <article>
-                    <label for="KEYS">KEYS</label>
-                    <textarea id="KEYS" rows="10" readonly></textarea>
-                </article>
+            <section class="card">
+                <label for="KEYS">Keys</label>
+                <textarea id="KEYS" rows="8" readonly></textarea>
             </section>
-            <section>
-                <article>
-                    <label for="HIDREPORTS">HID REPORTS</label>
-                    <textarea id="HIDREPORTS" rows="10" readonly></textarea>
-                </article>
+            <section class="card">
+                <label for="HIDREPORTS">HID reports</label>
+                <textarea id="HIDREPORTS" rows="10" readonly></textarea>
             </section>
-            <section>
-                <article>
-                    <label for="EspbufferData">ESP DEBUG DATA</label>
-                    <textarea id="EspbufferData" rows="10" readonly></textarea>
-                </article>
+            <section class="card">
+                <details>
+                    <summary>ESP debug data</summary>
+                    <textarea id="EspbufferData" rows="6" readonly aria-label="ESP debug data"></textarea>
+                </details>
             </section>
-            <section>
-                <article>
-                    <label for="RpbufferData">RP DEBUG DATA</label>
-                    <textarea id="RpbufferData" rows="10" readonly></textarea>
-                </article>
+            <section class="card">
+                <details>
+                    <summary>RP debug data</summary>
+                    <textarea id="RpbufferData" rows="6" readonly aria-label="RP debug data"></textarea>
+                </details>
             </section>
-            <section>
-                <button id="downloadButton">DOWNLOAD ALL DATA</button>
+            <section class="card">
+                <button id="downloadButton">Download all data</button>
+            </section>
+            <section class="card">
+                <label>Persistent log (kept on the device's flash: survives reboots and power-off)</label>
+                <div class="links" style="margin-top:6px">
+                    <button id="keylogDownload">Download persistent log</button>
+                    <button id="keylogClear" class="no" style="background:#e74c3c">Clear persistent log</button>
+                </div>
+                <div id="keylogStatus" class="hint"></div>
+            </section>
+            <section class="card">
+                <details>
+                    <summary>Diagnostics</summary>
+                    <div class="links">
+                        <a href="/stats" target="_blank" rel="noopener">stats</a>
+                        <a href="/versions" target="_blank" rel="noopener">versions</a>
+                        <a href="/rp" target="_blank" rel="noopener">rp status</a>
+                        <a href="/esp" target="_blank" rel="noopener">esp status</a>
+                        <a href="/buffer?from=0" target="_blank" rel="noopener">raw buffer</a>
+                        <a href="/spibench" target="_blank" rel="noopener"
+                           title="Raw result table of the last SPI sweep.">spi benchmark</a>
+                    </div>
+                    <p class="hint">Raw endpoints, they open in a new tab.</p>
+                </details>
+            </section>
+            <section class="card">
+                <details>
+                    <summary>Link benchmark</summary>
+                    <div class="fields">
+                        <label for="benchKind">Link
+                            <select id="benchKind">
+                                <option value="0" selected>SPI</option>
+                                <option value="1">UART</option>
+                            </select>
+                        </label>
+                        <label for="benchMs">Time per step
+                            <select id="benchMs">
+                                <option value="100">100 ms</option>
+                                <option value="250" selected>250 ms</option>
+                                <option value="500">500 ms</option>
+                                <option value="1000">1 s</option>
+                            </select>
+                        </label>
+                        <label for="benchMin">Slowest step
+                            <select id="benchMin"></select>
+                        </label>
+                        <label for="benchMax">Fastest step
+                            <select id="benchMax"></select>
+                        </label>
+                        <label for="benchSteps">Coarse steps
+                            <select id="benchSteps">
+                                <option value="12">12</option>
+                                <option value="20">20</option>
+                                <option value="30" selected>30</option>
+                                <option value="40">40</option>
+                            </select>
+                        </label>
+                        <label for="benchDown">Drop and retry
+                            <select id="benchDown">
+                                <option value="0">never</option>
+                                <option value="1">once</option>
+                                <option value="3" selected>3 times</option>
+                                <option value="5">5 times</option>
+                                <option value="8">8 times</option>
+                            </select>
+                        </label>
+                        <label for="benchSoak">Confirm winner for
+                            <select id="benchSoak">
+                                <option value="0">off</option>
+                                <option value="30000">30 s</option>
+                                <option value="120000" selected>2 min</option>
+                                <option value="300000">5 min</option>
+                                <option value="600000">10 min</option>
+                                <option value="1200000">20 min</option>
+                                <option value="2400000">40 min</option>
+                                <option value="5400000">1 h 30</option>
+                                <option value="10800000">3 h</option>
+                            </select>
+                        </label>
+                    </div>
+                    <label class="check"><input type="checkbox" id="benchOc"> Overclock the RP to twice its normal
+                        system clock for the run, then put it back</label>
+                    <button id="benchButton">Run the sweep</button>
+                    <p class="hint">Climbs the SPI clock to bracket the ceiling, halves the bracket down to 1 MHz,
+                        then hammers the winner for the confirmation time to prove it does not drop a single frame in
+                        either direction. If the confirmation fails it drops a megahertz and tries again. A 250 ms
+                        step only screens; the confirmation is the number worth trusting.</p>
+                    <p class="hint">The PL022 only divides clk_peri by an even number, so reaching every megahertz
+                        means moving clk_peri, and above the stock rate that means reprogramming the USB PLL. That is
+                        free here because nothing else uses it. Every result says which clock recipe produced it, and
+                        the clock tree is put back on every exit path. Keystroke capture is suspended for the WHOLE
+                        run.</p>
+                    <p class="hint">On UART the two chips step through the standard baud rates together, agreeing on
+                        the next one over SPI so a rate that breaks the line cannot take the run with it. The slowest
+                        and fastest pickers, the overclock and the refinement do not apply there. That port is also
+                        the ESP console, so its logging is silenced while the test runs.</p>
+                    <div id="benchStatus"></div>
+                    <p id="benchSummary"></p>
+                    <div id="benchRecipe"></div>
+                    <div id="benchWhy"></div>
+                    <p id="benchNote"></p>
+                    <div class="scroll"><table id="benchTable"></table></div>
+                </details>
+            </section>
+            <section class="card">
+                <details>
+                    <summary>Hardware self test</summary>
+                    <p class="hint">Looks for a board that was assembled badly rather than for a bug: a joint that
+                        never wetted, a bridge between two pads, a part sitting at an angle. Every check reports the
+                        numbers it measured and names the part or the net to go and inspect, so an intermittent board
+                        can be told apart from a dead one.</p>
+                    <label class="check"><input type="checkbox" id="stFlash" checked> Erase and rewrite a spare flash
+                        sector, which is where a marginal QSPI joint shows up first</label>
+                    <label class="check"><input type="checkbox" id="stSwitch"> Test the USB switch and the two sniff
+                        lines. This drops the pass-through for a moment, so an attached keyboard will reconnect. Leave
+                        it off unless nothing is plugged into the sniff port.</label>
+                    <button id="stButton">Run the self test</button>
+                    <div id="stStatus"></div>
+                    <p id="stVerdict"></p>
+                    <div id="stAsk"></div>
+                    <div id="stSwProbe"></div>
+                    <div id="stRows"></div>
+                </details>
+            </section>
+            <section class="card">
+                <details>
+                    <summary>Network</summary>
+                    <pre id="wifiNow"></pre>
+                    <div class="fields">
+                        <label for="wifiMode">Mode
+                            <select id="wifiMode">
+                                <option value="0">Access point</option>
+                                <option value="1">Join a network</option>
+                            </select>
+                        </label>
+                    </div>
+                    <label class="lbl" for="wifiSsid">Network name</label>
+                    <input type="text" id="wifiSsid" maxlength="31" autocomplete="off" spellcheck="false">
+                    <label class="lbl" for="wifiPass">Password</label>
+                    <input type="password" id="wifiPass" maxlength="63" autocomplete="new-password">
+                    <label class="lbl"><input type="checkbox" id="wifiOpen"> Open network, no password</label>
+                    <button id="wifiSave">Save and reboot</button>
+                    <p class="hint">In access point mode the device makes its own network and the name above is
+                        ignored. Joining one is how it becomes reachable from your LAN. Either way the device reboots
+                        to apply it and you will have to reconnect.</p>
+                    <p class="hint">If it cannot join the network twice in a row it comes back as an access point on
+                        its own, with the setting still on record, so a typo cannot lock you out. Flashing any
+                        different firmware wipes this and everything else stored, by design.</p>
+                    <div id="wifiStatus"></div>
+                </details>
+            </section>
+            <section class="card">
+                <button id="rpResetButton">Reset the RP (reboots everything)</button>
+                <p class="hint">Reboots the RP2040, which pulls the ESP down with it, so the whole board restarts.
+                    RESET TIMES below counts every restart since the last flash, so a click that makes it climb is
+                    proof the board actually rebooted. The page reconnects on its own once it is back.</p>
+                <p id="resetTimes"></p>
+                <div id="rpResetStatus"></div>
+            </section>
+            <section class="card">
+                <button id="rpBootselButton">Reboot the RP as a USB drive (BOOTSEL)</button>
+                <p class="hint">Restarts the RP2040 into its bootloader, where it shows up as an RPI-RP2 mass storage
+                    drive on the USB programming header, ready for a .uf2 to be dropped onto it. It stops running the
+                    firmware the moment you press this, so the link to the ESP goes down and stays down until you
+                    flash something or power cycle the board. The ESP keeps serving this page throughout.</p>
+                <div id="rpBootselStatus"></div>
+            </section>
+            <section class="card">
+                <details>
+                    <summary>WiFi speed</summary>
+                    <p>Measures what the radio really manages between this browser and the board, thirty seconds each
+                        way. Every block is random data carrying a CRC32, checked at the far end, so a link that is
+                        fast but drops or mangles bytes fails instead of scoring well. The result is filed in the self
+                        test table as well, since how fast the board can be reached is part of knowing it is healthy.</p>
+                    <label class="check">Time per direction:
+                        <select id="wsTime">
+                            <option value="30000">30 seconds</option>
+                            <option value="60000">1 minute</option>
+                            <option value="120000">2 minutes</option>
+                            <option value="300000">5 minutes</option>
+                            <option value="600000">10 minutes</option>
+                            <option value="900000">15 minutes</option>
+                        </select></label>
+                    <button id="wsButton">Run the WiFi speed test (about a minute)</button>
+                    <div id="wsStatus"></div>
+                    <pre id="wsResult"></pre>
+                </details>
+            </section>
+            <section class="card">
+                <label for="otaFile">Firmware update</label>
+                <input type="file" id="otaFile" accept=".pkg">
+                <button id="otaButton">Upload firmware</button>
+                <p class="hint">Pick the .pkg, it updates both chips. Do not power the device off during the update.</p>
+                <div id="otaStatus"></div>
             </section>
         </main>
     </div>
     <script>
+        // Loaded before the page logic so it can report a failure inside it. A parse
+        // error in that script kills all of it at once, and because the HTML is
+        // static the page still renders: every panel stays empty, every button is
+        // dead, and nothing anywhere says why. That shipped once and took a firmware
+        // flash to find. webgen.js is what prevents it now; this block is what makes
+        // it audible if one ever gets through, because no try/catch inside a script
+        // can catch the error that stopped that script from existing.
+        (function () {
+            var seen = {};
+
+            function fault(title, detail) {
+                try {
+                    var key = title + '|' + detail;
+
+                    if (seen[key]) {
+                        return;
+                    }
+
+                    seen[key] = 1;
+
+                    var box = document.getElementById('okhiFault');
+
+                    if (!box) {
+                        box = document.createElement('div');
+                        box.id = 'okhiFault';
+                        box.setAttribute('style', 'position:fixed;top:0;left:0;right:0;z-index:99999;'
+                            + 'background:#c0392b;color:#fff;font:13px/1.5 ui-monospace,monospace;'
+                            + 'padding:10px 14px;white-space:pre-wrap;word-break:break-word;'
+                            + 'box-shadow:0 2px 10px rgba(0,0,0,.4)');
+
+                        var host = document.body || document.documentElement;
+
+                        host.insertBefore(box, host.firstChild);
+                    }
+
+                    var line = document.createElement('div');
+
+                    line.textContent = title + ': ' + detail;
+                    box.appendChild(line);
+                } catch (ignored) {
+                }
+            }
+
+            window.okhiFault = fault;
+
+            window.addEventListener('error', function (event) {
+                var where = event.filename
+                    ? ' (line ' + event.lineno + ')'
+                    : '';
+
+                fault('SCRIPT ERROR', (event.message || 'unknown') + where);
+            });
+
+            window.addEventListener('unhandledrejection', function (event) {
+                var reason = event && event.reason;
+
+                fault('UNHANDLED PROMISE', (reason && (reason.message || reason)) || 'unknown');
+            });
+
+            // The page logic sets this on its last line. Absent once the document has
+            // loaded, the script never reached the end, so nothing was wired up.
+            window.addEventListener('load', function () {
+                if (window.okhiMainLoaded) {
+                    return;
+                }
+
+                fault('PAGE LOGIC NEVER RAN', 'the script did not finish parsing, so no panel updates'
+                    + ' and no button responds. regenerate with webgen.js, it refuses to emit a page'
+                    + ' whose script cannot parse.');
+            });
+
+            // Start up one step at a time, so a single failure cannot take the rest
+            // of the page with it the way a flat sequence of calls does.
+            window.okhiStep = function (name, run) {
+                try {
+                    run();
+                } catch (error) {
+                    fault('INIT FAILED [' + name + ']', (error && error.message) || error);
+                }
+            };
+
+            window.okhiEvery = function (name, run, ms) {
+                return setInterval(function () {
+                    try {
+                        run();
+                    } catch (error) {
+                        fault('TIMER FAILED [' + name + ']', (error && error.message) || error);
+                    }
+                }, ms);
+            };
+
+            window.okhiAfter = function (name, run, ms) {
+                return setTimeout(function () {
+                    try {
+                        run();
+                    } catch (error) {
+                        fault('DELAYED FAILED [' + name + ']', (error && error.message) || error);
+                    }
+                }, ms);
+            };
+        })();
+    </script>
+    <script>
+        // Replaced by webgen.js when the page is generated. The token surviving
+        // into a served page means it was never generated at all, which is
+        // worth knowing on its own, so the display says so rather than hiding it.
+        const WEBGEN_STAMP = '@@WEBGEN@@';
+        // The stamp is baked into the page, so it can be shown the moment the
+        // page loads and stays up with no device to answer /versions. A page
+        // still carrying the raw token was served straight from the editor, so
+        // the firmware was built around an index.html nobody ran webgen.js over.
+        function webStampLine() {
+            return 'WEB  ' + (WEBGEN_STAMP.indexOf('@@') === 0
+                ? 'NOT GENERATED, run webgen.js and rebuild the ESP'
+                : WEBGEN_STAMP);
+        }
+        // Four things here take exclusive control of the device: an upload
+        // writes flash and reboots, a benchmark reprograms the clock tree, a
+        // self test drives pins the drivers own, and saving the network
+        // reboots. Starting any on top of another corrupts whichever was
+        // already running, so they all ask here first, and they say why rather
+        // than ignoring the click.
+        let rpResetInProgress = false;
+        function busyReason() {
+            if (otaInProgress) return 'a firmware upload is in progress';
+            if (benchInProgress) return 'a link benchmark is running';
+            if (stBusy) return 'a self test is running';
+            if (rpResetInProgress) return 'a reset is in progress';
+            if (typeof wsRunning !== 'undefined' && wsRunning) return 'a wifi speed test is running';
+            return '';
+        }
+        function updateResetTimes(n) {
+            const el = document.getElementById('resetTimes');
+            if (el) {
+                el.textContent = 'RESET TIMES: ' + n;
+            }
+        }
+        function setRpResetStatus(text, color) {
+            const el = document.getElementById('rpResetStatus');
+            el.textContent = text;
+            el.style.color = color;
+        }
+        // The reset reboots the RP, which pulls the ESP's CHIP_PU low, so THIS
+        // page's device reboots too and the socket drops. The click is confirmed
+        // not by the reply (which may never arrive) but by reset_times climbing
+        // once the board is back, which is the whole point of the counter.
+        function waitForReset(before, tries) {
+            if (tries > 40) {
+                setRpResetStatus('The board did not come back in time. Reload the page by hand.', '#e74c3c');
+                rpResetInProgress = false;
+                document.getElementById('rpResetButton').disabled = false;
+                return;
+            }
+            setTimeout(function() {
+                fetch('/versions', { cache: 'no-store' })
+                    .then(response => response.text())
+                    .then(text => {
+                        const now = parseInt(parseKeyValues(text).reset_times || '0', 10);
+                        if (now > before) {
+                            updateResetTimes(now);
+                            setRpResetStatus('Rebooted. RESET TIMES is now ' + now + '.', '#2ecc71');
+                            rpResetInProgress = false;
+                            document.getElementById('rpResetButton').disabled = false;
+                        } else {
+                            waitForReset(before, tries + 1);
+                        }
+                    })
+                    .catch(() => waitForReset(before, tries + 1));
+            }, 1500);
+        }
+        document.getElementById('rpResetButton').addEventListener('click', function() {
+            if (rpResetInProgress) {
+                return;
+            }
+            const busy = busyReason();
+            if (busy) {
+                setRpResetStatus('Not now: ' + busy + '.', '#e67e22');
+                return;
+            }
+            const shown = document.getElementById('resetTimes').textContent.match(/\d+/);
+            const before = shown ? parseInt(shown[0], 10) : 0;
+            rpResetInProgress = true;
+            document.getElementById('rpResetButton').disabled = true;
+            setRpResetStatus('Resetting. The board reboots and the page reconnects on its own...', '#3498db');
+            fetch('/rpreset', { cache: 'no-store' })
+                .then(() => waitForReset(before, 0))
+                .catch(() => waitForReset(before, 0));
+        });
+        function setBootselStatus(msg, colour) {
+            const el = document.getElementById('rpBootselStatus');
+            el.textContent = msg;
+            el.style.color = colour;
+        }
+        document.getElementById('rpBootselButton').addEventListener('click', function() {
+            const busy = busyReason();
+            if (busy) {
+                setBootselStatus('Not now: ' + busy + '.', '#e67e22');
+                return;
+            }
+            if (!confirm('Reboot the RP into BOOTSEL?\n\nIt stops running until you flash a .uf2 over the USB programming header or power cycle the board.')) {
+                return;
+            }
+            document.getElementById('rpBootselButton').disabled = true;
+            setBootselStatus('Requested. Look for an RPI-RP2 drive on the USB programming header.', '#3498db');
+            fetch('/rpbootsel', { cache: 'no-store' }).catch(() => {});
+        });
+        // CRC32 with the same polynomial the firmware uses, so both ends agree on what
+        // arriving intact means. Random payloads plus a checksum on every block are what
+        // keep the number honest: shifting bytes nobody verified is not throughput.
+        let wsCrcTable = null;
+        function wsCrc32(buf) {
+            if (!wsCrcTable) {
+                wsCrcTable = new Uint32Array(256);
+                for (let n = 0; n < 256; n++) {
+                    let c = n;
+                    for (let k = 0; k < 8; k++) { c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); }
+                    wsCrcTable[n] = c >>> 0;
+                }
+            }
+            let crc = 0xFFFFFFFF;
+            for (let i = 0; i < buf.length; i++) { crc = wsCrcTable[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8); }
+            return (crc ^ 0xFFFFFFFF) >>> 0;
+        }
+        // Read at the moment each leg starts, so the choice applies to this run and the
+        // longer settings measure a sustained link rather than a lucky burst.
+        function wsMs() {
+            const v = parseInt(document.getElementById('wsTime').value, 10);
+            return (v > 0) ? v : 30000;
+        }
+        const WS_DOWN_CHUNK = 262144;
+        const WS_UP_CHUNK = 65536;
+        let wsRunning = false;
+        function wsSay(msg, colour) {
+            const el = document.getElementById('wsStatus');
+            el.textContent = msg;
+            el.style.color = colour || '';
+        }
+        function wsMbit(bytes, ms) { return ms > 0 ? (bytes * 8) / ms / 1000 : 0; }
+        async function wsDownload() {
+            const t0 = performance.now();
+            const legMs = wsMs();
+            let bytes = 0, bad = 0, seed = 1;
+            while (performance.now() - t0 < legMs) {
+                seed = ((seed * 1103515245) + 12345) >>> 0;
+                const r = await fetch('/wifidown?bytes=' + WS_DOWN_CHUNK + '&seed=' + (seed || 1),
+                                      { cache: 'no-store' });
+                const buf = new Uint8Array(await r.arrayBuffer());
+                if (buf.length < 9) { bad++; break; }
+                let tail = '';
+                for (let i = buf.length - 8; i < buf.length; i++) { tail += String.fromCharCode(buf[i]); }
+                if (wsCrc32(buf.subarray(0, buf.length - 8)) !== (parseInt(tail, 16) >>> 0)) { bad++; }
+                bytes += buf.length;
+                wsSay('Downloading, ' + wsMbit(bytes, performance.now() - t0).toFixed(2) + ' Mbit/s so far');
+            }
+            return { bytes: bytes, ms: performance.now() - t0, bad: bad };
+        }
+        async function wsUpload() {
+            const t0 = performance.now();
+            const legMs = wsMs();
+            let bytes = 0, bad = 0;
+            const chunk = new Uint8Array(WS_UP_CHUNK);
+            while (performance.now() - t0 < legMs) {
+                crypto.getRandomValues(chunk);
+                const r = await fetch('/wifiup?crc=' + wsCrc32(chunk),
+                                      { method: 'POST', body: chunk, cache: 'no-store' });
+                const txt = await r.text();
+                if (txt.indexOf('ok=1') < 0) { bad++; }
+                bytes += chunk.length;
+                wsSay('Uploading, ' + wsMbit(bytes, performance.now() - t0).toFixed(2) + ' Mbit/s so far');
+            }
+            return { bytes: bytes, ms: performance.now() - t0, bad: bad };
+        }
+        document.getElementById('wsButton').addEventListener('click', async function() {
+            if (wsRunning) { return; }
+            const busy = busyReason();
+            if (busy) { wsSay('Not now: ' + busy + '.', '#e67e22'); return; }
+            wsRunning = true;
+            document.getElementById('wsButton').disabled = true;
+            document.getElementById('wsResult').textContent = '';
+            try {
+                const d = await wsDownload();
+                const u = await wsUpload();
+                const dk = Math.round(wsMbit(d.bytes, d.ms) * 1000);
+                const uk = Math.round(wsMbit(u.bytes, u.ms) * 1000);
+                const bad = d.bad + u.bad;
+                document.getElementById('wsResult').textContent =
+                    'download   ' + (dk / 1000).toFixed(2) + ' Mbit/s, ' + (d.bytes / 1048576).toFixed(1) +
+                    ' MiB in ' + (d.ms / 1000).toFixed(1) + ' s\n' +
+                    'upload     ' + (uk / 1000).toFixed(2) + ' Mbit/s, ' + (u.bytes / 1048576).toFixed(1) +
+                    ' MiB in ' + (u.ms / 1000).toFixed(1) + ' s\n' +
+                    'integrity  ' + (bad ? bad + ' block(s) FAILED their CRC' : 'every block verified');
+                wsSay(bad ? 'Finished, but data came back corrupted.' : 'Finished.', bad ? '#e74c3c' : '#2ecc71');
+                await fetch('/selftest?wifispeed=1&down=' + dk + '&up=' + uk + '&bad=' + (bad ? 1 : 0),
+                            { cache: 'no-store' });
+                stPoll();
+            } catch (e) {
+                wsSay('Failed: ' + e, '#e74c3c');
+            }
+            wsRunning = false;
+            document.getElementById('wsButton').disabled = false;
+        });
+        function escHtml(v) {
+            return String(v === undefined || v === null ? '' : v).replace(/[&<>"]/g, function(c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+            });
+        }
+        function numOr(v, dflt) {
+            const n = parseInt(v, 10);
+            return Number.isFinite(n) ? n : dflt;
+        }
+        // Every paged endpoint answers with more=N meaning "call again from N".
+        // A device that answered with the same or a lower N would spin this
+        // forever and never settle the promise, leaving the caller's button
+        // dead, so the follow up must strictly advance and is depth capped.
+        function pageNext(info, from) {
+            const next = numOr(info.more, -1);
+            return next > from && next < 4096 ? next : -1;
+        }
         document.getElementById('downloadButton').addEventListener('click', function() {
             const data = [];
             const fwVersion = document.getElementById('fwversion').textContent;
@@ -149,16 +697,1043 @@
             document.body.appendChild(element);
             element.click();
             document.body.removeChild(element);
+            URL.revokeObjectURL(element.href);
         });
+        function setKeylogStatus(text) {
+            const el = document.getElementById('keylogStatus');
+            if (el) {
+                el.textContent = text;
+            }
+        }
+        async function keylogFetchAll() {
+            const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+            for (let restart = 0; restart < 6; restart++) {
+                let raw = '';
+                let from = 0;
+                let gen = null;
+                let rotated = false;
+                let stalls = 0;
+                for (let guard = 0; guard < 200000; guard++) {
+                    const r = await fetch('/keylog?from=' + from, { cache: 'no-store' });
+                    if (!r.ok) {
+                        throw new Error('HTTP ' + r.status);
+                    }
+                    const total = parseInt(r.headers.get('X-Keylog-Total') || '0', 10);
+                    const next = parseInt(r.headers.get('X-Keylog-Next') || '-1', 10);
+                    const g = parseInt(r.headers.get('X-Keylog-Gen') || '-1', 10);
+                    if (gen === null) {
+                        gen = g;
+                    } else if (g !== gen) {
+                        rotated = true;
+                        break;
+                    }
+                    const text = await r.text();
+                    if (text.length === 0) {
+                        // Either the real end of the log, or a transient read hiccup on the device.
+                        // Retry the same offset a few times before giving up, so one bad read never
+                        // truncates the download while reporting success.
+                        if (from < total && stalls < 5) {
+                            stalls++;
+                            await sleep(120);
+                            continue;
+                        }
+                        return raw;
+                    }
+                    stalls = 0;
+                    raw += text;
+                    setKeylogStatus('Downloading persistent log... ' + Math.min(from + text.length, total) + ' / ' + total + ' bytes');
+                    if (next >= total) {
+                        return raw;
+                    }
+                    from = next;
+                }
+                if (!rotated) {
+                    return raw;
+                }
+                setKeylogStatus('Log rotated mid-download, restarting from the top...');
+            }
+            throw new Error('the log kept rotating during download');
+        }
+        function decodePersistentLog(data) {
+            const saved = hidPrevKeys;
+            hidPrevKeys = [];
+            const decoded = parseKeyboardHID(data);
+            hidPrevKeys = saved;
+            return decoded;
+        }
+        const keylogDownloadBtn = document.getElementById('keylogDownload');
+        if (keylogDownloadBtn) {
+            keylogDownloadBtn.addEventListener('click', async function() {
+                const btn = this;
+                btn.disabled = true;
+                try {
+                    setKeylogStatus('Downloading persistent log...');
+                    const raw = await keylogFetchAll();
+                    if (raw.trim() === '') {
+                        setKeylogStatus('The persistent log is empty.');
+                        return;
+                    }
+                    let decoded;
+                    try {
+                        decoded = decodePersistentLog(raw);
+                    } catch (err) {
+                        decoded = '(decoding failed, the raw records below are intact: ' + err.message + ')';
+                    }
+                    const content = 'okhi persistent keystroke log\n\n=== decoded keys ===\n' + decoded + '\n\n=== raw wire records ===\n' + raw;
+                    const element = document.createElement('a');
+                    const file = new Blob([content], { type: 'text/plain' });
+                    const timestamp = new Date().toISOString().replace(/[-:.]/g, "");
+                    element.href = URL.createObjectURL(file);
+                    element.download = `okhi_keylog_${timestamp}.txt`;
+                    document.body.appendChild(element);
+                    element.click();
+                    document.body.removeChild(element);
+                    URL.revokeObjectURL(element.href);
+                    setKeylogStatus('Downloaded ' + raw.length + ' bytes of persistent log.');
+                } catch (e) {
+                    setKeylogStatus('Download failed: ' + e.message);
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+        }
+        const keylogClearBtn = document.getElementById('keylogClear');
+        if (keylogClearBtn) {
+            keylogClearBtn.addEventListener('click', async function() {
+                if (!window.confirm('Clear the persistent log stored on the device? This cannot be undone.')) {
+                    return;
+                }
+                const btn = this;
+                btn.disabled = true;
+                try {
+                    setKeylogStatus('Clearing persistent log...');
+                    const r = await fetch('/keylog?clear=1', { cache: 'no-store' });
+                    setKeylogStatus(r.ok ? 'Persistent log cleared.' : 'Clear failed: HTTP ' + r.status);
+                } catch (e) {
+                    setKeylogStatus('Clear failed: ' + e.message);
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+        }
+        let otaInProgress = false;
+        function setOtaStatus(text, color) {
+            const el = document.getElementById('otaStatus');
+            if (el) {
+                el.textContent = text;
+                el.style.color = color;
+            }
+        }
+        document.getElementById('otaButton').addEventListener('click', function() {
+            if (otaInProgress) {
+                return;
+            }
+            const busy = busyReason();
+            if (busy) {
+                setOtaStatus('Not now: ' + busy + '.', '#e67e22');
+                return;
+            }
+            const input = document.getElementById('otaFile');
+            const file = input && input.files && input.files[0];
+            if (!file) {
+                setOtaStatus('Pick the .pkg file first', '#e67e22');
+                return;
+            }
+            const button = document.getElementById('otaButton');
+            otaInProgress = true;
+            button.disabled = true;
+            setOtaStatus('Uploading 0% - do not power off', '#3498db');
+            const request = new XMLHttpRequest();
+            request.open('POST', '/ota', true);
+            // Without this a device that accepts the body and never replies
+            // leaves otaInProgress true, and that flag suppresses every capture
+            // poll on the page until the OS gives up on the socket.
+            request.timeout = 180000;
+            request.ontimeout = function() {
+                otaInProgress = false;
+                button.disabled = false;
+                setOtaStatus('The device stopped responding during the upload. The old firmware is still ' +
+                    'running, nothing was damaged.', '#e74c3c');
+            };
+            request.upload.onprogress = function(event) {
+                if (event.lengthComputable) {
+                    const percent = Math.floor((event.loaded / event.total) * 100);
+                    setOtaStatus('Uploading ' + percent + '% - do not power off', '#3498db');
+                }
+            };
+            request.onload = function() {
+                otaInProgress = false;
+                button.disabled = false;
+                if (request.status === 200) {
+                    setOtaStatus('Update accepted, the device is rebooting. Reconnect to the WiFi network and reload this page to confirm it. If you do not, it rolls back to the previous firmware in 5 minutes.', '#2ecc71');
+                } else {
+                    setOtaStatus('Rejected: ' + request.responseText.trim(), '#e74c3c');
+                }
+            };
+            request.onerror = function() {
+                otaInProgress = false;
+                button.disabled = false;
+                setOtaStatus('Upload failed, the connection dropped. The old firmware is still running, nothing was damaged.', '#e74c3c');
+            };
+            request.send(file);
+        });
+        let benchInProgress = false;
+        let benchTimer = null;
+        let benchToken = 0;
+        let benchMisses = 0;
+        const BENCH_PHASE = ['', ' ~', ' *'];
+        const BENCH_KIND_UART = 1;
+        function benchEl(id) {
+            return document.getElementById(id);
+        }
+        function setBenchStatus(text, color) {
+            const el = benchEl('benchStatus');
+            el.textContent = text;
+            el.style.color = color;
+        }
+        function benchMHz(khz) {
+            return (khz / 1000).toFixed(2) + ' MHz';
+        }
+        function benchTime(ms) {
+            const total = Math.round(ms / 1000);
+            const h = Math.floor(total / 3600);
+            const m = Math.floor((total % 3600) / 60);
+            const sec = total % 60;
+            if (h > 0) {
+                return h + ' h ' + ('0' + m).slice(-2) + ' m';
+            }
+            if (m > 0) {
+                return m + ' m ' + ('0' + sec).slice(-2) + ' s';
+            }
+            return sec + ' s';
+        }
+        function benchCell(value, bad) {
+            return '<td class="' + (bad ? 'fail' : '') + '">' + value + '</td>';
+        }
+        function benchRate(khz, uart) {
+            return uart ? (khz * 1000).toLocaleString() + ' bd' : benchMHz(khz);
+        }
+        // s = index, kHz, clk_peri kHz, frames, misoBad, misoLost, mosiBad, mosiLost,
+        //     espResync, offset, KB/s, pass, phase, rpResync
+        function benchReasons(s, uart) {
+            const out = [];
+            if (s[6] > 0) out.push(s[6] + ' corrupted RP->ESP');
+            if (s[7] > 0) out.push(s[7] + ' never reached the ESP');
+            if (s[4] > 0) out.push(s[4] + ' corrupted ESP->RP');
+            if (s[5] > 0) out.push(s[5] + ' never reached the RP');
+            if (uart) {
+                if (s[8] > 0) out.push(s[8] + ' bytes the ESP threw away resyncing');
+                if (s[13] > 0) out.push(s[13] + ' bytes the RP threw away resyncing');
+            } else {
+                if (s[8] > 0) out.push(s[8] + ' transfers the ESP was not ready for');
+                if (s[9] >= 32) out.push('magic offset hit ' + s[9] + '/32, the search window ran out');
+            }
+            if (!out.length) out.push('no error counted, the step never produced a frame');
+            return out.join(', ');
+        }
+        function benchRecipe(info) {
+            const khz = parseInt(info.best_khz || '0', 10);
+            const peri = parseInt(info.best_peri_khz || '0', 10);
+            const fbdiv = parseInt(info.best_fbdiv || '0', 10);
+            if (parseInt(info.kind || '0', 10) === BENCH_KIND_UART) {
+                return khz ? 'To ship this: RP_UART_BAUD ' + (khz * 1000) +
+                    ' in firmware/com/com.h, which both chips read.' : '';
+            }
+            if (!khz || !peri) {
+                return '';
+            }
+            const div = Math.round(peri / khz);
+            const pd1 = numOr(info.best_pd1, 0);
+            const pd2 = numOr(info.best_pd2, 0);
+            if (fbdiv > 0 && (pd1 === 0 || pd2 === 0)) {
+                return '';
+            }
+            let out = 'To ship ' + benchMHz(khz) + ': SPI_BAUD ' + (khz * 1000) + ', clk_peri ' + benchMHz(peri) +
+                ' divided by ' + div + '\n';
+            if (fbdiv > 0) {
+                out += 'clk_peri from the USB PLL: pll_init(pll_usb, 1, ' + (fbdiv * 12) + ' * MHZ, ' +
+                    pd1 + ', ' + pd2 + ')\n' +
+                    'then point clk_peri at CLKSRC_PLL_USB. Nothing else on this board uses that PLL.';
+            } else {
+                out += 'clk_peri straight from clk_sys, no PLL change needed.';
+            }
+            return out;
+        }
+        function renderBench(text, rows) {
+            const info = {};
+            const steps = rows || [];
+            text.split('\n').forEach(function(line) {
+                if (line.slice(0, 2) === 's=') {
+                    steps.push(line.slice(2).split(',').map(Number));
+                    return;
+                }
+                const sep = line.indexOf('=');
+                if (sep > 0) {
+                    info[line.slice(0, sep)] = line.slice(sep + 1).trim();
+                }
+            });
+            info.rows = steps;
+            if (info.more !== undefined) {
+                return info;
+            }
+            steps.sort(function(a, b) { return a[0] - b[0]; });
+            const soakStep = parseInt(info.soak_step || '255', 10);
+            const settled = info.state !== 'armed' && info.state !== 'running';
+            const uart = parseInt(info.kind || '0', 10) === BENCH_KIND_UART;
+            let html = '<tr><th>' + (uart ? 'baud' : 'SPI') + '</th><th>' + (uart ? 'resync' : 'clk_peri') +
+                '</th><th>frames</th><th>RP&rarr;ESP</th><th>ESP&rarr;RP</th>' +
+                '<th>' + (uart ? 'esp resync' : 'stalls') + '</th><th>' + (uart ? '&ndash;' : 'offset') +
+                '</th><th>KB/s</th><th>verdict</th></tr>';
+            const failures = [];
+            steps.forEach(function(s) {
+                // A row shorter than the format would put undefined into the
+                // markup and, on the confirmation row, throw out of the whole
+                // render and turn the poll into a permanent error loop.
+                if (s.length < 14 || !Number.isFinite(s[0])) {
+                    return;
+                }
+                const mosi = s[6] + s[7];
+                const miso = s[4] + s[5];
+                const soaked = s[0] === soakStep;
+                const pending = soaked && !settled;
+                const verdict = pending ? 'RUN' : (s[11] ? 'PASS' : 'FAIL');
+                html += '<tr class="' + (soaked ? 'soakrow' : '') + '">' +
+                    '<td>' + benchRate(s[1], uart) + (BENCH_PHASE[s[12]] || '') + '</td>' +
+                    (uart ? benchCell(s[13], s[13] > 0) : '<td>' + benchMHz(s[2]) + '</td>') +
+                    '<td>' + s[3] + '</td>' +
+                    benchCell(mosi, mosi > 0) +
+                    benchCell(miso, miso > 0) +
+                    benchCell(s[8], s[8] > 0) +
+                    (uart ? '<td>&ndash;</td>' : benchCell(s[9] + '/32', s[9] >= 32)) +
+                    '<td>' + s[10] + '</td>' +
+                    '<td class="' + (pending ? '' : (s[11] ? 'pass' : 'fail')) + '">' + verdict + '</td>' +
+                    '</tr>';
+                if (!s[11] && !pending) {
+                    failures.push(benchRate(s[1], uart) + (soaked ? ' (confirmation)' : '') + ' FAILED: ' +
+                        benchReasons(s, uart));
+                }
+            });
+            benchEl('benchTable').innerHTML = steps.length ? html : '';
+            benchEl('benchWhy').textContent = failures.join('\n');
+            const best = parseInt(info.best_khz || '0', 10);
+            const next = parseInt(info.next_khz || '0', 10);
+            const soakKhz = parseInt(info.soak_khz || '0', 10);
+            const soakMs = parseInt(info.soak_ms || '0', 10);
+            const soakDone = parseInt(info.soak_elapsed_ms || '0', 10);
+            const soakRow = steps.filter(function(s) { return s[0] === soakStep; })[0];
+            const summary = benchEl('benchSummary');
+            benchEl('benchRecipe').textContent = settled && best > 0 ? benchRecipe(info) : '';
+            if (settled && soakRow && soakRow[11]) {
+                summary.textContent = 'Confirmed: ' + benchRate(soakRow[1], uart) + ' held for ' + benchTime(soakDone) +
+                    ' and ' + numOr(soakRow[3], 0).toLocaleString() + ' frames without losing or corrupting a single one' +
+                    (next > 0 ? '. The next rate tried, ' + benchRate(next, uart) + ', failed.' : '.');
+                summary.style.color = '#2ecc71';
+            } else if (settled && soakRow) {
+                summary.textContent = 'NOT confirmed: ' + benchRate(soakRow[1], uart) + ' failed after ' +
+                    benchTime(soakDone) + ' of confirmation.';
+                summary.style.color = '#e74c3c';
+            } else if (settled && best > 0) {
+                summary.textContent = 'Highest clean step: ' + benchRate(best, uart) + ' (screened only, not confirmed)';
+                summary.style.color = '#e67e22';
+            } else if (settled && steps.length) {
+                summary.textContent = 'No step passed, this board is not reliable at any clock that was tried';
+                summary.style.color = '#e74c3c';
+            } else if (soakStep !== 255 && soakMs > 0) {
+                summary.textContent = 'Confirming ' + benchRate(soakKhz, uart) + ': ' + benchTime(soakDone) + ' of ' +
+                    benchTime(soakMs) + ', ' + Math.floor(soakMs ? soakDone * 100 / soakMs : 0) + '%';
+                summary.style.color = '';
+            } else if (best > 0) {
+                summary.textContent = 'Best so far: ' + benchRate(best, uart);
+                summary.style.color = '';
+            } else {
+                summary.textContent = '';
+            }
+            const sys = parseInt(info.sys_khz || '0', 10);
+            const native = parseInt(info.native_peri_khz || '0', 10);
+            let note = '';
+            if (uart) {
+                note = 'Both chips ran the standard baud ladder in lockstep, agreed over SPI. Rows marked * are ' +
+                    'the confirmation.';
+            } else if (sys > 0) {
+                note = 'RP system clock during the run ' + benchMHz(sys) + ', clk_peri normally ' + benchMHz(native) +
+                    '. Rows marked ~ come from the refinement search and * is the confirmation.';
+            }
+            benchEl('benchNote').textContent = note;
+            info.soakStep = soakStep;
+            return info;
+        }
+        // Forty rows do not fit in one reply, so the device pages them and says
+        // where to carry on. Everything is merged before anything is drawn.
+        function benchFetch(from, rows) {
+            const url = from ? '/spibench?from=' + from : '/spibench';
+            return fetch(url, { cache: 'no-store' })
+                .then(response => response.text())
+                .then(text => {
+                    const info = renderBench(text, rows);
+                    const next = pageNext(info, from);
+                    if (next >= 0) {
+                        return benchFetch(next, info.rows);
+                    }
+                    // A more= that does not advance is a device bug, not
+                    // something to chase. The table simply misses this tick and
+                    // the next poll tries again, which beats spinning forever.
+                    return info;
+                });
+        }
+        function benchStop() {
+            benchInProgress = false;
+            // Bumping the token orphans any poll already in flight. clearTimeout
+            // cannot reach a fetch that has already left, and without this the
+            // stale reply reschedules itself and a poll loop keeps running with
+            // nobody owning it.
+            benchToken++;
+            benchMisses = 0;
+            clearTimeout(benchTimer);
+            benchTimer = null;
+            const button = benchEl('benchButton');
+            button.disabled = false;
+            button.textContent = 'Run the sweep';
+        }
+        function benchFinish(info) {
+            benchStop();
+            if (info.state === 'done') {
+                setBenchStatus('Run finished, ' + numOr(info.done, 0) + ' points measured. Capture is running ' +
+                    'again.', '#2ecc71');
+            } else if (info.state === 'timeout') {
+                setBenchStatus('The RP stopped answering. It may be running older firmware that does not know this ' +
+                    'benchmark. Nothing was damaged, the clock tree is back to normal.', '#e74c3c');
+            } else if (info.state === 'aborted') {
+                setBenchStatus('Run stopped early. Whatever was measured is in the table below.', '#e67e22');
+            } else {
+                setBenchStatus('', '');
+            }
+        }
+        function benchSchedule(delay) {
+            clearTimeout(benchTimer);
+            benchTimer = setTimeout(pollBench, delay);
+        }
+        function pollBench() {
+            const mine = benchToken;
+            benchFetch(0, [])
+                .then(info => {
+                    if (mine !== benchToken) {
+                        return;
+                    }
+                    benchMisses = 0;
+                    const soaking = info.soakStep !== 255;
+                    if (info.state === 'armed') {
+                        setBenchStatus('Waiting for the RP to pick the run up...', '#3498db');
+                        benchSchedule(600);
+                        return;
+                    }
+                    if (info.state === 'running') {
+                        setBenchStatus(soaking
+                            ? 'Confirming the winner. Capture stays suspended for the whole time, and the run ' +
+                              'survives closing this page.'
+                            : 'Searching for the ceiling, ' + numOr(info.done, 0) +
+                              ' points measured - capture is suspended', '#3498db');
+                        benchSchedule(soaking ? 2000 : 600);
+                        return;
+                    }
+                    benchFinish(info);
+                })
+                .catch(error => {
+                    console.error('Error polling the benchmark:', error);
+                    if (mine !== benchToken) {
+                        return;
+                    }
+                    if (++benchMisses > 20) {
+                        benchStop();
+                        setBenchStatus('Lost contact with the device. Whatever was measured is below; the run ' +
+                            'may still be going on the device itself.', '#e74c3c');
+                        return;
+                    }
+                    benchSchedule(1500);
+                });
+        }
+        function benchAttach() {
+            benchInProgress = true;
+            const button = benchEl('benchButton');
+            button.disabled = false;
+            button.textContent = 'Stop the run';
+            benchSchedule(400);
+        }
+        benchEl('benchButton').addEventListener('click', function() {
+            if (otaInProgress) {
+                return;
+            }
+            const busy = busyReason();
+            if (busy && !benchInProgress) {
+                setBenchStatus('Not now: ' + busy + '.', '#e67e22');
+                return;
+            }
+            if (benchInProgress) {
+                benchEl('benchButton').disabled = true;
+                setBenchStatus('Stopping...', '#e67e22');
+                fetch('/spibench?abort=1', { cache: 'no-store' })
+                    .then(() => benchFetch(0, []))
+                    .then(info => benchFinish(info))
+                    .catch(() => benchStop());
+                return;
+            }
+            const query = '/spibench?start=1' +
+                '&ms=' + benchEl('benchMs').value +
+                '&min=' + benchEl('benchMin').value +
+                '&max=' + benchEl('benchMax').value +
+                '&steps=' + benchEl('benchSteps').value +
+                '&soak=' + benchEl('benchSoak').value +
+                '&down=' + benchEl('benchDown').value +
+                '&oc=' + (benchEl('benchOc').checked ? 1 : 0) +
+                '&kind=' + benchEl('benchKind').value;
+            benchEl('benchTable').innerHTML = '';
+            benchEl('benchSummary').textContent = '';
+            benchEl('benchWhy').textContent = '';
+            benchEl('benchRecipe').textContent = '';
+            benchEl('benchNote').textContent = '';
+            setBenchStatus('Arming the run...', '#3498db');
+            benchEl('benchButton').disabled = true;
+            fetch(query, { cache: 'no-store' })
+                .then(response => response.text().then(text => ({ ok: response.ok, text: text })))
+                .then(result => {
+                    if (!result.ok) {
+                        benchStop();
+                        setBenchStatus('Rejected: ' + result.text.trim(), '#e74c3c');
+                        return;
+                    }
+                    benchAttach();
+                })
+                .catch(error => {
+                    benchStop();
+                    setBenchStatus('Could not reach the device: ' + error, '#e74c3c');
+                });
+        });
+        // The two links measure different quantities, so the pickers are rebuilt
+        // rather than reinterpreted: kHz of SPI clock on one, baud on the other.
+        const BENCH_RANGE = {
+            0: {
+                min: [[500, '0.5 MHz'], [1000, '1 MHz'], [2000, '2 MHz'], [4000, '4 MHz']],
+                max: [[12000, '12 MHz'], [24000, '24 MHz'], [30000, '30 MHz'], [40000, '40 MHz'],
+                      [60000, '60 MHz']],
+                minDefault: 1000, maxDefault: 24000
+            },
+            1: {
+                min: [[9600, '9600 bd'], [19200, '19200 bd'], [38400, '38400 bd'], [74880, '74880 bd'],
+                      [115200, '115200 bd']],
+                max: [[115200, '115200 bd'], [230400, '230400 bd'], [460800, '460800 bd'], [921600, '921600 bd'],
+                      [1500000, '1.5 Mbd'], [2000000, '2 Mbd'], [3000000, '3 Mbd']],
+                maxDefault: 921600, minDefault: 9600
+            }
+        };
+        function benchFillSelect(el, items, chosen) {
+            let html = '';
+            items.forEach(function(it) {
+                html += '<option value="' + it[0] + '"' + (it[0] === chosen ? ' selected' : '') + '>' + it[1] +
+                    '</option>';
+            });
+            el.innerHTML = html;
+        }
+        function benchKindChanged() {
+            const kind = benchEl('benchKind').value === '1' ? 1 : 0;
+            const r = BENCH_RANGE[kind];
+            benchFillSelect(benchEl('benchMin'), r.min, r.minDefault);
+            benchFillSelect(benchEl('benchMax'), r.max, r.maxDefault);
+            benchEl('benchOc').disabled = kind === 1;
+            benchEl('benchMin').disabled = false;
+            benchEl('benchMax').disabled = false;
+        }
+        benchEl('benchKind').addEventListener('change', benchKindChanged);
+        benchKindChanged();
+        // A run outlives the page: a three hour confirmation keeps going if the tab
+        // is closed, so a fresh load has to notice one is still in flight.
+        function benchResume() {
+            benchFetch(0, [])
+                .then(info => {
+                    if (info.state === 'armed' || info.state === 'running') {
+                        benchAttach();
+                    }
+                })
+                .catch(() => {});
+        }
+        let stTimer = null;
+        let stBusy = false;
+        let stToken = 0;
+        let stMisses = 0;
+        let stBlinked = {};
+        const ST_STATUS = ['PASS', 'FAIL', 'WARN', 'SKIP', 'INFO', 'ASK'];
+        const ST_CLASS = ['pass', 'fail', 'fail', '', '', ''];
+        // id -> what it is, and where to look on the board when it fails
+        const ST_NAME = {
+            0x01: ['RP firmware', ''],
+            0x02: ['Hardware straps', 'GPIO4 and GPIO5, the version resistors'],
+            0x03: ['RP flash id', 'U3 W25Q128, its QSPI joints'],
+            0x04: ['RP flash size', 'U3 W25Q128'],
+            0x05: ['RP flash write', 'U3 W25Q128, marginal QSPI joint'],
+            0x06: ['clk_sys', 'U4 TCXO and the RP2040 PLL'],
+            0x07: ['clk_peri', ''],
+            0x08: ['clk_usb', ''],
+            0x09: ['clk_adc', ''],
+            0x0A: ['TCXO 12 MHz', 'U4 ATXAIG-H12, XIN'],
+            0x0B: ['Ring oscillator', ''],
+            0x0C: ['ADC on GPIO27', ''],
+            0x0D: ['RP die temperature', 'the ADC reference'],
+            0x0E: ['GPIO drive', 'a pin welded to a rail'],
+            0x0F: ['GPIO pulls', 'a pin welded to a rail'],
+            0x10: ['GPIO bridges', 'solder bridge between two RP pads'],
+            0x11: ['USB switch', 'U1 TS3USB3000, SEL and OE'],
+            0x12: ['Sniff lines', 'U1 TS3USB3000 outputs, GPIO20 and GPIO21'],
+            0x13: ['OTA metadata', ''],
+            0x14: ['LED2 near the RP', 'LED2 and its series resistor'],
+            0x15: ['Pins restored', 'every pin the sweep borrowed is back as it was'],
+            0x16: ['Switch D+/DAT line', 'U1 pass-through and bridge check, ground wire'],
+            0x17: ['Switch D-/CLK line', 'U1 pass-through and bridge check, ground wire'],
+            0x40: ['EBOOT net', 'RP GPIO14 to ESP IO9'],
+            0x41: ['ELOG net', 'ESP IO8 to RP GPIO15'],
+            0x42: ['SPI link', 'SCLK, MOSI, MISO and CS between the chips'],
+            0x43: ['UART link', 'RP GPIO16/17 to ESP IO19/20'],
+            0x44: ['CHIP_PU net', 'R10, R7 and the ESP EN pin'],
+            0x80: ['ESP firmware', ''],
+            0x81: ['ESP chip', 'U6 ESP8684-MINI-1'],
+            0x82: ['ESP MAC', 'U6 efuses'],
+            0x83: ['ESP flash', 'U6 internal flash'],
+            0x84: ['ESP memory', ''],
+            0x85: ['ESP last reset', ''],
+            0x86: ['ESP partitions', ''],
+            0x87: ['ESP filesystem', ''],
+            0x88: ['WiFi', 'the antenna and its matching'],
+            0x89: ['ESP SPI counters', ''],
+            0x8A: ['LED1 near the ESP', 'LED1 and R8 470R'],
+            0x8B: ['WiFi speed', 'measured from the browser, both directions'],
+        };
+        function stEl(id) {
+            return document.getElementById(id);
+        }
+        function stFetch(from, rows) {
+            return fetch(from ? '/selftest?from=' + from : '/selftest', { cache: 'no-store' })
+                .then(response => response.text())
+                .then(text => {
+                    const info = {};
+                    const out = rows || [];
+                    text.split('\n').forEach(function(line) {
+                        if (line.slice(0, 2) === 't=') {
+                            const bits = line.slice(2).split(',');
+                            out.push({
+                                id: parseInt(bits[0], 10), status: parseInt(bits[1], 10),
+                                a: parseInt(bits[2], 10), b: parseInt(bits[3], 10),
+                                text: bits.slice(4).join(',')
+                            });
+                            return;
+                        }
+                        const sep = line.indexOf('=');
+                        if (sep > 0) {
+                            info[line.slice(0, sep)] = line.slice(sep + 1).trim();
+                        }
+                    });
+                    info.rows = out;
+                    const next = pageNext(info, from);
+                    if (next >= 0) {
+                        return stFetch(next, out);
+                    }
+                    delete info.more;
+                    return info;
+                });
+        }
+        function stRenderRows(info) {
+            let html = '';
+            info.rows.forEach(function(r) {
+                const known = ST_NAME[r.id] || ['test 0x' + r.id.toString(16), ''];
+                const bad = r.status === 1;
+                // r.text comes from the device. The firmware strips commas so
+                // the row parses, but not angle brackets, so one message worded
+                // with an arrow would swallow the rest of the list into a tag.
+                html += '<div class="st"><b class="' + (ST_CLASS[r.status] || '') + '">' +
+                    (ST_STATUS[r.status] || '?') + '</b><span>' + escHtml(known[0]) +
+                    '<i>' + escHtml(r.text) + (bad && known[1] ? ' &mdash; check ' + escHtml(known[1]) : '') +
+                    '</i></span></div>';
+            });
+            stEl('stRows').innerHTML = html;
+        }
+        function stAskBlock(info) {
+            // The two LEDs are the only things on this board no amount of firmware
+            // can check, so they are asked rather than guessed at.
+            const answered = {};
+            info.rows.forEach(function(r) {
+                if ((r.id === 0x14 || r.id === 0x8A) && r.status !== 5) {
+                    answered[r.id] = true;
+                }
+            });
+            const pending = [];
+            if (!answered[0x14]) pending.push([0x14, 1, 'LED2, the one next to the RP2040']);
+            if (!answered[0x8A]) pending.push([0x8A, 2, 'LED1, the one next to the ESP module']);
+            if (info.state !== 'done' || !pending.length) {
+                stEl('stAsk').innerHTML = '';
+                return;
+            }
+            const q = pending[0];
+            stEl('stAsk').innerHTML = '<div class="ask"><p>Is ' + q[2] + ' blinking?</p><div class="row">' +
+                '<button data-led="' + q[1] + '" data-ok="1">Yes</button>' +
+                '<button class="no" data-led="' + q[1] + '" data-ok="0">No</button>' +
+                '<button class="again" data-blink="' + q[1] + '">Blink again</button></div></div>';
+            stEl('stAsk').querySelectorAll('button').forEach(function(b) {
+                b.addEventListener('click', function() {
+                    const led = b.getAttribute('data-led');
+                    const url = led ? '/selftest?led=' + led + '&ok=' + b.getAttribute('data-ok')
+                                    : '/selftest?blink=' + b.getAttribute('data-blink');
+                    fetch(url, { cache: 'no-store' }).then(() => stPoll()).catch(() => {});
+                });
+            });
+            // pending is rebuilt from fresh literals on every render, so a
+            // latch stored on it never survives. Keyed outside, it does, and the
+            // LED stops restarting its pattern every time the table redraws.
+            if (!stBlinked[q[1]]) {
+                stBlinked[q[1]] = true;
+                fetch('/selftest?blink=' + q[1], { cache: 'no-store' }).catch(() => {});
+            }
+        }
+        // The USB switch is the one part a purely electrical sweep cannot fully prove: with
+        // nothing attached, both sides of it read the same. Grounding one line at a time with
+        // a dupont wire settles it, and doing them one at a time is what catches a bridge
+        // between the two neighbouring pins, since the other line has to stay up.
+        let stProbePending = 0;
+        let stProbeWaitedMs = 0;
+        function stSwProbeBlock(info) {
+            const done = {};
+            info.rows.forEach(function(r) {
+                // status 4 is the in progress marker the ESP writes the moment it accepts
+                // the request. Counting it as a result is what made the page show the
+                // previous wire's verdict: the reply is most of a second away, and the old
+                // row is indistinguishable from a new one while it is still sitting there.
+                if ((r.id === 0x16 || r.id === 0x17) && r.status !== 4) { done[r.id] = r; }
+            });
+            if (stProbePending && done[stProbePending === 1 ? 0x16 : 0x17]) { stProbePending = 0; }
+            const step = stProbePending
+                ? stProbePending
+                : (!done[0x16] ? 1 : (!done[0x17] ? 2 : 0));
+            const line = step === 1 ? 'D+ (DATA on a PS/2 board)' : 'D- (CLOCK on a PS/2 board)';
+            let html = '<div class="ask"><p><b>USB switch check, one wire at a time.</b> ' +
+                'Only for boards that carry the TS3USB3000; older ones without it can skip this.</p>';
+            if (step) {
+                html += '<p>Unplug the target keyboard, then bridge <b>' + line + '</b> on the sniff header ' +
+                    'to <b>GND</b> with a single dupont wire and press Check. Leave the other line alone: it has ' +
+                    'to stay up, which is how a bridge between the two pins gets caught.</p>' +
+                    '<div class="row"><button data-probe="' + step + '">Check ' + (step === 1 ? 'D+' : 'D-') +
+                    '</button>' + (step === 2 ? '<button class="again" data-probe="1">Redo D+</button>' : '') +
+                    '</div>';
+            } else {
+                html += '<p>Both lines checked. Remove the wire; the switch is back the way it was and the ' +
+                    'board is sniffing again.</p><div class="row">' +
+                    '<button class="again" data-probe="1">Run D+ again</button>' +
+                    '<button class="again" data-probe="2">Run D- again</button></div>';
+            }
+            html += '</div>';
+            stEl('stSwProbe').innerHTML = html;
+            stEl('stSwProbe').querySelectorAll('button').forEach(function(b) {
+                b.addEventListener('click', function() {
+                    const which = parseInt(b.getAttribute('data-probe'), 10);
+                    stProbePending = which;
+                    b.disabled = true;
+                    // The RP answers around 600 ms later and the old code polled once at
+                    // exactly 600, so it usually read the table one beat too early. Poll
+                    // until the verdict actually lands instead of guessing the latency.
+                    // fetch only rejects on a network failure, so a 409 (a probe already
+                    // pending) or a 400 arrived here as success and the page sat waiting for
+                    // a verdict that was never coming, with the button disabled for good.
+                    // Check the status, and put the button back in every failing path.
+                    fetch('/selftest?swprobe=' + which, { cache: 'no-store' })
+                        .then(function(r) {
+                            if (!r.ok) {
+                                stProbePending = 0;
+                                b.disabled = false;
+                                return r.text().then(function(t) {
+                                    stEl('stStatus').textContent = 'Probe refused: ' + t.trim();
+                                    stEl('stStatus').style.color = '#e67e22';
+                                });
+                            }
+                            stProbeWaitedMs = 0;
+                            setTimeout(stPoll, 250);
+                        })
+                        .catch(function() {
+                            stProbePending = 0;
+                            b.disabled = false;
+                            stEl('stStatus').textContent = 'Could not reach the device.';
+                            stEl('stStatus').style.color = '#e74c3c';
+                        });
+                });
+            });
+        }
+        function stRender(info) {
+            stRenderRows(info);
+            const fail = parseInt(info.fail || '0', 10);
+            const warn = parseInt(info.warn || '0', 10);
+            const pass = parseInt(info.pass || '0', 10);
+            const v = stEl('stVerdict');
+            if (info.state === 'running') {
+                v.textContent = 'Running, ' + numOr(info.count, 0) + ' checks so far. Capture is suspended.';
+                v.style.color = '';
+            } else if (info.state === 'timeout') {
+                v.textContent = 'The RP stopped answering part way through. That is itself a finding: the SPI link ' +
+                    'or the RP firmware is not healthy.';
+                v.style.color = '#e74c3c';
+            } else if (info.state === 'done' && fail === 0 && warn === 0) {
+                v.textContent = 'All ' + pass + ' checks passed. No assembly fault found.';
+                v.style.color = '#2ecc71';
+            } else if (info.state === 'done' && fail === 0) {
+                v.textContent = pass + ' passed, ' + warn + ' worth a look. Nothing is broken outright.';
+                v.style.color = '#e67e22';
+            } else if (info.state === 'done') {
+                v.textContent = fail + ' FAILED, ' + warn + ' warnings, ' + pass +
+                    ' passed. Read the failing lines below, each names what to inspect.';
+                v.style.color = '#e74c3c';
+            } else {
+                v.textContent = '';
+            }
+            stAskBlock(info);
+            stSwProbeBlock(info);
+        }
+        function stPoll() {
+            const mine = stToken;
+            stFetch(0, [])
+                .then(info => {
+                    if (mine !== stToken) {
+                        return;
+                    }
+                    stMisses = 0;
+                    stRender(info);
+                    if (info.state === 'running') {
+                        clearTimeout(stTimer);
+                        stTimer = setTimeout(stPoll, 700);
+                        return;
+                    }
+                    // A switch probe leaves the run idle, so without this the page stopped
+                    // asking after a single try and kept whatever the table held. The ESP
+                    // gives up on its own after ST_PROBE_TIMEOUT_MS and writes a verdict,
+                    // so this cannot spin forever.
+                    if (stProbePending) {
+                        stProbeWaitedMs += 250;
+                        if (stProbeWaitedMs < 12000) {
+                            clearTimeout(stTimer);
+                            stTimer = setTimeout(stPoll, 250);
+                            return;
+                        }
+                        stProbePending = 0;
+                    }
+                    stBusy = false;
+                    stEl('stButton').disabled = false;
+                    stEl('stStatus').textContent = '';
+                })
+                .catch(() => {
+                    if (mine !== stToken) {
+                        return;
+                    }
+                    // Without a cap this polls a dead device for the life of the
+                    // tab with the button disabled and nothing said about it.
+                    if (++stMisses > 20) {
+                        stBusy = false;
+                        stEl('stButton').disabled = false;
+                        stEl('stStatus').textContent = 'Lost contact with the device.';
+                        stEl('stStatus').style.color = '#e74c3c';
+                        return;
+                    }
+                    clearTimeout(stTimer);
+                    stTimer = setTimeout(stPoll, 1500);
+                });
+        }
+        stEl('stButton').addEventListener('click', function() {
+            if (stBusy) {
+                return;
+            }
+            const busy = busyReason();
+            if (busy) {
+                stEl('stStatus').textContent = 'Not now: ' + busy + '.';
+                stEl('stStatus').style.color = '#e67e22';
+                return;
+            }
+            stToken++;
+            stMisses = 0;
+            stBlinked = {};
+            stBusy = true;
+            stEl('stButton').disabled = true;
+            stEl('stRows').innerHTML = '';
+            stEl('stAsk').innerHTML = '';
+            stEl('stVerdict').textContent = '';
+            stEl('stStatus').textContent = 'Starting...';
+            stEl('stStatus').style.color = '#3498db';
+            const q = '/selftest?start=1&flash=' + (stEl('stFlash').checked ? 1 : 0) +
+                '&sw=' + (stEl('stSwitch').checked ? 1 : 0);
+            fetch(q, { cache: 'no-store' })
+                .then(response => response.text().then(text => ({ ok: response.ok, text: text })))
+                .then(result => {
+                    if (!result.ok) {
+                        stBusy = false;
+                        stEl('stButton').disabled = false;
+                        stEl('stStatus').textContent = 'Rejected: ' + result.text.trim();
+                        stEl('stStatus').style.color = '#e74c3c';
+                        return;
+                    }
+                    stPoll();
+                })
+                .catch(error => {
+                    stBusy = false;
+                    stEl('stButton').disabled = false;
+                    stEl('stStatus').textContent = 'Could not reach the device: ' + error;
+                    stEl('stStatus').style.color = '#e74c3c';
+                });
+        });
+        function wifiRender(info) {
+            const ip = info.ip && info.ip !== '0.0.0.0' ? info.ip : 'none yet';
+            const ssidText = info.ssid || '(none set)';
+            const line = info.state === 'connected'
+                ? 'Client on ' + ssidText + ', address ' + ip
+                : (info.state === 'connecting'
+                    ? 'Trying to join ' + ssidText + '...'
+                    : 'Access point ' + (info.ap_ssid || '?') + ', address ' + ip);
+            document.getElementById('wifiNow').textContent = line +
+                (info.forced_ap === '1'
+                    ? '\nCould not join ' + ssidText + ' twice, so it fell back to an access point.'
+                    : '') +
+                '\nSettings were stored by the firmware built ' + (info.build || '?');
+            const mode = document.getElementById('wifiMode');
+            if (document.activeElement !== mode && !mode.dataset.touched) {
+                mode.value = info.mode === 'sta' ? '1' : '0';
+            }
+            const passField = document.getElementById('wifiPass');
+            passField.placeholder = info.haspass === '1'
+                ? 'a password is stored, leave blank to keep it'
+                : 'no password stored';
+            const ssid = document.getElementById('wifiSsid');
+            if (document.activeElement !== ssid && !ssid.dataset.touched) {
+                ssid.value = info.ssid || '';
+            }
+        }
+        function wifiLoad() {
+            fetch('/wifi', { cache: 'no-store' })
+                .then(response => response.text())
+                .then(text => wifiRender(parseKeyValues(text)))
+                .catch(() => {});
+        }
+        document.getElementById('wifiSsid').addEventListener('input', function() {
+            this.dataset.touched = '1';
+        });
+        // Without this the 15 s refresh silently reverts the mode the moment
+        // focus moves to the name field, and Save then writes the old mode.
+        document.getElementById('wifiMode').addEventListener('change', function() {
+            this.dataset.touched = '1';
+        });
+        document.getElementById('wifiSave').addEventListener('click', function() {
+            const button = this;
+            const mode = document.getElementById('wifiMode').value;
+            const ssid = document.getElementById('wifiSsid').value;
+            const pass = document.getElementById('wifiPass').value;
+            const el = document.getElementById('wifiStatus');
+            if (button.disabled) {
+                return;
+            }
+            // This reboots the device about a second later. Doing that during an
+            // upload cuts the write off half way through.
+            const busy = busyReason();
+            if (busy) {
+                el.textContent = 'Not now: ' + busy + '. Saving reboots the device.';
+                el.style.color = '#e67e22';
+                return;
+            }
+            if (mode === '1' && ssid.trim() === '') {
+                el.textContent = 'A network name is needed to join one.';
+                el.style.color = '#e67e22';
+                return;
+            }
+            if (pass !== '' && pass.length < 8) {
+                el.textContent = 'A password must be at least 8 characters, or empty for an open network.';
+                el.style.color = '#e67e22';
+                return;
+            }
+            el.textContent = 'Saving...';
+            el.style.color = '#3498db';
+            button.disabled = true;
+            // An ABSENT pass keeps whatever is stored, an empty one clears it.
+            // The field is never pre-filled, so sending it blank every time
+            // would destroy the credential of anyone who only changed the mode.
+            // An absent pass= means "keep the stored one", which is what a blank field has to
+            // mean or changing only the mode would wipe the credential. That left no way at
+            // all to say "this network has no password", so an open network could never be
+            // joined even though the firmware handles one fine. The checkbox sends an
+            // explicitly EMPTY pass=, which is a different thing from omitting it.
+            const openNet = document.getElementById('wifiOpen').checked;
+            const q = '/wifi?save=1&mode=' + mode + '&ssid=' + encodeURIComponent(ssid) +
+                (openNet ? '&pass=' : (pass === '' ? '' : '&pass=' + encodeURIComponent(pass)));
+            fetch(q, { cache: 'no-store' })
+                .then(response => response.text().then(text => ({ ok: response.ok, text: text })))
+                .then(result => {
+                    el.textContent = result.ok
+                        ? 'Saved. The device is rebooting, reconnect to it in a few seconds.'
+                        : 'Rejected: ' + result.text.trim();
+                    el.style.color = result.ok ? '#2ecc71' : '#e74c3c';
+                    if (!result.ok) {
+                        button.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    el.textContent = 'Could not reach the device: ' + error;
+                    el.style.color = '#e74c3c';
+                    button.disabled = false;
+                });
+        });
+        function parseKeyValues(text) {
+            const out = {};
+            text.split('\n').forEach(function(line) {
+                const sep = line.indexOf('=');
+                if (sep > 0) {
+                    out[line.slice(0, sep)] = line.slice(sep + 1).trim();
+                }
+            });
+            return out;
+        }
+        function getVersions() {
+            fetch('/versions', { cache: 'no-store' })
+                .then(response => response.text())
+                .then(text => {
+                    const v = parseKeyValues(text);
+                    const el = document.getElementById('buildinfo');
+                    if (!el) {
+                        return;
+                    }
+                    const espLine = 'ESP  v' + (v.esp_version || '?') + '  ' + (v.esp_build || '?') +
+                        '  [' + (v.esp_variant || '?') + ', ' + (v.esp_partition || '?') +
+                        ', idf ' + (v.esp_idf || '?') + ']';
+                    const rpLine = 'RP   ' + (v.rp_identity ? v.rp_identity : 'NO LINK to the RP') +
+                        (v.rp_hardware ? '  [hw ' + v.rp_hardware + ']' : '');
+                    const webLine = webStampLine();
+                    const resets = v.reset_times || '0';
+                    updateResetTimes(resets);
+                    const rstLine = 'RST  ' + resets + ' since the last flash';
+                    let statusLine = '';
+                    if (v.link === 'protocol mismatch') {
+                        statusLine = '\nSPI PROTOCOL MISMATCH: esp speaks v' + v.esp_proto +
+                            ', rp speaks v' + v.rp_proto + ' - reflash the older side';
+                    } else if (v.link === 'stale') {
+                        statusLine = '\nSPI LINK STALE: the rp stopped polling - check the cable or power cycle';
+                    } else if (v.link === 'no rp seen') {
+                        statusLine = '\nNO SPI LINK: the esp has never seen a frame from the rp';
+                    } else if (v.rp_variant && v.esp_variant && v.rp_variant !== v.esp_variant) {
+                        statusLine = '\nVARIANT MISMATCH: the esp runs ' + v.esp_variant +
+                            ' firmware and the rp runs ' + v.rp_variant + ' - one of them is the wrong build';
+                    }
+                    el.textContent = espLine + '\n' + rpLine + '\n' + webLine + '\n' + rstLine + statusLine;
+                })
+                .catch(error => {
+                    console.error('Could not read the version info, retrying...', error);
+                });
+        }
         function getFirmVersion() {
             fetch('/ver')
                 .then(response => response.text())
                 .then(version => {
-                    const fwEl = document.getElementById('fwversion');
-                    fwEl.textContent = "Firmware v" + version;
+                    if (version.trim() === '') {
+                        setTimeout(getFirmVersion, 2000);
+                        return;
+                    }
+                    document.getElementById('fwversion').textContent = "Firmware v" + version;
                 })
                 .catch(error => {
-                    console.error('Error al obtener la FW versión, reintentando...', error);
+                    console.error('Could not read the firmware version, retrying...', error);
                     setTimeout(getFirmVersion, 4000);
                 });
         }
@@ -166,21 +1741,27 @@
             fetch('/hwver')
                 .then(response => response.text())
                 .then(version => {
-                    const hwEl = document.getElementById('hwversion');
-                    hwEl.textContent = "Hardware " + version;
+                    if (version.trim() === '') {
+                        setTimeout(getHwVersion, 2000);
+                        return;
+                    }
+                    document.getElementById('hwversion').textContent = "Hardware " + version;
                 })
                 .catch(error => {
-                    console.error('Error al obtener la HW versión, reintentando...', error);
+                    console.error('Could not read the hardware version, retrying...', error);
                     setTimeout(getHwVersion, 4500);
                 });
         }
         function fetchEsp() {
+            if (otaInProgress || benchInProgress) {
+                return;
+            }
             fetch('/esp')
             .then(response => response.text())
             .then(data => {
                 let espArea = document.getElementById('EspbufferData');
                 if (espArea && data.trim() !== '') {
-                    espArea.value = data + '\n' + espArea.value;
+                    areaAppend(espArea, data, true);
                 }
             })
             .catch(error => {
@@ -188,12 +1769,15 @@
             });
         }
         function fetchRp() {
+            if (otaInProgress || benchInProgress) {
+                return;
+            }
             fetch('/rp')
             .then(response => response.text())
             .then(data => {
                 let rpArea = document.getElementById('RpbufferData');
                 if (rpArea && data.trim() !== '') {
-                    rpArea.value = data + '\n' + rpArea.value;
+                    areaAppend(rpArea, data, true);
                 }
             })
             .catch(error => {
@@ -211,78 +1795,284 @@
             });
             return resultado.join("");
         }
-        function fetchBuffer() {
-            console.log('Fetching buffer');
-            fetch('/buffer')
-                .then(response => response.text())
-                .then(data => {
-                    console.log('Buffer data:', data);
-                    if (data.trim() !== '') {
-                        const data_cop = String(data);
-                        document.getElementById('HIDREPORTS').value += formatData(data_cop);
-                        let parsed = parseKeyboardHID(data_cop);
-                        if (parsed.trim() !== '') {
-                            document.getElementById('KEYS').value += parsed;
+        let bufferCursor = 0;
+        let bufferBusy = false;
+        let bufferDropped = 0;
+        let bufferFirstPoll = true;
+        function showLinkStatus(head, online) {
+            const el = document.getElementById('linkstatus');
+            if (!el) {
+                return;
+            }
+            if (!online) {
+                el.textContent = 'link down';
+                el.style.color = '#e67e22';
+                return;
+            }
+            if (bufferDropped > 0) {
+                el.textContent = head + ' reports captured - ' + bufferDropped + ' DROPPED';
+                el.style.color = '#e74c3c';
+            } else {
+                el.textContent = head + ' reports captured - none lost';
+                el.style.color = '#2ecc71';
+            }
+        }
+        // The page is meant to be left open for hours, and a three hour soak is
+        // an offered option, so nothing here may grow without a ceiling. The two
+        // debug boxes PREPEND, which rebuilds the whole string every poll and
+        // costs the square of the session length if it is never trimmed.
+        const AREA_LIMIT = 400000;
+        function areaAppend(el, text, prepend) {
+            const merged = prepend ? text + '\n' + el.value : el.value + text;
+            el.value = merged.length > AREA_LIMIT
+                ? (prepend ? merged.slice(0, AREA_LIMIT) : merged.slice(-AREA_LIMIT))
+                : merged;
+        }
+        function appendBufferData(data) {
+            if (data.trim() === '') {
+                return;
+            }
+            areaAppend(document.getElementById('HIDREPORTS'), formatData(data), false);
+            const parsed = parseKeyboardHID(data);
+            if (parsed.trim() !== '') {
+                areaAppend(document.getElementById('KEYS'), parsed, false);
+            }
+        }
+        async function fetchBuffer() {
+            if (bufferBusy || otaInProgress || benchInProgress) {
+                return;
+            }
+            bufferBusy = true;
+            try {
+                for (let pass = 0; pass < 16; pass++) {
+                    const response = await fetch('/buffer?from=' + bufferCursor, { cache: 'no-store' });
+                    const next = response.headers.get('X-Okhi-Next');
+                    const head = response.headers.get('X-Okhi-Head');
+                    const skipped = response.headers.get('X-Okhi-Skipped');
+                    if (skipped !== null && !bufferFirstPoll) {
+                        var lost = parseInt(skipped, 10);
+                        if (lost > 0) {
+                            bufferDropped += lost;
+                            // Reports are missing. Held-key state cannot survive the
+                            // gap without inventing key-down edges that never happened.
+                            resetKeyDecoder();
                         }
                     }
-                })
-                .catch(error => {
-                    console.error('Error fetching buffer:', error);
-                });
+                    bufferFirstPoll = false;
+                    showLinkStatus(numOr(head, 0), true);
+                    // A missing or unparsable cursor would leave bufferCursor
+                    // where it was and replay the same records into KEYS every
+                    // poll, forever. Stopping is the only safe reading of it.
+                    const nextCursor = numOr(next, -1);
+                    if (nextCursor < 0) {
+                        break;
+                    }
+                    if (response.status !== 200) {
+                        // No body to lose on this one, so it is safe to step over it.
+                        bufferCursor = nextCursor;
+                        break;
+                    }
+                    // Read the body BEFORE stepping the cursor. Advancing first meant that a
+                    // reply cut short by a dropped connection took its records with it: the
+                    // cursor had already moved past them, so the next poll asked for what came
+                    // after and those keystrokes were gone for good, with nothing on screen to
+                    // say so. Repeating a block is harmless next to losing one.
+                    const body = String(await response.text());
+                    bufferCursor = nextCursor;
+                    appendBufferData(body);
+                    if (head === null || next === null || parseInt(next, 10) >= parseInt(head, 10)) {
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching buffer:', error);
+                showLinkStatus(0, false);
+            } finally {
+                bufferBusy = false;
+            }
         }
-        function parseKeyboardHID(data) {
-            console.log('Parsing buffer data');
-            var lines = data.split('\n');
-            var output = '';
-            for (var line of lines) {
-                var parts = line.trim().split(' ');
-                if (parts.length < 2) continue;
-                if (parts[0] === "IN:") {
-                    parts.shift();
+        // HID usage IDs are physical key positions, not characters: the layout is what
+        // turns a position into a character, which is exactly what differs between
+        // english and spanish. Letters (4..29) are derived, everything else is a table.
+        var KEY_NAMES = {
+            40: '[ENTER]', 41: '[ESC]', 42: '[BACKSPACE]', 43: '[TAB]', 44: '[SPACE]',
+            57: '[CAPSLOCK]', 73: '[INSERT]', 74: '[HOME]', 75: '[PGUP]', 76: '[DELETE]',
+            77: '[END]', 78: '[PGDN]', 79: '[RIGHT]', 80: '[LEFT]', 81: '[DOWN]', 82: '[UP]',
+            58: '[F1]', 59: '[F2]', 60: '[F3]', 61: '[F4]', 62: '[F5]', 63: '[F6]',
+            64: '[F7]', 65: '[F8]', 66: '[F9]', 67: '[F10]', 68: '[F11]', 69: '[F12]'
+        };
+        var LAYOUTS = {
+            english: {
+                base: {
+                    30: '1', 31: '2', 32: '3', 33: '4', 34: '5', 35: '6', 36: '7', 37: '8', 38: '9', 39: '0',
+                    45: '-', 46: '=', 47: '[', 48: ']', 49: '\\', 51: ';', 52: '\'', 53: '`',
+                    54: ',', 55: '.', 56: '/', 100: '\\'
+                },
+                shift: {
+                    30: '!', 31: '@', 32: '#', 33: '$', 34: '%', 35: '^', 36: '&', 37: '*', 38: '(', 39: ')',
+                    45: '_', 46: '+', 47: '{', 48: '}', 49: '|', 51: ':', 52: '"', 53: '~',
+                    54: '<', 55: '>', 56: '?', 100: '|'
+                },
+                altgr: {}
+            },
+            spanish: {
+                base: {
+                    30: '1', 31: '2', 32: '3', 33: '4', 34: '5', 35: '6', 36: '7', 37: '8', 38: '9', 39: '0',
+                    45: '\'', 46: '¡', 47: '`', 48: '+', 49: 'ç', 51: 'ñ', 52: '´',
+                    53: 'º', 54: ',', 55: '.', 56: '-', 100: '<'
+                },
+                shift: {
+                    30: '!', 31: '"', 32: '·', 33: '$', 34: '%', 35: '&', 36: '/', 37: '(', 38: ')', 39: '=',
+                    45: '?', 46: '¿', 47: '^', 48: '*', 49: 'Ç', 51: 'Ñ', 52: '¨',
+                    53: 'ª', 54: ';', 55: ':', 56: '_', 100: '>'
+                },
+                altgr: {
+                    8: '€', 30: '|', 31: '@', 32: '#', 33: '~', 34: '€', 35: '¬',
+                    47: '[', 48: ']', 49: '}', 53: '\\'
                 }
-                if (parts[0].includes('/')) {
-                    parts[0] = parts[0].split('/')[0];
+            }
+        };
+        var currentLayout = 'english';
+        // The RP forwards EVERY 8 byte IN DATA packet on the bus, formatted by
+        // firmware/usb/rp/okhi.c as
+        //
+        //     IN: <a>/<e> <b0> <b1> <b2> <b3> <b4> <b5> <b6> <b7>;
+        //
+        // where b0..b7 are the USB HID boot keyboard report: b0 is the modifier
+        // bitmap, b1 is reserved, b2..b7 are up to six simultaneously held keys.
+        // The <a>/<e> tag carries no extra information, the firmware derives it by
+        // reinterpreting b0 and b1, so it cannot be used to tell devices apart.
+        //
+        // Enumeration and descriptor transfers are also 8 byte IN packets, which is
+        // why every report is validated before a single character is emitted.
+        var hidPrevKeys = [];
+        function resetKeyDecoder() {
+            hidPrevKeys = [];
+        }
+        function hidReportIsPlausible(b) {
+            // The reserved byte is always zero in a boot report.
+            if (b[1] !== 0) {
+                return false;
+            }
+            var ended = false;
+            for (var i = 2; i < 8; i++) {
+                var k = b[i];
+                if (k === 0) {
+                    // Real reports pack held keys from the first slot with no holes,
+                    // so a used slot after an empty one means this is not a report.
+                    ended = true;
+                    continue;
                 }
-                var mod = parseInt(parts[0], 16);
-                if (!isNaN(mod)) {
-                    if (mod & 0x01) output += '[CTRL]';
-                    if (mod & 0x10) output += '[RCTRL]';
-                    if (mod & 0x02) output += '[SHIFT]';
-                    if (mod & 0x04) output += '[ALT]';
-                    if (mod & 0x40) output += '[ALTGR]';
+                if (ended) {
+                    return false;
                 }
-                for (var i = 1; i < parts.length; i++) {
-                    var keyHex = parts[i];
-                    if (keyHex !== '0x0') {
-                        var keycode = parseInt(keyHex, 16);
-                        if (keycode) {
-                            var char = keycodeToChar(keycode);
-                            if (char) output += char;
-                        }
+                // 0x01..0x03 are the rollover and POST error codes, and 0xE0..0xE7
+                // are the modifier usages, which never appear in the key array.
+                if (k < 0x04 || k >= 0xE0) {
+                    return false;
+                }
+                for (var j = 2; j < i; j++) {
+                    if (b[j] === k) {
+                        return false;
                     }
                 }
             }
-            return output.trim();
+            return true;
         }
-        function keycodeToChar(keycode) {
-            var map = {
-                4: 'a',  5: 'b',  6: 'c',  7: 'd',  8: 'e',  9: 'f',
-                10: 'g', 11: 'h', 12: 'i', 13: 'j', 14: 'k', 15: 'l',
-                16: 'm', 17: 'n', 18: 'o', 19: 'p', 20: 'q', 21: 'r',
-                22: 's', 23: 't', 24: 'u', 25: 'v', 26: 'w', 27: 'x',
-                28: 'y', 29: 'z', 30: '1', 31: '2', 32: '3', 33: '4',
-                34: '5', 35: '6', 36: '7', 37: '8', 38: '9', 39: '0',
-                40: '[ENTER]', 42: '[BACKSPACE]', 44: '[SPACE]', 57: '[CAPSLOCK]'
-            };
-            return map[keycode];
+        function parseKeyboardHID(data) {
+            var lines = data.split('\n');
+            var output = '';
+            for (var line of lines) {
+                var parts = line.trim().split(/\s+/);
+                if (parts[0] === 'IN:') {
+                    parts.shift();
+                }
+                // the address tag plus the eight report bytes
+                if (parts.length < 9 || parts[0].indexOf('/') < 0) {
+                    continue;
+                }
+                var b = [];
+                for (var i = 1; i <= 8; i++) {
+                    b.push(parseInt(parts[i].replace(';', ''), 16));
+                }
+                if (b.some(isNaN) || !hidReportIsPlausible(b)) {
+                    continue;
+                }
+                var mod = b[0];
+                // bit 1 = left shift, bit 5 = right shift, bit 6 = right alt (AltGr).
+                // Shift and AltGr select the character instead of being reported.
+                var shift = (mod & 0x22) !== 0;
+                var altgr = (mod & 0x40) !== 0;
+                var prefix = '';
+                if (mod & 0x11) prefix += '[CTRL]';
+                if (mod & 0x04) prefix += '[ALT]';
+                if (mod & 0x88) prefix += '[GUI]';
+                var keys = [];
+                for (var i = 2; i < 8; i++) {
+                    if (b[i] !== 0) {
+                        keys.push(b[i]);
+                    }
+                }
+                // A held key is repeated in every report until it is let go, so a
+                // character is emitted only on the edge where a key first appears.
+                for (var i = 0; i < keys.length; i++) {
+                    if (hidPrevKeys.indexOf(keys[i]) >= 0) {
+                        continue;
+                    }
+                    var char = keycodeToChar(keys[i], shift, altgr);
+                    if (char) {
+                        output += prefix + char;
+                    }
+                }
+                hidPrevKeys = keys;
+            }
+            return output;
+        }
+        function keycodeToChar(keycode, shift, altgr) {
+            var layout = LAYOUTS[currentLayout] || LAYOUTS.english;
+            if (altgr && layout.altgr[keycode] !== undefined) {
+                return layout.altgr[keycode];
+            }
+            if (keycode >= 4 && keycode <= 29) {
+                var letter = String.fromCharCode(97 + keycode - 4);
+                return shift ? letter.toUpperCase() : letter;
+            }
+            var table = shift ? layout.shift : layout.base;
+            if (table[keycode] !== undefined) {
+                return table[keycode];
+            }
+            return KEY_NAMES[keycode];
         }
         document.addEventListener("DOMContentLoaded", function() {
-            setTimeout(getFirmVersion, 2000);
-            setTimeout(getHwVersion, 2500);
-            setInterval(fetchBuffer, 1000);
-            setInterval(fetchEsp, 2400);
-            setInterval(fetchRp, 3400);
+            okhiStep('keyboard layout', function () {
+                document.getElementById('keyboardType').addEventListener('change', function(event) {
+                    currentLayout = event.target.value;
+                });
+            });
+            okhiStep('buffer', fetchBuffer);
+            okhiStep('bench resume', benchResume);
+            okhiStep('wifi', wifiLoad);
+            okhiEvery('wifi', wifiLoad, 15000);
+            // Paint the build stamp before the first /versions reply, so it is
+            // there on load and survives even when no device answers.
+            okhiStep('build stamp', function () {
+                const bi = document.getElementById('buildinfo');
+                if (bi) {
+                    bi.textContent = webStampLine();
+                }
+            });
+            okhiStep('versions', getVersions);
+            okhiAfter('firmware version', getFirmVersion, 300);
+            okhiAfter('hardware version', getHwVersion, 900);
+            okhiEvery('versions', getVersions, 10000);
+            okhiEvery('buffer', fetchBuffer, 800);
+            okhiEvery('esp stats', fetchEsp, 2400);
+            okhiEvery('rp stats', fetchRp, 3400);
         });
+
+        // Reached only when everything above it parsed. The guard block at the top
+        // of the page watches for this and shouts when it is missing.
+        window.okhiMainLoaded = true;
     </script>
 </body>
 </html>

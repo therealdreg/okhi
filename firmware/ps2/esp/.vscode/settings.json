@@ -5,7 +5,7 @@
   "idf.openOcdConfigs": [
     "board/esp32c2-ftdi.cfg"
   ],
-  "idf.portWin": "COM31",
+  "idf.portWin": "COM20",
   "idf.toolsPathWin": "C:\\Users\\regue\\.espressif",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32c2"

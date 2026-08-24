@@ -59,6 +59,10 @@ Check size before buying, maybe it is too big for your target. Or maybe you need
 - Supports both PS2 and USB keyboards (limited to classic USB low-speed mode yet)
 - WiFi + web support
 - Real-time viewing of keystrokes
+- **Persistent capture (new)**: every keystroke is also written to the implant's own flash the moment it happens, so nothing is lost across reboots, power cuts, or long stretches with nobody watching the page. Download or wipe the stored log from the web interface. See [Persistent keystroke log](#persistent-keystroke-log)
+- Multi-language keyboard layouts (since v7): pick the layout of the target keyboard in the web interface and the keystrokes are decoded with it
+- OTA updates (since v7): update both chips over WiFi from the web interface, no cables, no probe board, no disassembly
+- **[Reusable dual-chip OTA](#reusable-dual-chip-ota-for-rp2040--esp32-boards)**: building your own RP2040 + ESP32 board? The whole OTA system is yours, MIT, commercial use included
 - Open Hardware
 - Open Source (MIT License)
 - Community support
@@ -168,29 +172,55 @@ Follow these steps to update the firmware:
 
 - Connect the implant to implant probe PROG pins 
 
+![](stuff/images/programokhiusb.jpg)
+
 - Connect the implant probe to the computer 
 
 - Entering Program Mode for the okhi Module: Before connecting the okhi module to a USB port, ensure you press and hold the programming button (BOOT).
 
+![](stuff/images/holdbuttonusbprobe.jpg)
+
 - Uploading the UART Bridge Firmware: Transfer the uart_bridge.uf2 file to the okhi module, which will appear as a MASS STORAGE DEVICE RP2040 on your computer (e.g., drive E:). The device will automatically eject once the file transfer completes.
 
-- Switching to Normal Mode: To operate the okhi module in normal mode, connect it to a USB port without pressing any buttons.
+![](stuff/images/copybridge.jpg)
+
+- Switching to Normal Mode: To return the okhi module to normal operation, disconnect it from USB, then reconnect it to a USB port without pressing any buttons.
 
 - Programming the ESP Module: Run the upload_firmware.bat script to start programming the ESP module. This script automates the firmware installation process.
 
 - Selecting the COM Port: Input the COM port number where the okhi module is connected (e.g., COM3). If you are uncertain of the correct COM port, the batch file will display a list of available COM ports. You may need to try each one sequentially to find the correct connection.
 
+![](stuff/images/uploadbat.png)
+
 - Completing the Programming Process: Wait for the script to finish running. Once complete, the ESP module will be programmed and ready for use.
+
+![](stuff/images/uploadbat2.png)
 
 - Re-entering Program Mode: Disconnect the okhi module from the USB, then reconnect it in program mode by pressing the programming button before plugging it back into the USB.
 
+![](stuff/images/holdbuttonusbprobe.jpg)
+
 - Programming the RP2040 Chip: Copy the okhi.uf2 file to the okhi module, now recognized again as a MASS STORAGE DEVICE RP2040 (e.g., drive E:). The device will automatically eject after the file transfer.
+
+![](stuff/images/copyokhiuf2.png)
 
 - Finalizing Setup for RP2040: The RP2040 chip is now programmed and ready for operational use.
 
-- Reconnecting for Regular Use: Disconnect the okhi module from USB and then reconnect it without pressing the programming button for normal use.
+- Reconnecting for Regular Use: Disconnect the okhi module from USB.
+
+- Connect okhi to sniff zone of implant probe.
+
+![](stuff/images/sniffusb.jpg)
+
+- Connect the implant probe to the computer.
+
+![](stuff/images/probeworking.jpg)
+
+- Additionally, connect the program zone's USB to your PC as an extra power source to ensure the okhi implant has sufficient power.
 
 - Connecting to the ESP WiFi Network: An ESP WiFi network (PS2/USB_<device_id>) will become available with the password '1234567890'. Connect to this network and open a web browser to access the web interface at: http://192.168.4.1/
+
+![](stuff/images/v5webdemo.png)
 
 Note: old firmware SSID: ESP_PS2/USB, password: '0123456789'
 
@@ -210,6 +240,43 @@ Starting from firmware version v5, uart_bridge.uf2 is compatible with the latest
 
 Just pick the binary that matches your OS and architecture — no installation needed.
 
+### Firmware update over the air (OTA), since FirmwareV7
+
+**OTA stands for "Over The Air"**: updating the firmware of the implant through its own WiFi network, instead of taking it out of the target, plugging it into an implant probe board and copying files over USB. Starting from firmware **FirmwareV7**, okhi can update **both chips** this way. Once an implant is hidden inside a keyboard, laptop or tower case, you never have to open it again to put a newer firmware on it: connect to its WiFi, open the web interface, upload one file.
+
+The whole update is a single file, `okhi_USB_ota.pkg` or `okhi_PS2_ota.pkg`, included in the release package. It carries the ESP32-C2 firmware and the RP2040 firmware together, tagged with the variant (USB or PS2) and protected by a CRC32 for each half, so the device refuses a package built for the other variant or a corrupted one, and the two chips can never end up running mismatched firmware.
+
+To update, join the device WiFi network (`USB_xxxxxxxxxxxx` or `PS2_xxxxxxxxxxxx`, password `1234567890`), open http://192.168.4.1/, use the **Upload firmware** button and pick the `.pkg`. From there everything is automatic: the ESP validates the package, writes its own half to the spare flash slot and reboots into it, then **you reconnect and load the page again to confirm the update**. Only after that confirmation does the RP2040 pull its own image over the internal SPI link, verify it with a CRC32, back up its current firmware to a golden slot, apply the new one and reboot.
+
+That confirmation step is not optional, and it is the core of the safety design: if nobody loads the page within 5 minutes, the ESP assumes the new firmware is broken (or unreachable), rolls back to the previous one and never touches the RP2040. An update nobody could reach is an update that failed. In the same spirit, a power loss while the package is uploading is harmless (the old firmware keeps running from the other slot), and an RP2040 firmware that boots but cannot talk to the ESP is replaced by the golden backup after three attempts.
+
+While the update runs, keystroke capture is suspended for the couple of seconds the SPI transfer and the commit take. The keyboard itself keeps working normally throughout, those keystrokes are simply not recorded.
+
+Do not power the device off during an update.
+
+**Important**: OTA only works on devices already running an OTA capable firmware, that is v7 or newer. A device coming from an older release has to be programmed **once by cable** with `upload_firmware.bat` and the `.uf2` files, as described above, because the ESP partition table changed and that change cannot be migrated over the air. After that first cable install, every following update can be done over WiFi.
+
+The release package also ships `ota_esp.bin` and `ota_rp.bin`, the same two images loose, to update one chip on its own. Those are meant for development; for normal use always use the `.pkg`. Full details, including the `curl` commands and how to check the result on http://192.168.4.1/stats, are in **OTA developer reference** in the Developers section below.
+
+### Multi-language keyboard support, since FirmwareV7
+
+A keyboard does not send characters, it sends **key positions** (HID usage IDs on USB, scan codes on PS2). What turns a position into a character is the keyboard layout configured in the target computer, so the same physical key is `;` on an english keyboard and `ñ` on a spanish one. Until FirmwareV7 okhi decoded everything as an english keyboard, which meant wrong characters whenever the target used a different layout.
+
+Starting from firmware **FirmwareV7**, the web interface has a **Keyboard layout** selector at the top. Pick the layout the target machine is using and the keystrokes are decoded with it, including the characters typed with **AltGr** (`@`, `#`, `€`, `[`, `]`, and so on), which do not exist at all in the english layout. Decoding happens in the browser, so the selector changes how new keystrokes are shown from that moment on; the text already on screen keeps the characters it was decoded with, and the selected layout is saved together with the capture when you press **Download all data**.
+
+The layouts currently included are **english** (default) and **spanish**. Adding a new one is easy and does not require touching any C code: the tables live in `webusb\index.html` (USB firmware, `LAYOUTS` object) and `webps2\index.html` (PS2 firmware, `PS2_LAYOUTS` object), with one entry per layout and three tables in each (`base`, `shift` and `altgr`) mapping key code to character. The USB tables are indexed by HID usage ID and the PS2 ones by set 2 scan code, since that is what each protocol puts on the wire. Add your layout there, add an `<option>` to the selector, regenerate the web with `webgen.js` and rebuild the ESP firmware, as described in the **Web Developers** section below. Pull requests with new layouts are very welcome.
+
+Note: the raw stream is always kept next to the decoded keys (**HID reports** on USB, **PS/2 data** on PS2) and both go into the downloaded file, so nothing is lost by having the wrong layout selected while capturing.
+
+### Persistent keystroke log
+
+Every keystroke is written to the implant's own flash memory the moment it happens, so the log survives reboots, power cuts, and stretches where nobody is watching the web page. The ESP32-C2 has ~1.2 MB of SPIFFS storage; at an average of 62 bytes per keystroke, that is roughly 19,000 keystrokes before the log wraps and starts overwriting the oldest records.
+
+To download the stored log, open the web interface and use the **Download persistent log** button in the "Persistent log" section. The browser will download a text file with both the decoded keystrokes (using the currently selected keyboard layout) and the raw wire records, so you can re-decode the log with a different layout afterwards without losing data. The status text shows download progress.
+
+To erase the stored log, use the **Clear persistent log** button. This wipes the log files on the device's flash; the device will ask for confirmation because it cannot be undone.
+
+Both operations work whether the device is in WiFi access-point mode or connected to your LAN as a station.
 
 ## Thanks to PCBWAY for sponsoring the okhi project
 
@@ -319,6 +386,137 @@ https://github.com/therealdreg/pico-ps2-diagnostic-tool
 ![](stuff/images/originalvsre.png)
 
  A short pulse was captured on the original CLOCK signal, and the replayed signal successfully reproduced it.
+
+# Reusable: dual-chip OTA for RP2040 + ESP32 boards
+
+> **Building your own board with an RP2040 and an ESP32? Take this. It is MIT.**
+> Use it in open source projects, in commercial products, in anything. No attribution
+> dance, no license fee, no strings.
+
+The RP2040 has no radio. That is the whole problem: you can put it next to an ESP32 and give
+your board WiFi, but the moment you want to update the RP2040 *over the air* you discover
+there is nothing to update it *with*. okhi solves that, and the solution is not
+okhi-specific, so it is written down here as a component you can lift out.
+
+**One file, uploaded from a browser, updates both chips.** The ESP32 takes the WiFi side and
+its own half of the image, then feeds the RP2040 its half over the SPI link the two chips
+already share. Neither chip can be left running firmware that does not match the other.
+
+## What you actually get
+
+| | |
+|---|---|
+| A combined package format | one `.pkg` carrying both firmwares, each CRC32'd, with a variant tag so a board refuses an image built for a different board |
+| A/B updates on the ESP32 | standard `ota_0` / `ota_1` slots, plus a rollback window: if the new firmware never serves a page, the old one comes back |
+| Self-update on the RP2040 | it fetches its own new image over SPI, stages it, verifies it, then rewrites its own application flash |
+| A **golden image** rescue | a backup of the last known-good RP firmware. Three failed boots and the RP restores itself from it, with no host involved |
+| Crash tolerance | the update state lives in flash. Lose power mid-update and the next boot picks up where it left off instead of bricking |
+| A build and packaging script | `make_release.py` builds every target and produces the `.pkg`, self-tests its own CRC32 table, and re-parses what it wrote before declaring success. Pure Python, no dependencies, runs anywhere |
+
+## How it flows
+
+```mermaid
+flowchart LR
+    B["Browser"] -->|"POST /ota<br/>one .pkg"| E["ESP32-C2"]
+    E -->|"esp_ota_write<br/>ota_0 / ota_1"| E2["ESP half<br/>applied + confirmed"]
+    E2 -->|"only after the ESP<br/>runs its new firmware"| S["RP half offered"]
+    S -->|"SPI, 128 B blocks<br/>CRC32 verified"| R["RP2040 staging"]
+    R -->|"state = APPLYING<br/>written to flash first"| A["RP app rewritten"]
+    A -->|"CRC32 matches"| C["state = COMMITTED"]
+    A -.->|"3 failed boots"| G["restored from<br/>golden image"]
+```
+
+The ordering is the interesting part. The ESP writes and **confirms its own half first**, and
+only once it has served a request on the new firmware does it offer the RP image. Reversing
+that would let a broken ESP strand a perfectly good RP halfway through an update.
+
+## RP2040 flash map
+
+Needs an **8 MB or larger** flash part. `ota_map_fits_flash()` checks the JEDEC-detected size
+at boot and simply disables OTA rather than risk corrupting a smaller one.
+
+```
+0x000000   app       1 MB    the running image
+0x100000   golden    1 MB    last known-good backup, the rescue path
+0x200000   staging   1 MB    incoming image, verified before it is used
+0x300000   meta      4 KB    state + sizes + CRC32s, magic 0x494B4B4F
+```
+
+The meta record is what makes a power cut survivable: it is written **before** the app is
+overwritten. If the board dies mid-copy, the next `ota_boot_check()` finds `OTA_STATE_APPLYING`,
+re-verifies staging against its CRC32 and finishes the job.
+
+## Taking it into your own project
+
+Everything shared lives in [firmware/com/](firmware/com/) and is plain headers, no build
+system to adopt:
+
+| file | lines | what it is |
+|---|---|---|
+| [com_rp_ota.h](firmware/com/com_rp_ota.h) | 3517 | RP2040 side: SPI poll, fetch, stage, verify, apply, golden image, boot check |
+| [com_esp.h](firmware/com/com_esp.h) | 5606 | ESP32 side: HTTP upload, package parsing, `esp_ota_*`, rollback window, block server |
+| [com.h](firmware/com/com.h) | 344 | the wire contract: frame layout, package format, flags |
+| [com_rp_hw.h](firmware/com/com_rp_hw.h) | 652 | RP2040 flash helpers and SPI wrappers |
+| [com_rp_pins.h](firmware/com/com_rp_pins.h) | 66 | pin map, pure macros, no SDK includes |
+
+On the RP2040 side the contract is four calls, documented at the top of `com_rp_ota.h`:
+
+```c
+ota_boot_check();      // very early in main(), BEFORE the watchdog and before touching flash
+report_flash_size();   // optional
+report_ota_state();    // optional
+poll_esp_if_due();     // regularly, from whichever core owns the SPI bus
+```
+
+What you will need to change: the pins in `com_rp_pins.h`, the ESP partition table, the
+variant tags if you want more than one board type, and `SPI_FRAME_VERSION` is yours to own.
+If you enable a watchdog, you **must** define `OTA_WATCHDOG_UPDATE()` as `watchdog_update()`,
+because applying an image takes seconds and the long loops feed it through that macro.
+
+## What it actually guarantees
+
+The image is CRC32 checked **three separate times** before it can become the running app:
+in flight over the SPI stream, re-read back **from flash** at commit time, and again after
+the copy. Re-reading staging from flash is what makes an interrupted transfer harmless, since
+a half-written staging area no longer matches its recorded CRC.
+
+The write ordering is where the crash safety actually lives:
+
+1. the golden backup is written **and read back verified** before anything destructive
+2. only then is the meta record armed with `OTA_STATE_APPLYING` and flushed to flash
+3. only then is the app slot touched
+
+So a power cut during the copy is recoverable, because the next boot finds `APPLYING` and
+finishes the job. A power cut during the *golden* copy is harmless too: `golden_size` and
+`golden_crc` are only updated after that copy verifies, so a torn golden slot can never be
+restored over a good app. The meta record carries its own CRC32, so a torn sector reads as
+invalid rather than as garbage that looks plausible.
+
+## Being straight with you about the limits
+
+This is a robust updater, not a secure one. Know exactly what you are getting:
+
+- **No signature, no authentication, no anti-rollback.** CRC32 detects corruption, not
+  tampering. Anyone who can reach the web endpoint can push arbitrary firmware to the RP2040.
+  If your product needs signed updates, this is the layer you must add.
+- **The golden image is not a factory image.** It is a rolling snapshot of whatever was in
+  the app slot at the last commit. Two bad updates in a row, where the first one boots well
+  enough to look healthy, and your safety net is now a copy of the first bad image.
+- **"Healthy" means exactly one successful SPI poll.** That is the whole criterion that
+  disarms the rollback. Firmware that boots and answers on SPI but is broken in every other
+  way will happily disarm it.
+- **The meta sector has no A/B copy.** `ota_meta_write()` erases and reprograms one sector;
+  a power cut inside that window loses the only state record there is.
+- **One window has no software recovery**: the couple of seconds while the RP2040 rewrites
+  its own application flash. Lose power exactly there and it comes back as a USB mass storage
+  device. Copy a `.uf2` onto it and it is fine.
+- **Changing `SPI_FRAME_VERSION` breaks OTA for that release**, on both chips, because the
+  update needs the very link it is changing. That one ships over a cable.
+- **An ESP OTA wipes NVS** on a build-stamp mismatch, by design. Anything you keep there is
+  gone after an update unless you compile your defaults in.
+
+Protocol-level details, the exact package byte layout and single-chip update commands are in
+**[OTA developer reference](#ota-developer-reference)** further down.
 
 # Developers setup
 
@@ -512,19 +710,616 @@ Done! The new firmware for ESP should have been created:
 
 ![](stuff/images/espidfvscrtspart2.png)
 
+## ESP32-C2 firmware build & hardware notes
+
+Settings that are easy to get wrong when touching the ESP build, pinned in `sdkconfig.defaults` rather than left to whatever a regenerated `sdkconfig` picks. They were lost once, silently, during the ESP-IDF 5.5 → 6.0.2 upgrade, and would have broken devices in the field. Treat `sdkconfig.defaults` as the source of truth; `sdkconfig` is generated and can be deleted at any time.
+
+| Setting | Value | Why |
+|---|---|---|
+| `CONFIG_XTAL_FREQ_26` | 26 MHz, never 40 | every okhi board uses a 26 MHz crystal; wrong here garbles the serial console and breaks WiFi/timing |
+| `CONFIG_ESP32C2_REV_MIN_1` | v1.0 | devices in the field are any revision from v1.0 to v2.0; a v2.0-minimum binary refuses to flash on anything older (Espressif advisory AR2025-001). Costs ~20 KB SRAM / ~100 KB flash that a v2.0-only build could reclaim, accepted on purpose |
+| `CONFIG_ESPTOOLPY_FLASHSIZE_4MB` | 4 MB | the `storage` SPIFFS partition runs to the end of the chip; anything smaller does not fit |
+| `CONFIG_PARTITION_TABLE_CUSTOM` | `partitions.csv` | the default single-app table has no `storage` partition |
+
+Partition layout, two OTA slots and no `factory` slot on purpose (a third would leave under 60 KB headroom per app):
+
+    nvs       0x9000    16K
+    otadata   0xd000    8K
+    phy_init  0xf000    4K
+    ota_0     0x10000   1408K
+    ota_1     0x170000  1408K
+    storage   0x2d0000  1216K
+
+That is the full 4 MB, no spare region: growing the app means taking space from `storage`, and since `ota_0`/`ota_1` must match, every extra 1 MB of app costs 2 MB of flash. Migrating a device from the old layout (`storage` used to sit at `0x300000`) requires a full erase, because `otadata` now sits where the old `nvs` used to be and the bootloader would misread the leftover bytes as a boot selector.
+
+**ESP-IDF 6.0 migration notes:** the monolithic `driver` component split into per-peripheral ones, so `main/CMakeLists.txt` requires `esp_driver_gpio`, `esp_driver_spi` and `esp_driver_uart` explicitly. picolibc (the new default C library) no longer pulls in `<sys/stat.h>` transitively, so [firmware/com/com_esp.h](firmware/com/com_esp.h) includes it directly.
+
+**The SPI callbacks must stay in IRAM** (`CONFIG_SPI_SLAVE_ISR_IN_IRAM`, `CONFIG_GPIO_CTRL_FUNC_IN_IRAM`, both callbacks marked `IRAM_ATTR`). The SPI slave ISR runs from IRAM and calls them to drive `ELOG_SLAVEREADY`; if either sat in flash, a transaction arriving while the cache is disabled (a SPIFFS read, an NVS write) would dereference unmapped memory, a crash, or a handshake that never rises and hangs the RP forever.
+
+**DIRAM is a single pool** — the ESP32-C2 has no separate IRAM/DRAM, so anything placed in IRAM comes straight out of the ~191 KB heap. `CONFIG_ESP_WIFI_IRAM_OPT` and `CONFIG_ESP_WIFI_RX_IRAM_OPT` are both off (they default on and buy sustained WiFi throughput this firmware never needs), which returns ~30 KB. Watch `min_free_heap` in `/stats`, not the link-time "Remain" figure, since WiFi and lwIP allocate at runtime. Rule of thumb after a few minutes with the web page open: >20 KB comfortable, 10-20 KB no margin, <10 KB allocations start failing. `RING_ENTRIES` in `com/com_esp.h` (512 → 256) gives back ~16 KB at the cost of halving how much capture survives while nobody is browsing.
+
+**HTTP server**: `HTTP_MAX_CONN` (4) connections in one `select()` loop, non-blocking sockets, so a browser's speculative preconnects that send nothing cannot stall it, which is what the old serial-accept-with-timeout server used to freeze on for seconds. Endpoints:
+
+| Endpoint | What it does |
+|---|---|
+| `/` | `index.html.gz`, streamed from the embedded copy |
+| `/buffer` | HID/PS2 records; `?from=N` for a stateless cursor |
+| `/stats`, `/versions` | full counter dump; build identity of both chips plus link state |
+| `/wifi` | network settings |
+| `/selftest` | hardware self test, see **Built-in self test** above |
+| `/spibench` | SPI/UART link benchmark, see **Link speed benchmarks** above |
+| `/wifidown`, `/wifiup` | WiFi throughput test payload, see **WiFi speed test** above |
+| `/rpreset`, `/rpbootsel` | ask the RP to reboot normally, or into BOOTSEL |
+| `/ota`, `/rpimage` + `/rpcommit` | firmware update, see **OTA developer reference** below |
+
+Raw esptool command, for when `upload_firmware.bat` is not an option (`erase-flash` first is mandatory when coming from a pre-OTA device, since `storage` moved from `0x300000` to `0x2d0000`):
+
+    esptool --chip esp32c2 --baud 921600 erase-flash
+    esptool --chip esp32c2 --baud 921600 write-flash -z --flash-mode dio --flash-freq 60m --flash-size 4MB \
+        0x0000   bootloader.bin \
+        0x8000   partition-table.bin \
+        0x10000  okhi.bin \
+        0x2d0000 storage.bin
+
+Serial monitor: 115200 baud.
+
+## Flashing over a cable, and the traps in it
+
+Everything below was learned the hard way on a real board. None of it is obvious from the
+commands themselves, and every item has bitten someone.
+
+### Keep the machine idle while flashing
+
+**Do not compile, run builds in the background, or do anything CPU heavy while a flash is in
+progress.** Serial flashing sometimes just breaks when the PC is loaded: esptool has to keep
+up with the port, and a CPU spike makes it lose frames. Wait for your builds to finish, then
+flash. This is the single most common cause of a flash that fails for no visible reason.
+
+### You have about 50 seconds per esptool command
+
+This one surprises everyone. When esptool resets the ESP over DTR/RTS, the **RP2040 notices**
+that reset on `ESP_RESET_GPIO`, prints
+
+    external ESP-RESET detected!
+    rebooting in 50 secs!!!
+
+and reboots itself, leaving a marker in `.uninitialized_data`. On the way back up,
+`delay_boot_if_esp_reset_detected()` runs `sleep_ms(50000)`. That deliberate 50 second nap is
+the RP staying off the SPI bus and off the shared GPIOs so you can flash the ESP in peace.
+
+**After those 50 seconds the RP wakes up, starts capturing and starts driving the bus, and it
+can corrupt a flash that is still running.** Each esptool invocation triggers its own reset
+and therefore gets its own fresh 50 second window, so run `erase-flash` and `write-flash` as
+**separate commands** rather than chaining long work inside one window. In practice the erase
+takes ~4 s and the write ~15 s, so there is plenty of room, but do not go looking for trouble.
+
+### The full erase is not optional
+
+    esptool --port COMx --chip esp32c2 --baud 921600 erase-flash
+
+The OTA partition table puts `otadata` at 0xd000, where the old `nvs` partition used to live.
+Skipping the erase leaves stale bytes there and the bootloader reads garbage out of the boot
+selector. Two consequences worth knowing:
+
+- **It wipes NVS**, so any saved WiFi settings are gone. The board only comes back on your
+  network by itself if the credentials are compiled in (see *Putting the implant on your own
+  WiFi*). Otherwise it returns as an access point at `192.168.4.1`.
+- **`esp_partition` goes back to `ota_0`**, because `otadata` is left at 0xff and the
+  bootloader falls back to the base slot. Seeing `ota_0` in `/versions` afterwards is
+  confirmation that the erase actually happened, not a problem.
+
+### Two error messages that are harmless
+
+Both of these appear on a **successful** flash. Do not chase them:
+
+- **openocd**, at the end of a perfectly good SWD flash:
+  `Error: [rp2040.core0] Execution of event reset-init failed: args[i] option value ('CX') is
+  not valid`. It is a quirk of `rp2040.cfg` in openocd 0.12; look for
+  `** Programming Finished **` and `** Verified OK **` instead.
+- **esptool**, right after the last partition reaches 100%:
+  `A fatal error occurred: Invalid head of packet (0x00): Possible serial noise or
+  corruption`. It fires during the final reset, most likely the RP2040 waking from its 50
+  second nap. The partitions that matter each report `Hash of data verified` before it.
+
+Because both tools can "fail" on a good flash, **never trust the exit code**. Verify against
+the device instead:
+
+    curl http://<board-ip>/versions
+
+`esp_image` is the first 8 bytes of the `app_elf_sha256` embedded in the binary itself, so it
+can be compared directly with `okhi.bin[0xB0:0xB8]`. `rp_identity` carries the RP's build
+date and time, which is unique per compile. If both match what you built, it went in.
+
+### Flashing the RP2040 over SWD
+
+The Pico VS Code extension already ships openocd and a CMSIS-DAP setup works out of the box:
+
+    openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program {path/to/firmware/usb/rp/build/okhi.elf} verify reset exit"
+
+Pass the **`.elf`**, not the `.bin`, so openocd places every section correctly. To test the
+probe without writing anything, swap the `program` line for `-c "init" -c "targets" -c
+"shutdown"`; it should list `rp2040.core0` and `rp2040.core1`.
+
+Note that flashing the RP this way writes straight over the app slot and leaves the OTA meta
+record describing the image that *used* to be there. That is fine: the board boots, the first
+successful SPI poll calls `ota_mark_healthy()` and the record settles. It does mean the
+golden backup still holds the previous firmware until the next OTA commit refreshes it.
+
+### The RP2040 UART log is the best debugging tool here
+
+Hook a serial terminal to the RP at **115200 baud** and log to a file. It prints far more
+than the web page can show, and it is the fastest way to understand what a board is doing:
+
+    okhi USB started! Hardware vXX          identity and build timestamp
+    flash JEDEC id / size detected          whether OTA is even possible on this part
+    ota map: app/golden/staging/meta        the flash layout in use
+    ota boot check: ...                     what it decided at boot
+    ota meta: state N attempts N            OTA state machine and trial-boot counter
+    esp link UP/DOWN, esp fw vN             SPI link transitions
+    esp wifi client, address 192.168.x.x    the IP it just got
+    rp image offered / STAGED ok / ABORTED  every step of an OTA, with byte counts and CRCs
+    rp commit: backing up ... to golden     the commit sequence, in order
+
+Seeing `rp image transfer ABORTED at block N (attempt 1)` followed by a successful retry is
+**normal** during a combined OTA: the ESP reboots into its own new half partway through, the
+link drops, and the RP simply starts the transfer again.
+
 ## Generating a New Release
 
-To create a new release with the updated RP and ESP firmware, follow these steps:
+**The repository does not carry build output**, so a release starts from source every time:
 
-1. Navigate to the project directory.
-2. Execute the `make_release.bat` script.
-3. The script will generate a new release package containing the updated firmware for both the RP2040 and ESP32-C2.
+1. Build all five targets: `usb/esp`, `usb/rp`, `ps2/esp`, `ps2/rp` and `uart_bridge`.
+2. Or skip step 1 entirely: `python make_release.py` builds all five targets and then
+   packages them. Add `--deep-clean` to rebuild everything from scratch first.
+3. The script gathers those artifacts into `release/<timestamp>/` and produces the combined
+   `okhi_{USB,PS2}_ota.pkg` for both chips. That directory is gitignored, so a release you
+   built for testing can never be committed by mistake.
+
+If it reports `[MISSING]` for something, that target has not been built yet.
+
+Why the extra step: the ESP binaries are compiled with `wifi_secret.h` baked in whenever it
+is present, so tracking them would mean a development build could carry a real WiFi password
+into a public repository. Keeping every `build/` directory out of git removes that risk
+entirely rather than relying on anyone remembering to clean up first.
 
 -----
 
 To compile USB firmware, follow the same steps. Just select the firmware\usb\rp folder and firmware\usb\esp folder.
 
 Note: I modified the original usb-sniffer-lite project by Alex Taradov (porting to pico-sdk). I am not a RP2040 expert, so I am learning a lot with this project.
+
+## OTA developer reference
+
+User-facing OTA usage is in **Firmware update over the air (OTA)** above; this is the protocol level, for updating one chip at a time during development or troubleshooting a failed update.
+
+**Package format** (what `make_release.py` builds, magic `"OKHI"`):
+
+    0   4   magic "OKHI"              4   4   package format version
+    8   4   variant tag, "USB\0" or "PS2\0"
+    12  4   ESP image length          16  4   ESP image crc32
+    20  4   RP image length           24  4   RP image crc32
+    28  4   crc32 of bytes 0..27
+    32  ..  ESP image, then RP image
+
+`POST /ota` also accepts a bare ESP image (magic `0xE9`, sniffed from the first byte), for updating just that chip.
+
+**Updating one chip on its own:**
+
+    curl -X POST -H "Expect:" --data-binary "@ota_esp.bin" http://<board-ip>/ota
+
+    curl -X POST -H "Expect:" --data-binary "@ota_rp.bin" http://<board-ip>/rpimage
+    curl http://<board-ip>/rpcommit
+
+`/rpimage` only stages the image on the ESP's filesystem; `/rpcommit` tells the RP to fetch, verify and apply it. Use the combined `.pkg` for anything that leaves the lab: it is what guarantees the two chips can never end up on mismatched firmware.
+
+**Why the commit order matters.** The ESP writes and confirms its own half FIRST; only once it has served an HTTP request on the new firmware does it flag the RP image as ready, so the RP starts fetching it. Reversing that order would let a broken ESP strand a good RP mid-update. The loop closes on its own: the RP's status frames carry the CRC32 of what it is running, and once that matches the staged image the ESP deletes it.
+
+**RP flash map**, printed at boot (`report_ota_state()`) and why a bad RP update recovers on its own:
+
+    0x000000  app        1 MB   the running image
+    0x100000  golden     1 MB   backup of the image being replaced
+    0x200000  staging    1 MB   incoming image
+    0x300000  meta       4 KB
+
+An RP firmware that boots but cannot talk to the ESP is replaced by the golden backup automatically after three failed attempts. This needs an 8 MB+ flash part (`ota_map_fits_flash()` checks the JEDEC-detected size and disables OTA rather than risk corrupting a 4 MB part).
+
+**Two things that will bite you:**
+
+- Bumping `SPI_FRAME_VERSION` (in [firmware/com/com.h](firmware/com/com.h)) breaks OTA for that release on both chips, because the update needs the very link it just changed. That one needs a cable release for the RP.
+- The one step with no software recovery is the couple of seconds while the RP is rewriting its own application flash. Losing power exactly there leaves the RP as a USB mass storage device; recover it by copying `okhi.uf2` onto it.
+
+**Checking the result**, `/stats` fields worth watching:
+
+    partition        ESP slot in use, ota_0 or ota_1
+    booted_pending   1 for the rest of the session after an OTA
+    rp_image_ready   1 while an RP image is still staged
+    ota_last_error   why the last upload was rejected, if it was
+
+## The ESP32-C2 as an SPI slave: behavior, quirks, and how they shaped the code
+
+The two chips talk over a private SPI link plus two side-band GPIO lines. The **RP2040 is the SPI master** and the **ESP32-C2 is the SPI slave**: the RP is the real time capture engine, so it owns the clock and decides when anything moves, while the ESP is the Wi-Fi / web / OTA brain that only ever answers. The slave side is ESP-IDF's `driver/spi_slave.h`, driven from [firmware/com/com_esp.h](firmware/com/com_esp.h); the RP master side lives in [firmware/com/com_rp_hw.h](firmware/com/com_rp_hw.h). Everything below is behavior of the ESP32-C2 slave and of the ESP-IDF `spi_slave` driver that we hit during development, and that the current protocol and timing hacks exist to work around. It is written down so anyone extending the link knows why the code looks the way it does.
+
+**Wire and frame format.** SPI mode 0 (CPOL=0, CPHA=0), MSB first, about 5 MHz (`SPI_BAUD` in com_rp_hw.h), DMA on the ESP side. The frame layout is 256 bytes (`SPI_FRAME_SIZE` in [firmware/com/com.h](firmware/com/com.h)): a 16-byte lead, an `OKHI` / `OKHC` magic, a small header, then a payload area. The ESP arms its DMA buffers at that full size, but the master does not always clock all 256 bytes (see quirk 3). Both ends stamp `SPI_FRAME_VERSION` into their frames, and the ESP rejects a control frame whose version does not match (counted as `spi_proto_mismatch`), so a version skew between the two firmwares is caught rather than silently misparsed.
+
+**Pins, clock and DMA.** The ESP-IDF slave driver caps non-DMA transfers at 64 bytes, so the 256-byte frames need DMA, which is why the slave is brought up with `SPI_DMA_CH_AUTO`. The ESP SPI pins (MOSI 7, MISO 2, SCLK 6, CS 10 in com_esp.h) are the ESP32-C2 IO_MUX defaults for SPI2, so the signals stay on the dedicated pins instead of going through the GPIO matrix. At 5 MHz that is not a performance requirement (the ESP-IDF docs note that at 80 MHz and below both routings behave identically), and 5 MHz sits far below the slave's rated 60 MHz ceiling.
+
+### 1. The slave must be armed before the master clocks a single bit
+
+An ESP SPI slave does not listen for free. A DMA transaction has to be queued with `spi_slave_queue_trans()` **before** the master pulls CS and starts clocking; if the master clocks while nothing is queued, that data is not captured. This one fact drives most of the design:
+
+- The slave pre-queues a ring of 8 transactions at startup (`SPI_QUEUE_DEPTH`, `spi_task()` in com_esp.h) and re-queues each buffer as soon as it has processed it, so there is always one waiting.
+- A dedicated ready line, `ELOG_SLAVEREADY` (ESP -> RP), tells the master when the slave actually has a transaction loaded. The slave raises it in `spi_post_setup_cb()`, which the driver fires after it has loaded a queued transaction into the SPI hardware, and drops it in `spi_post_trans_cb()`. Both callbacks are `IRAM_ATTR` because they run from interrupt context.
+- The master treats that line as a hard interlock. `my_spi_to_esp_write_blocking()` in [firmware/usb/rp/okhi.c](firmware/usb/rp/okhi.c) raises `EBOOT_MASTERDATAREADY` (RP -> ESP), spins until `ELOG_SLAVEREADY` is high, and only then drives CS and clocks the frame out. At boot, `init_esp_seq()` waits for the slave to come up before the first poll.
+
+None of this is an okhi invention. The ESP-IDF slave docs state plainly that "a Host should not start a transaction before its Device is ready for receiving data" and recommend a dedicated GPIO handshake to sync the two sides, and the official `spi_slave` receiver example raises that handshake line in its `post_setup_cb` and drops it in its `post_trans_cb`, which is exactly what okhi's `spi_post_setup_cb` / `spi_post_trans_cb` do with `ELOG_SLAVEREADY`. The line exists precisely because an SPI slave cannot be clocked on demand: the master has to be told when a transaction is armed. Both handshake GPIOs are pinned in [firmware/com/com_rp_pins.h](firmware/com/com_rp_pins.h).
+
+### 2. CS setup and hold matter, and the official ESP example shows you must delay around CS
+
+The ESP slave can miss the final bit of a frame when CS deasserts too close to the last clock edge, that is, when CS reaches the slave faster than the clock does. This is not okhi folklore. The official ESP-IDF `spi_slave` "sender" example handles exactly this on the master side by keeping CS asserted for a few SPI clock cycles after the last bit, with `cs_ena_posttrans = 3` in its master device config (that same example master runs at 5 MHz in mode 0, the exact clock and mode okhi uses). That example, its URL and the reasoning it gives ("Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK") are quoted verbatim in the comment above the `delay_cs()` macro in [firmware/com/com_rp_hw.h](firmware/com/com_rp_hw.h).
+
+okhi cannot use `cs_ena_posttrans`, because the RP drives CS in **software** rather than with the hardware CS pin (`rp_spi_master_init()` sets the CS GPIO by hand). So it reproduces the same margins itself, inside the `CS_LOW()` / `CS_HIGH()` macros that wrap every transfer:
+
+- **Hold after the last bit**, the direct analog of `cs_ena_posttrans = 3`: `delay_cs_pos()` keeps CS low for a short NOP delay after the last clock, before releasing it. The comment in com_rp_hw.h works the sizing out (about 90 NOPs, on the order of a few SPI clock cycles at 5 MHz, matching the example's 3). Both variants use this default.
+- **Setup after asserting CS**, before the first clock: the USB build additionally waits 25 us here (`delay_cs_pre()` / `SPI_CS_SETUP_US` in [firmware/usb/rp/okhi.c](firmware/usb/rp/okhi.c)); the PS/2 build leaves this at the same default NOP delay.
+
+The point for anyone touching this: the software-CS, NOP and busy-wait arrangement is not cargo cult, it is there to give the ESP slave enough CS setup and hold time so it does not drop the last bit, mirroring what the official example does with `cs_ena_posttrans`. If you change the CPU clock or the SPI rate, re-check these delays, since the NOP timing scales with the clock (com_rp_hw.h spells out the 125 MHz and 250 MHz cases).
+
+### 3. Fixed-size DMA buffers, word-aligned, with a separately reported transfer length
+
+The slave's DMA works in fixed length buffers, so the RX and TX buffers are a fixed 256 bytes each and every transaction is armed for that full length (`length = SPI_FRAME_SIZE * 8` bits in `spi_task()`). The ESP-IDF docs are explicit that `length` is only the buffer capacity: the real transaction length is decided by the master's clock and CS, and can only be read afterwards from `trans_len`. So the master does not have to clock all 256 bytes: the driver reports the actual bit count through `trans_len` (the ESP keeps it for diagnostics), and the payload length itself is recovered by scanning the received buffer in `spi_payload_length()`. This is how the PS/2 variant can forward short keystroke lines while the poll, status and OTA-data frames use the full 256-byte layout. The RX/TX buffers carry `WORD_ALIGNED_ATTR` because, with DMA, the driver requires the buffer to start on a 32-bit boundary and be a multiple of 4 bytes long, and it errors out of `spi_slave_queue_trans()` otherwise; the fixed 256-byte size meets the length-multiple part. The net effect is that the slave side always deals in 256-byte buffers even when the payload is a short line.
+
+### 4. The slave can never start a transfer, so everything is poll plus piggyback
+
+A slave only responds. The ESP cannot push a byte when it wants to; it can only place data in its TX buffer and wait for the master to clock it out on MISO. The whole protocol is built around that constraint:
+
+- The RP periodically clocks a control frame (magic `OKHC`, `SPI_CTRL_TYPE_POLL`) in `poll_esp()`, driven by `poll_esp_if_due()`, as one full-duplex 256-byte transfer. On that same transfer the ESP's already-queued TX buffer rides back on MISO as a status frame with flag bits (`SPI_FLAG_RP_IMAGE_READY`, `SPI_FLAG_RP_COMMIT`, and so on). Because the TX buffer was filled when the ESP re-armed it, the status the RP reads reflects the state as of that arming, one transfer behind.
+- OTA of the RP image is pure request/response over polling: the RP asks for block N with `SPI_CTRL_TYPE_REQUEST_BLOCK`, the ESP only acts on that request after the transfer completes and loads block N into the *next* TX buffer in `spi_fill_frame()`, so the RP reads it back on a following poll (`ota_fetch_block()` retries for exactly this reason). Nothing "sends" the image; the RP pulls it 128 bytes at a time.
+- Captured keystrokes travel the other way, RP -> ESP on MOSI, and the ESP just files whatever landed in its RX buffer into a ring for the web server to serve.
+
+### 5. The two handshake GPIOs are also ESP32-C2 strapping pins, on purpose
+
+This one catches people new to the ESP32-C2, so it is worth spelling out. The two side-band handshake lines are **not** ordinary GPIOs on the ESP side, they are the chip's **two strapping pins**:
+
+| line | RP2040 pin | ESP32-C2 pin | ESP strapping role at reset |
+|---|---|---|---|
+| `EBOOT_MASTERDATAREADY` (RP -> ESP) | GPIO14 | **GPIO9** | selects the **boot mode** |
+| `ELOG_SLAVEREADY` (ESP -> RP) | GPIO15 | **GPIO8** | selects **ROM-log printing** |
+
+Pins are defined in [firmware/com/com_rp_pins.h](firmware/com/com_rp_pins.h) (RP side) and [firmware/com/com_esp.h](firmware/com/com_esp.h) (ESP side); the wiring is in the board schematic, `stuff/images/schematic.png`.
+
+**What a strapping pin is.** At power-up or reset the ESP32-C2 samples a small fixed set of GPIOs to decide how it boots, latches those values, and then **frees the pins to be used as normal IO** for the rest of the run. The datasheet says exactly this (`stuff/esp8684_datasheet_en.pdf`, chapter 3 "Boot Configurations", tables 10, 12 and 13). So a strapping pin is a normal GPIO that is *also* read once, very early, before your firmware ever runs. Reusing these two for the SPI handshake afterwards is deliberate and perfectly legal, precisely because the datasheet guarantees they are free after reset, and it is why they were picked. The names are the hint: `EBOOT` = ESP boot-select, `ELOG` = ESP ROM-log.
+
+**GPIO9 = boot mode (the `EBOOT` line).** GPIO9 is the ESP's BOOT pin, the equivalent of the BOOT button on a devkit. At reset:
+
+- **GPIO9 = 1 -> SPI boot** (run the app in flash). This is the default: GPIO9 has an **internal weak pull-up** (datasheet table 10), so left alone it reads 1.
+- **GPIO9 = 0 -> Joint Download Boot**, the UART flashing mode that esptool drives.
+
+The rule the okhi RP follows: **while the ESP is in reset the RP must not pull GPIO9 low, or the ESP drops into flashing mode instead of running the app.** It does this by leaving `EBOOT` as an **input (high-Z)** during the ESP's boot, `rp_board_boot_init()` in [firmware/com/com_rp_hw.h](firmware/com/com_rp_hw.h) sets `GPIO_IN`, so the ESP's own pull-up wins and selects SPI boot, and only turns it into a driven output later, once the ESP is up, in `esp_link_master_init()`. The flip side of the same fact is how you deliberately enter flashing mode: hold GPIO9 low and reset.
+
+**GPIO8 = ROM-log printing (the `ELOG` line).** GPIO8 is the other strap. For SPI boot its level is **don't-care for the boot mode itself** (datasheet table 12), but together with the `EFUSE_UART_PRINT_CONTROL` eFuse it still decides whether the boot ROM prints its messages on UART0 (table 13). Unlike GPIO9 it has **no internal pull** at all (table 10, "N/A"), so whatever pull you attach externally is what sets that strap at every reset. okhi puts an **internal pull-up** on `ELOG` from the RP side (`esp_link_uart_init()` in com_rp_hw.h), which pins the ROM-log strap high.
+
+**The trap, and how to handle it safely.** Because the RP holds `ELOG` high with that pull-up, there is a window right after any ESP reset (an OTA of the ESP, a Wi-Fi settings change that restarts it, a brownout, the first seconds of power-on) where the **ESP has not yet driven GPIO8**, so the line just floats high on the RP's pull-up. The master then reads `SLAVEREADY = high = armed` while the slave is in fact still booting, clocks a frame at it, and those bytes are lost. The tempting "fix", flipping the RP pull to pull-**down** so a floating line reads not-ready, is **the wrong move**: that pin is the ROM-log strap, and a pull-down would change what the ESP samples at every single reset. The correct fix stays in software on the master side: the RP knows when it has just reset the ESP (it owns `ESP_RESET_GPIO`), so during that known boot window it should treat `SLAVEREADY` as not-ready and buffer, instead of trusting the raw level. **Never solve a strapping-pin problem by changing the strap.**
+
+**If you are wiring your own two-chip board,** the portable lessons are: (1) read the strapping table *before* you assign a handshake to GPIO8 or GPIO9; (2) choose any pull on a strapping pin to match the level the *strap* needs at reset, not just the level your handshake wants when idle; and (3) prefer to leave a strapping pin at its strap default (high-Z, let its own pull decide) during the other chip's reset, driving it only once that chip is past boot, exactly as the `EBOOT` input-then-output flip does here. The strapping setup/hold window is short (datasheet table 11: hold 3 ms after CHIP_EN is released), but short is not zero, so a line that stays quiet across the other chip's reset is the safe design.
+
+### ESP-IDF specifics
+
+The ESP firmware is built on native **ESP-IDF** (v6.0.2 here). Since okhi v5 the old PlatformIO + Arduino layer was dropped, partly so a single codebase supports both the legacy ESP32-C2 and the new 2.0 (H4X) silicon, which older ESP-IDF cannot build for (see the note under **ESP-C2 DEV SETUP** above). The slave lives entirely in the `spi_slave` driver; the DMA queue, the two IRAM callbacks and the fixed-frame model above are all ESP-IDF behavior, not something okhi invented.
+
+### In hindsight: the master and slave roles are arguably backwards
+
+Every quirk in this section comes from the ESP32-C2 being the **slave**. Looking back, flipping the roles, making the **RP2040 the SPI slave** and the **ESP32-C2 the master**, would likely have been the cleaner choice. The RP2040's PIO can implement a tightly timed SPI slave in hardware, and an ESP master could initiate a transfer whenever it wanted data instead of waiting to be clocked. That would have removed the `SLAVEREADY` / `MASTERDATAREADY` arming handshake and much of the software-CS setup and hold tuning that the current direction forces. But that is not how it was built, and in practice it does not matter: the current design has proven reliable in the field and works well, so it stays as is. Treat this section as a heads-up for anyone extending the link, not a bug list.
+
+## Link speed benchmarks (SPI & UART): measured limits
+
+okhi ships a built-in link benchmark that stresses the RP2040 <-> ESP32-C2 bus over a
+sweep of clocks/bauds, checks every frame with CRC32 and sequence numbers in both
+directions, and reports the highest rate that stays clean. It is driven over HTTP (the
+board's web page has buttons; the raw endpoint is `/spibench`), so you can characterize
+your own PCB.
+
+Measured on the production hw v0F board (firmware v7, 2026-08). A short sweep finds the
+highest rate that survives a 300 ms burst, but that **overestimates** the sustainable rate:
+a soak (the benchmark's `soak` mode, run here for a full hour) is the honest test and exposes
+rare errors the sweep is too short to catch. Three numbers matter per link: the sweep ceiling,
+that ceiling held for an hour, and the highest rate that survives an hour with **zero** errors.
+
+| Link | Sweep ceiling (short burst) | Ceiling held 1 h | **Safe max (0 errors, 1 h soak)** | Normal operating rate |
+|---|---|---|---|---|
+| **SPI** (RP master <-> ESP slave, no core overclock) | ~34.5 MHz | 34.5 MHz: 20.7M frames, 2 corrupted, no reset (about 1 error per 10M) | **30 MHz**: 22.4M frames, **0 errors**, no reset | 5 MHz (~6x under the safe max) |
+| **UART** (RP uart0 <-> ESP UART0) | 3 Mbaud (ladder top) | 1.5 Mbaud: 9M frames, 3 corrupted + 9 lost + 142 resyncs (3 Mbaud fails outright) | **1 Mbaud**: 6.5M frames, **0 errors**, no reset | 74880 baud (~13x under the safe max) |
+
+So for this PCB the **safe maximum link speeds are 30 MHz (SPI) and 1 Mbaud (UART)**: each was
+verified with a full hour of soak and zero errors of any kind, and no board reset. The sweep
+ceilings (34.5 MHz / 3 Mbaud) are absolute maximums, not usable rates: at the ceiling a 1-hour
+soak still runs without resetting the board, but a handful of frame errors creep in (typically
+after 20-30 min, then leveling off, so likely thermal). Normal operation runs far below even the
+safe maximum, with a large margin and zero errors. Both limits are set by signal integrity on
+the PCB, not by the firmware; overclocking the RP2040 core to 240 MHz does not raise the SPI
+ceiling (the wall is the bus, and the board browns out first, see the SPI slave notes above).
+
+Reproduce it (replace the IP with your board's):
+
+```
+# SPI, no overclock, 2-40 MHz (values in kHz), 500 ms per step
+curl "http://<board-ip>/spibench?start=1&kind=0&ms=500&min=2000&max=40000&steps=15&soak=0&down=0&oc=0"
+# UART, full baud ladder 9600..3000000 (values in baud), 300 ms per step
+curl "http://<board-ip>/spibench?start=1&kind=1&ms=300&min=9600&max=3000000&steps=13&soak=0&down=0"
+# 1-hour soak at a single fixed rate (SPI 34.5 MHz here): min=max, steps=1, soak in ms
+curl "http://<board-ip>/spibench?start=1&kind=0&ms=500&min=34500&max=34500&steps=1&soak=3600000&down=0&oc=0"
+# then poll the result:
+curl "http://<board-ip>/spibench"           # state= and best_khz=
+curl "http://<board-ip>/spibench?from=0"    # per-step table
+```
+
+Parameters: `kind` is 0 for the SPI link or 1 for the UART; `ms` is the per-step duration;
+`min`/`max` are in **kHz for SPI** and in **baud for UART**; `steps` is the coarse sweep
+count; `oc=1` enables RP2040 core overclock for the SPI sweep (brownout-prone); `soak`
+runs a longer confirmation at the best rate. The benchmark never stops at the first
+failure (the link can be non-monotonic due to resonances): it sweeps the whole range and
+then reports the highest clean rate.
+
+
+## Built-in self test: what it checks and how to read it
+
+Every board can test itself without any external instrument. The web page has a
+**Self test** button; the raw endpoint is `/selftest`. Both halves take part: the ESP
+checks itself and then arms the RP2040, which runs its own list and streams each result
+back over the SPI link. A full run is 36 rows and takes a few seconds.
+
+```
+# run everything, including the flash read/write probe and the USB switch
+curl "http://<board-ip>/selftest?start=1&flash=1&sw=1"
+# poll the summary and the rows (8 per page)
+curl "http://<board-ip>/selftest"
+curl "http://<board-ip>/selftest?from=8"
+```
+
+Rows come back as `t=id,verdict,a,b,text`, with verdict `0` pass, `1` fail, `2` warn,
+`3` skipped, `4` informational and `5` waiting for you to answer. `flash=1` adds the
+erase/write/read check on the spare sector, and `sw=1` adds the USB switch and sniff pin
+tests; both are opt-in because they touch state the running firmware otherwise owns.
+
+A healthy hw v0F board with no target keyboard attached reports **29 pass, 0 fail,
+0 warn**, with the rest informational, skipped, or waiting on you:
+
+| Area | Covered by |
+|---|---|
+| RP2040 core | firmware build, hardware straps, die temperature |
+| Clocks | `clk_sys` 120 MHz, `clk_peri`/`clk_usb`/`clk_adc` 48 MHz, U4 TCXO 12 MHz, ROSC |
+| U3 flash (W25Q128) | JEDEC id, 16 MB size against what the build expects, erase/write/read |
+| GPIO | pull-up and pull-down follow, push-pull drive, and a full pin-to-pin bridge scan |
+| U1 USB switch | mux select and output enable both directions, sniff pair follows, previous state restored |
+| SPI link | 256 real frames, magic and version verified, worst search offset reported |
+| UART link | one real 460800 baud benchmark step, both directions CRC and sequence checked |
+| Handshake lines | MASTERDATAREADY (RP14 to ESP IO9) and SLAVEREADY (ESP IO8 to RP15) both toggle |
+| CHIP_PU | R7 holds the ESP enable up, and the RP can pull it down |
+| ESP32-C2 | chip revision, MAC, flash id and size, heap, reset reason, partitions, SPIFFS, WiFi |
+| LEDs | LED1 (ESP IO0 through R8) and LED2 (RP GPIO26 through R10), **you confirm these** |
+| Clean exit | every pin the sweep borrowed is verified to be back exactly as it was found |
+| WiFi speed | filed by the browser after the throughput test below, both directions with CRC32 |
+
+The two LED rows are the only ones a machine cannot judge: the board blinks and you
+answer with `?led=1&ok=1` for LED2 or `?led=2&ok=1` for LED1 (the web page turns that
+into a yes/no prompt). `ST_RP_ADC_PIN` reports skipped on purpose, because GPIO27/ADC1
+is not populated on this board. Nothing checks U2 (the 3V3 regulator), the protection
+diodes and fuse, the RUN reset network, or the RP2040's own USB port on H2: the first
+three have no observable output the firmware can read, and the last needs a host at the
+other end.
+
+Two design notes, because both cost real debugging time:
+
+- **The link tests move real traffic instead of reading a status word.** A burst that
+  arrives intact exercises the whole path at once, so a single row covers clock, both
+  data lines, chip select and the two handshake wires. They reuse the benchmark code
+  described above rather than reimplementing frame checking.
+- **The handshake lines are latched, not sampled.** Neither line can be probed by
+  holding a level and then asking the far side, because the only way to ask is an SPI
+  transfer and every transfer drives both lines itself: the question always arrives
+  after the answer has been overwritten. Each side therefore records both levels it
+  sees while handshaking, and the test just runs traffic and reads that latch.
+- **The board is fully usable the moment a run ends.** The sweep drives, pulls and
+  reconfigures pins that the running firmware owns, so each one is photographed before
+  the run (function, direction, level, pulls) and put back exactly as it was, with the
+  peripheral function restored last so a pin belonging to PIO or the UART is not left
+  on SIO. The link pins are then reasserted to their known running state, and the last
+  row compares every borrowed pin against its photograph, so a test that forgets to
+  clean up is caught immediately rather than showing up later as a board that
+  misbehaves after a self test.
+
+
+### Proving the USB switch with a ground wire
+
+The sweep can tell that the switch's control pins move and that the sniff lines follow a
+pull, but not that the switch itself actually passes and blocks a signal: with nothing
+attached, both sides of it look the same. The web therefore offers a guided check, under
+the self test, that settles it with a single dupont wire. It only applies to boards that
+carry the TS3USB3000; earlier revisions without the switch simply skip it.
+
+Unplug the target keyboard, then, **one line at a time**:
+
+1. Bridge **D+** (DATA on a PS/2 board) on the sniff header to **GND** and press Check.
+2. Move the wire to **D-** (CLOCK) and press Check again.
+
+For each line the RP holds it up with its internal pull-up and takes three readings:
+
+| Reading | What it proves |
+|---|---|
+| the line goes low with the switch closed | the switch really passes the signal through |
+| the **other** line stays high at the same time | no solder bridge between the two neighbouring pins |
+| the line springs back high with the switch open | the switch really isolates, it is not stuck closed |
+
+Doing one wire at a time is the whole point of the bridge half: if the two pads are
+bridged, grounding one drags the other down with it and the check fails. The verdict
+names which of the three went wrong, so `no ground through it` means the wire or the
+switch, `BRIDGED to its neighbour` means the two pads, and `will not open` means a switch
+stuck closed. Both pins are put back exactly as they were afterwards, so the board is
+sniffing again the moment you remove the wire.
+
+### Rebooting the RP2040 as a USB drive
+
+The card below the self test has a **Reboot the RP as a USB drive (BOOTSEL)** button. It
+restarts the RP2040 into its own bootloader, where it enumerates as the usual RPI-RP2 mass
+storage device on the USB programming header, ready for a `.uf2` to be copied onto it. This
+is the escape hatch when the OTA path is not an option, for instance when flashing a
+completely different firmware onto the RP.
+
+The RP stops running the moment you press it, so the SPI link goes down and the page will
+report the RP as missing until you either flash something or power cycle the board. The
+ESP is unaffected and keeps serving the page throughout, which is what makes the button
+usable in the first place.
+
+**The RP reboots on its way there, and it has to.** The request arrives inside the SPI poll,
+which runs on core 1, and `reset_usb_boot()` called from there does jump to the bootrom but
+never produces a usable device: core 0 is still running the capture, with its PIO programs
+and DMA channels live, over the RAM and the peripherals the bootrom needs for itself. The
+board ends up stranded between the two, neither keylogger nor bootloader, and only a power
+cycle recovers it. So core 1 records the request in a variable that survives a reset and
+reboots instead; `ota_bootsel_check()` then enters the bootloader from the top of `main()`,
+on core 0, before core 1 is launched and with every peripheral back at its reset state. That
+is the same path the physical BOOTSEL button takes, which is why that one always worked. The
+marker is cleared before the jump, so power cycling out of the bootloader brings the
+keylogger back rather than dropping into it again.
+
+When checking whether the jump happened, watch `rp_link_age_ms` in `/stats` rather than
+`link`: the age starts climbing immediately, while `link` takes about three seconds to turn
+`stale`. And a link that goes quiet only proves `reset_usb_boot()` ran, not that the
+bootloader came up.
+
+
+## WiFi speed test, measured from the browser
+
+How fast the board can actually be reached matters as much as whether it answers at all, so
+the page carries a throughput test under **WiFi speed**. It runs from the browser that is
+looking at the page, one direction after the other, and files the result in the self test
+table as well. **Time per direction** is a dropdown: 30 seconds, 1, 2, 5, 10 or 15 minutes.
+Thirty seconds is enough to see roughly where a link sits; the longer settings are for
+finding out whether it holds that rate, since a radio that starts fast and degrades, or an
+access point that reshuffles rates under sustained load, only shows up over minutes.
+
+What makes the number trustworthy is that nothing is taken on faith:
+
+- **The payload is random, not zeros.** The board generates it from a linear congruential
+  sequence, so it is spread out and incompressible enough that no layer in between can
+  flatter the result by squeezing it.
+- **Every block carries a CRC32 and is checked at the far end.** On the way down the board
+  appends the checksum of the block as eight hex digits after the payload, and the browser
+  recomputes it over what actually arrived. On the way up the browser sends the checksum of
+  what it generated and the board recomputes it over what actually landed, answering `ok=1`
+  or `ok=0`. A link that is fast but drops or mangles bytes fails instead of scoring well.
+- **Nothing is stored.** The uploaded bytes are hashed as they arrive and discarded, so what
+  is being measured is the radio and not the flash.
+
+The browser loops one block at a time until its own stopwatch runs out, rather than doing a
+single huge transfer, so a slow link still makes progress and a fast one is not dominated by
+one long request. The average is total bytes over elapsed time, which is why the figure is
+real throughput including every per request overhead, not a peak.
+
+### What this PCB actually manages, a room away
+
+Measured with the page's own benchmark at the 15 minute setting, which is 15 minutes down
+followed by 15 minutes up, on a production board joined to an ordinary home network as a
+client. The board sat about five metres from the laptop, in the next room, with one wall in
+between. Signal at the board was **-45 dBm**, a strong link, and the self test reports it next
+to the network name so the figures below always come with the conditions that produced them.
+
+| direction | rate | in bytes per second | moved in 15 min | integrity |
+|---|---|---|---|---|
+| **download** (board to browser) | **2.50 Mbit/s** | **0.31 MB/s** = 313 KB/s (0.30 MiB/s, ~305 KiB/s) | 268 MiB | every block verified |
+| **upload** (browser to board) | **1.31 Mbit/s** | **0.16 MB/s** = 164 KB/s (0.16 MiB/s, ~160 KiB/s) | 141 MiB | every block verified |
+
+The test reports Mbit/s because that is what radios are rated in, but bytes per second is
+what most people picture, so both are given. **Divide megabits by 8 to get megabytes**: 2.50
+Mbit/s is 0.31 MB/s. The values in brackets are the binary units, MiB/s and KiB/s, which
+divide by 1024 rather than 1000; they run about 5% lower for the same speed, which is exactly
+why the two are spelled out separately instead of being mixed.
+
+**Not one byte of 409 MiB failed its CRC.** At this range the link is not marginal, it is
+simply not fast, and those two things are worth telling apart.
+
+#### Read these numbers for what they are
+
+This is **application throughput measured end to end from a browser**, not the radio's raw
+rate, and the gap between the two is large and entirely normal. What the figures already have
+subtracted from them:
+
+- **802.11 itself**: preambles and framing, an acknowledgement for every frame, retries,
+  waiting for the channel to be free, and the rate the access point decides to use.
+- **TCP**: the page fetches one block at a time and the board answers `Connection: close`, so
+  every block pays a fresh three way handshake and starts again in slow start. That is a
+  deliberate part of the test, because it is also how anything else will talk to this board.
+- **HTTP**: request and response headers on every block.
+- **The ESP32-C2 doing the work**: a single small core that also generates the payload and
+  computes its CRC32 as it streams, on a four connection server with a 2 kB send buffer, on
+  top of lwIP. On a part this size the processor and the stack, not the antenna, are usually
+  what sets the ceiling.
+
+So the honest way to read the table is: *this is what a program pulling data off the board
+will really see*, which is exactly the number worth knowing when the board is full of capture
+and you want it out. It is not a measure of how good the radio or the antenna is, and it
+should not be compared against a PHY rate or a phone's speed test.
+
+#### It is a range, not a figure
+
+The long run showed something a 30 second test cannot. Download held 2.5 Mbit/s flat for the
+full fifteen minutes. Upload did not: it ran at roughly 2.1 Mbit/s for five minutes and then
+settled to around 0.8, which is what drags its fifteen minute average down to 1.31. From then
+on the whole link, both directions, sat at about 1.2 Mbit/s and stayed there. Leaving the board
+idle for three minutes did not bring it back, and neither did rebooting it, while the signal
+stayed at -45 dBm and the heap stayed flat at 31 kB free with no leak. So it is not the board
+running out of memory and it is not a weak signal; something outside it, the access point or
+the channel, settled into a slower arrangement and kept it.
+
+Expect **1.2 to 2.5 Mbit/s at five metres through a wall**, which is **0.15 to 0.31 MB/s**
+(150 to 313 KB/s, or roughly 146 to 305 KiB/s), and re-measure rather than assume. That
+spread is exactly why the longer settings exist: a 30 second run would have reported 2.5
+Mbit/s in both directions and told you nothing about what the link does once it is asked to
+keep it up.
+
+#### Is that fast enough for a keylogger?
+
+For the job the board actually does, it is not close to being the limit. Worth spelling out,
+because 2.5 Mbit/s sounds slow next to any modern link and the instinct is to read it as a
+problem.
+
+**Capturing keystrokes needs almost nothing.** Someone typing hard, around 120 words per
+minute, produces roughly 20 HID events per second counting key down and key up. At the size
+these records are stored and served, that is on the order of **300 to 600 bytes per second**.
+The measured link moves **313 000 bytes per second** downward. The margin is about **500 to
+1000 times** what the keylogger generates. Sustained typing does not stress this radio and
+never will; the capture side is bounded by the USB bus and by human fingers, not by WiFi.
+
+**The one place the speed is felt is the OTA.** A combined package is about 913 KB and
+uploading it took **8.3 seconds** on this link, an effective 110 KB/s, which is 67% of the
+1.31 Mbit/s the benchmark measured for uploads. That gap is the per block HTTP and TCP
+overhead described above, and 8 seconds for a full two chip firmware update is perfectly
+comfortable. On a weaker link this is the operation that gets uncomfortable first, not the
+capturing.
+
+**What matters more than the rate is what else those runs proved.** Not one byte of 409 MiB
+failed its CRC, and the upload started at 2.1 Mbit/s and settled at 1.2 after five minutes.
+For a device that is supposed to sit somewhere untouched and stay reachable, a link that is
+slow but perfectly correct and predictable beats a fast one that occasionally mangles a
+block. That is why the 15 minute setting is worth more here than the 30 second one.
+
+**The real ceiling is the buffer, not the radio.** The ESP holds `RING_ENTRIES` = 512
+captured records. While the page is open it polls `/buffer` every 800 ms, which at 20 events
+per second is about 16 records per poll, so it never comes close to filling. With nobody
+reading, that same ring fills in roughly **26 seconds of hard typing** and the oldest records
+start being dropped, which the page reports as skipped. If you care about losing nothing,
+keep a page polling or increase the ring; bandwidth is not what will lose you keystrokes.
+
+The result lands in the self test as **WiFi speed**, which passes when both directions moved
+verified data at a reasonable rate, warns when either direction crawls, and fails outright if
+any block failed its checksum. The raw endpoints are there if you would rather drive it
+yourself:
+
+```
+# download: <bytes> of payload followed by 8 hex digits, the CRC32 of that payload
+curl -s "http://<board-ip>/wifidown?bytes=262144&seed=7" --output block.bin
+# upload: the board replies bytes=, crc= and ok=, having hashed what it received
+curl -s -X POST --data-binary @block.bin "http://<board-ip>/wifiup?crc=<crc32 as decimal>"
+```
 
 # Web Developers
 
@@ -575,6 +1370,10 @@ node.exe webgen.js
 This script will generate a new web for ESP firmware.
 
 Please, keep in mind that the web is very simple, it is only a proof of concept, and we must conserve the ESP flash memory for other features, so do not add tons of code, just the necessary for useful features.
+
+**Why the page is embedded in the binary, not SPIFFS.** `webgen.js` writes `main/index.html.gz`, which links into the app via `EMBED_FILES` and is served straight out of mapped flash (`http_reply_index()`): no separate `storage.bin` reflash for a page change, no risk of firmware and page drifting apart (the old SPIFFS layout let a device run new firmware with an old page, which happened in practice), and it travels over OTA since that only ever writes app partitions. `webgen.js` gzips the **original** HTML, not a minified one, because `html-minifier`'s JS minifier only understands ES5 and the page uses template literals and arrow functions.
+
+Rules for the page itself: everything inline, no CDN, web font or remote image (the device is an access point with no route to the internet, so a remote resource never loads, it does not just load slowly); `<meta name="viewport">` is mandatory or phones render it at desktop width and then zoom out; inputs need `font-size:16px` or iOS zooms the whole page on focus; colours come from CSS variables redefined under `prefers-color-scheme: dark` (JS-set status colours are inline on purpose and must stay readable in both themes); and `webusb/index.html` and `webps2/index.html` must stay feature-identical, only the captured-data panel and its decoder should legitimately differ.
 
 # Developers notes for PS2 PIO
 
@@ -660,16 +1459,32 @@ Pack includes:
 
 ![](stuff/images/usbdevboard.jpg)
 
-- 1 PS2 sniffer board for developers (this board converts PS2 signals to 3v3 for Raspberry Pi Pico):
+- 1 PS2 sniffer board for developers (this board converts PS2 signals to 3v3 for RP2040 BOARD):
 
-![](stuff/images/ps2devboard.jpg)
+![](stuff/images/newdevsetup.png)
 
 You need buy by yourself:
 
-- 1 RASPBERRY PI PICO (soldered version) + USB cable
-- 1 Raspberry Debug probe (debugger) + USB cable
+- 1 RP2040 board with 16 MB of flash, Raspberry Pi Pico form factor (soldered version) + USB cable. **A stock Raspberry Pi Pico will not work**, see the note below
+
+- 1 Raspberry Pi Debug probe (debugger) + USB cable
 - 1 ESP8684-DevKitM-1 (soldered version) + USB cable
 - 1 kit Dupont cables (Female-Female, Male-Male, Male-Female)
+
+-----
+
+- 3-JST-SH to 3-Female DuPont cable 
+- 3-JST-SH to 3-Male DuPont cable 
+- 3-JST-SH to 3-JST-SH cable
+
+This combination covers the vast majority of RP2040 boards available online, letting you connect the Raspberry Pi Debug Probe via SWD and UART regardless of the connector type used:
+
+![](stuff/images/jstshcableset.png)
+
+Recommendation: buy a couple of JST-SH sets of each cable so you have spares and avoid losing connectivity during testing or debugging.
+
+-----
+
 - 1 Cheap logic analyzer ~8$ (compatible with Saleae software if possible)
 - 1 PS2<->USB adapter
 - 1 PS2 male to PS2 male cable (MINI-DIN 6P)
@@ -677,21 +1492,57 @@ You need buy by yourself:
 - 1 USB Keyboard (optional)
 - 1 PS2 Keyboard (Lenovo on Aliexpress is OK) (optional)
 
-So, this is basically the okhi implant in big format! the PCBs just allow an easy sniffer and interconnection between Raspberry Pi Pico and ESP32-C2 and the keyboard.
+So, this is basically the okhi implant in big format! the PCBs just allow an easy sniffer and interconnection between RP2040 board and ESP32-C2 and the keyboard.
 
 With this setup, you can debug, test, and develop the implant firmware in a more comfortable way.
 
-## Flash PI PICO PS2 firmware using Raspberry Pi Debug Probe
+## About the RP2040 board
 
-- Connect the raspberry pi debug probe to the raspberry pi pico:
+A stock Raspberry Pi Pico is **not** enough: it only carries 2 MB of flash, and okhi needs 16 MB. What you need is a board that keeps the same form factor, pinout and GPIO mapping as the Pico, but ships a 16 MB flash chip. Everything else must stay identical, otherwise the firmware and the developer boards above will not line up.
+
+There are plenty of cheap ones on the internet, and many of them come with USB-C instead of micro-USB, which is a nice bonus. The one I use and recommend is the **YD-RP2040** (16 MB version).
+
+![](stuff/images/rp2040bigflash.png)
+
+# Extract boards from the female header pins
+
+![](stuff/images/extractool.png)
+
+https://github.com/therealdreg/removal_tool_cw308_ufo_chipwhisperer
+
+Use this 3D-printable removal tool for the CW308 UFO ChipWhisperer platform to remove the RP2040 board from the female header pins without damaging either the board or the pins. It is designed to fit the RP2040 board precisely, making it easy to extract it safely from the female headers.
+
+Gently pry up each of the four corners of the board little by little, rotating around the board as you go, until it comes free from the female pins. Do not apply too much force; work slowly and carefully.
+
+[Click here to watch a short video showing how to safely extract the board without damaging it: stuff/images/extractfig.gif](stuff/images/extractfig.gif)
+
+
+## Flash RP2040 Board PS2 firmware using Raspberry Pi Debug Probe
+
+- Connect the raspberry pi debug probe SWD + UART to the RP2040 board:
+
+
+![](stuff/images/Cum1K.jpg)
+
+-----
+
+Example PI PICO + Debug Probe:
 
 ![](stuff/images/debugprobepico.png)
 
-Connect the debug probe to the computer using a USB cable. Also connect raspberry pi pico to the computer using a USB cable.
+-----
+
+Final setup for PS2 dev SWD + UART debugging:
+
+![](stuff/images/I69UQ.jpg)
+
+------
+
+Connect the debug probe to the computer using a USB cable. Also connect the RP2040 board to the computer using a USB cable.
 
 Open Visual Studio Code (with the Raspberry Pi Pico extension), open okhi ps2 project, shift+ctrl+p, type ">Tasks: Run Task", press enter, select "Flash", press enter. Done!
 
-## Debugging PI PICO PS2 firmware using Raspberry Pi Debug Probe
+## Debugging RP2040 Board PS2 firmware using Raspberry Pi Debug Probe
 
 - The same as flashing, but go to Run and Debug icon (shift+ctrl+d). Select "Pico Debug (Cortex Debug)" and press the green arrow. Done!
 
@@ -699,11 +1550,11 @@ Open Visual Studio Code (with the Raspberry Pi Pico extension), open okhi ps2 pr
 
 The debugger stops on platform_entry function, At this point, you can set a breakpoint in the main() code, etc...
 
-## PI PICO Debug UART Console
+## RP2040 Board Debug UART Console
 
-Connect GND from USB to 3v3 UART adapter to GND PIN of the Raspberry Pi Pico.
+Connect GND from USB to 3v3 UART adapter to GND PIN of the RP2040 board.
 
-Connect a USB to 3v3 UART adapter -> RX From adapter to the TX PIN (GPIO 4) of the Raspberry Pi Pico:
+Connect a USB to 3v3 UART adapter -> RX From adapter to the TX PIN (GPIO 4) of the RP2040 board:
 
 ![](stuff/images/uartdebug.png)
 
@@ -711,7 +1562,7 @@ You can use Raspberry Pi Debug probe to debug UART because it has a USB to UART 
 
 ![](stuff/images/uartcon.png)
 
-Note: Raspberry Pi Pico is 3v3, so you need a 3v3 USB to UART adapter.
+Note: RP2040 board is 3v3, so you need a 3v3 USB to UART adapter.
 
 Open a terminal (putty, teraterm, etc...) and select the COM port of the USB to UART adapter. Set the baudrate to 921600 and done! you can see the debug messages in the terminal.
 
@@ -773,6 +1624,10 @@ Hard resetting via RTS pin...
 ```
 
 And then the debug UART window should appear
+
+Somtimes is neccesary run a "Erase Flash Memory from Device" after build but before flash, to avoid problems with old firmware in the flash memory. Build the code, whe finish: Press Ctrl+Shift+P, type "> ESP-IDF: Erase Flash Memory from Device" and press enter. After that, you can flash again.
+
+![](stuff/images/idffullera.png)
 
 # PS2 Captures
 
@@ -2991,6 +3846,103 @@ The header word is `flags | byte_count`, with `CAPTURE_SIZE_MASK = 0xFFFF` in th
 
 
 # Developers doc
+
+## Putting the implant on your own WiFi
+
+By default the ESP runs its own access point and you join that. While you are
+working on it, it is far more convenient to have it join YOUR network instead:
+the web page then lives at an address on your LAN, it stays reachable while you
+keep your normal internet connection, and anything that can reach your LAN can
+poke the endpoints.
+
+Create the file below. It is in `.gitignore`, and it deliberately has a
+different name from the tracked `wifi_client.h` so it has **never been in the
+index** and cannot be committed by accident:
+
+```
+firmware/usb/esp/src/wifi_secret.h        (and/or the ps2 one)
+```
+
+```c
+#ifndef __WIFI_SECRET_H__
+#define __WIFI_SECRET_H__
+
+#define OKHI_DEV_STA_SSID "your network"
+#define OKHI_DEV_STA_PASS "your password"
+
+#endif
+```
+
+Rebuild the ESP and flash it. `wifi_client.h` is tracked and holds no secrets;
+all it does is `#include "wifi_secret.h"` when that file exists next to it.
+
+**Never put credentials in `wifi_client.h` itself.** That file IS tracked, and
+this repository is auto-committed, so anything written into it can end up in
+history where removing it means rewriting every SHA.
+
+### The trap this used to be, and why it is gone
+
+Gitignoring the header was not the whole story for a long time.
+`firmware/*/esp/build/okhi.bin` and `okhi.elf` used to be tracked so a fresh clone
+could cut a release without compiling, and a build made with `wifi_secret.h`
+present has your SSID and password sitting in those binaries in clear text.
+Committing them published the password just as surely as committing the header
+would, and the only defence was remembering to clean up first.
+
+**Since 2026-08-23 the whole of `build/` is gitignored**, so those binaries are
+not tracked at all and there is nothing to remember. The build still prints a
+`#warning` whenever the secret is compiled in, which is useful for knowing what
+kind of image you are holding, but it is no longer the thing standing between
+your password and a public repository.
+
+If you fork this and decide to track build output again, understand that you are
+putting that trap back.
+
+If you would rather not think about it at all, do not use the header. Set the
+network from the **Network** card on the web page instead: it stores to NVS,
+touches no build output, and is the same setting. The only thing the header buys
+you is surviving a reflash, and a reflash wipes stored settings by design
+anyway.
+
+### What those two defines actually change
+
+They change the FACTORY DEFAULT, nothing more. The order of precedence at boot
+is:
+
+1. Whatever is stored in NVS, if the build stamp matches. This is what the
+   Network card on the web page writes.
+2. Otherwise `OKHI_DEV_STA_SSID` / `OKHI_DEV_STA_PASS` if they were compiled in.
+3. Otherwise the access point.
+
+So a developer build comes up on your network the first time, and you can still
+change it from the web page afterwards without rebuilding.
+
+### Finding the address it landed on
+
+Two ways, and neither needs you to go hunting in your router:
+
+- The RP prints it on its debug UART whenever it changes, in either mode:
+  `esp wifi client, address 192.168.1.57`. That is uart1 on **GPIO 4 and 5 at
+  921600 baud**, the header marked TP1/TP2.
+- `GET /wifi` returns it, along with the mode and the build stamp the stored
+  settings belong to.
+
+### Settings are wiped by any firmware change, on purpose
+
+The ESP writes the build date and time of the running image into NVS. On every
+boot it compares. A mismatch erases the WHOLE of NVS and starts again from the
+factory default above.
+
+That is deliberate, not a limitation. Settings that outlive the firmware which
+understood them are how a board ends up joined to a network nobody remembers
+configuring, with no way back except a serial cable. Reflashing is the escape
+hatch, so it has to actually reset things. Rebuilding the same source twice
+produces two different stamps, so a rebuild resets it too.
+
+If a board cannot join the configured network twice in a row it gives up and
+comes back as an access point, keeping the setting on record so you can see
+what it was trying to join. A typo cannot lock you out.
+
 
 - https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf
 

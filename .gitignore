@@ -1,0 +1,49 @@
+# okhi build output. NOTHING under build/ is versioned.
+#
+# The remote used to carry the flashable images so a fresh clone could cut a
+# release without compiling. That convenience is gone on purpose: those binaries
+# are built from firmware/<variant>/esp/src/wifi_secret.h when it is present, and
+# a development build therefore has a real SSID and password sitting in clear
+# text inside okhi.bin and okhi.elf. Keeping them out of the index means it
+# cannot happen by accident, ever, regardless of what any build script does.
+#
+# The trade is deliberate: to produce a release you now clone, build all five
+# targets, and then run make_release.ps1. See "Releases" in CLAUDE.md.
+
+# ESP-IDF generated config. Rebuilt from sdkconfig.defaults on every build and
+# verified byte-identical, so versioning it only adds noise. sdkconfig.defaults,
+# sdkconfig.ci* and partitions.csv stay in: those are the source of truth.
+# sdkconfig.old is just idf.py's backup copy of the same generated file.
+firmware/*/esp/sdkconfig
+firmware/*/esp/sdkconfig.old
+
+# Every build tree, in full.
+firmware/*/esp/build/
+firmware/*/rp/build/
+firmware/uart_bridge/build/
+
+# Claude Code working files. Kept local on purpose: CLAUDE.md is a set of notes to
+# an assistant about this specific machine (toolchain paths, build quirks, what
+# has already been tried), and .claude/ holds per-user settings. None of it is
+# useful to anyone cloning the project, so it stays out of the public remote. The
+# user keeps their own backups.
+CLAUDE.md
+.claude/
+
+# Developer WiFi credentials. Never commit these. wifi_client.h is the tracked
+# mechanism and stays empty; wifi_secret.h is the file that actually holds a
+# SSID and a password, and it is deliberately a different name so that it has
+# never been in the index and cannot be committed by accident.
+firmware/*/esp/src/wifi_secret.h
+
+# Release output. make_release.ps1 drops release/<yyyyMMddHHmmss>/ holding the
+# built images plus a copy of stuff/last_esptool, which is hundreds of megabytes.
+# None of it belongs in the history: it is all reproducible from the tree, and a
+# release built for testing carries whatever was in wifi_secret.h at the time.
+# Ignoring the whole directory means no release can be committed by accident,
+# whatever it is named.
+/release/
+
+# Older releases used to land in a bare timestamp folder at the repo root. Kept
+# so an existing working copy does not suddenly show them as untracked.
+/20????????????/
