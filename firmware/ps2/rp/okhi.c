@@ -48,6 +48,7 @@ WARNING: BULLSHIT CODE X-)
 #include "hardware/timer.h"
 #include "hardware/uart.h"
 #include "hardware/watchdog.h"
+#include "hardware/vreg.h"
 #include "okhi.pio.h"
 #include "pico/bootrom.h"
 #include "pico/multicore.h"
@@ -59,42 +60,21 @@ WARNING: BULLSHIT CODE X-)
 
 #include "../../com/com.h"
 
-#include "../../com/com_rp.h"
-
 // uncomment to enable dev build
 // #define DEV_BUILD 1 // NOT USED YET
 
-// for UART debugging on devboard & HW version detection
-#define GPIO_A 4
-#define GPIO_B 5
+// This variant never changes the system clock, so clk_peri stays at 125 MHz and
+// the PL022 lands on 125e6 / (2 * 13) = 4.81 MHz. Asking for 5 MHz cannot hit it
+// exactly; spi_set_baudrate() always rounds DOWN to an achievable rate.
 
-#define BP() __asm("bkpt #1"); // breakpoint via software macro
+#define RP_VARIANT OKHI_VARIANT_PS2
+#define OTA_WATCHDOG_UPDATE() watchdog_update()
 
-#ifndef FLASH_PAGE_SIZE
-#define FLASH_PAGE_SIZE 256
-#endif
-#ifndef FLASH_SECTOR_SIZE
-#define FLASH_SECTOR_SIZE 4096
-#endif
-#define FLASH_TOTAL_SIZE (16 * 1024 * 1024)
+#include "../../com/com_rp.h"
 
-#define USSEL_PIN 8
-#define USOE_PIN 9
+#include "../../com/com_rp_hw.h"
 
-#define UART_BAUD 921600 // 460800 // 230400 // 115200
-#define UART_ID uart1
-#define UART_TX_PIN 4
-#define UART_RX_PIN 5
-#define DATA_BITS 8
-#define STOP_BITS 1
-#define PARITY UART_PARITY_NONE
-
-#define SPI_BAUD 5000000 // ~4.6 mhz
-#define SPI_ID spi1
-#define SPI_SCK_PIN 10
-#define SPI_MOSI_PIN 11
-#define SPI_MISO_PIN 12
-#define SPI_CS_PIN 13
+#include "../../com/com_rp_ota.h"
 
 // --- PS/2 bus + PIO helper pins --------------------------------------------------
 // These four GPIOs must keep THIS numeric order. The capture programs use DAT_GPIO as their
@@ -106,71 +86,14 @@ WARNING: BULLSHIT CODE X-)
 #define DAT_GPIO 20         // PS/2 data
 #define CLK_GPIO 21         // PS/2 clock
 #define AUX_D2H_JMP_GPIO 22 // PIO JMP HELPER PIN FOR DEVICE TO HOST PIO (must be a free GPIO pin)
-#define EBOOT_MASTERDATAREADY_GPIO 14
-#define ELOG_SLAVEREADY_GPIO 15
-#define ESP_RESET_GPIO 28
 
-/*
-Attempting to achieve the minimum necessary delay for the ESP Slave SPI CS signal
--
-90 NOP at 125 MHz = 0.72 us. Our SPI runs at ~5 MHz, so 0.72 us is a delay of approximately 3.6 SPI clock cycles.
-Overclocking CPU frequency to 250 MHz reduces NOP execution time to 0.36 us,
-corresponding to approximately 1.8 SPI clock cycles.
--
-https://github.com/espressif/esp-idf/blob/v5.2.2/examples/peripherals/spi_slave/sender/main/app_main.c
-spi_device_interface_config_t devcfg = {
-...
-        .cs_ena_posttrans = 3,
-...
-Keep the CS low 3 cycles after transaction,
-to stop slave from missing the last bit when CS has less propagation delay than CLK
-*/
-#define delay_cs()                                                                                                     \
-    asm volatile("nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t");
-
-#define delay_cs_pre() delay_cs();
-#define delay_cs_pos() delay_cs();
-#define CS_LOW()                                                                                                       \
-    asm volatile("nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop");                                                  \
-    gpio_put(SPI_CS_PIN, false);                                                                                       \
-    delay_cs_pre();
-#define CS_HIGH()                                                                                                      \
-    delay_cs_pos();                                                                                                    \
-    gpio_put(SPI_CS_PIN, true);                                                                                        \
-    asm volatile("nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop");
-
-#define RING_BUFF_MAX_ENTRIES 800
-
-typedef enum
-{
-    VERSION_00 = 0,
-    VERSION_01,
-    VERSION_10,
-    VERSION_11,
-    VERSION_FF,
-    VERSION_0F,
-    VERSION_1F,
-    VERSION_F0,
-    VERSION_F1,
-    VERSION_UNKNOWN
-} hw_version_t;
-
-typedef enum
-{
-    PIN_STATE_LOW = 0,
-    PIN_STATE_HIGH,
-    PIN_STATE_FLOATING
-} pin_state_t;
-
-extern char __flash_binary_end;
+// FIX BY DREG
+// Was 800 (~266 keystrokes at ~3 PS/2 bytes each). Enlarged so the log survives a long ESP
+// outage: while the ESP is down the drain is gated off (see the esp_link_up gate in core1),
+// so the ring fills at the capture rate and 800 could overflow a multi-second outage under
+// heavy typing. 2000 entries buffer ~666 keystrokes; the RP has plenty of RAM free for it.
+#define RING_BUFF_MAX_ENTRIES 2000
+// END FIX
 
 // --- PS/2 capture state (shared between the PIO IRQs, the main loop and core1) ----
 // ringbuff holds parsed PS/2 bytes as short timestamped ASCII strings that core1 drains to
@@ -178,6 +101,24 @@ extern char __flash_binary_end;
 // the host->device and device->host state machines so the IRQs can restart them by name.
 volatile static unsigned int write_index = 0;
 volatile static char ringbuff[RING_BUFF_MAX_ENTRIES][32];
+// FIX BY DREG
+// read_index is the consumer cursor (core1). It lives at file scope, not local to core1_main,
+// so the producer on core0 can see how far the drain has got and refuse to overwrite unread
+// bytes. ringbuff_dropped counts bytes discarded because the ring was full (ESP down too long).
+volatile static unsigned int read_index = 0;
+volatile static unsigned int ringbuff_dropped = 0;
+// END FIX
+
+// Records the ESP did not acknowledge by dropping SLAVEREADY, i.e. frames clocked at a slave with
+// nothing armed. Each one is now RETRIED rather than lost (see the drain loop), so this counts
+// recoveries, not losses: it should keep climbing on a healthy board while nothing goes missing.
+volatile static unsigned int spi_unacked = 0;
+
+// Holes refilled from the ring, and the latch that gives up on doing so. See the reconciliation
+// block in core1_main for why the safety valve exists.
+volatile static unsigned int spi_rewinds = 0;
+volatile static bool spi_rewind_disabled = false;
+
 volatile static uint kbd_h2d_sm;
 volatile static uint offset_kbd_h2d;
 volatile static uint kbd_sm;
@@ -187,203 +128,6 @@ volatile static bool last_state_idle;
 volatile static int inidle;
 volatile static int inidletoggle;
 volatile static bool inh_fired;
-volatile char *hwver_name = "UNKNOWN";
-volatile static hw_version_t hwver = VERSION_UNKNOWN;
-
-static pin_state_t get_pin_state(uint gpio)
-{
-    gpio_init(gpio);
-    gpio_pull_up(gpio);
-    sleep_ms(5);
-    bool pull_up_state = gpio_get(gpio);
-
-    gpio_pull_down(gpio);
-    sleep_ms(5);
-    bool pull_down_state = gpio_get(gpio);
-
-    gpio_deinit(gpio);
-
-    if (pull_up_state && !pull_down_state)
-    {
-        return PIN_STATE_FLOATING;
-    }
-
-    return pull_up_state ? PIN_STATE_HIGH : PIN_STATE_LOW;
-}
-
-static hw_version_t detect_hw_version(void)
-{
-    pin_state_t state_a = get_pin_state(GPIO_A);
-    pin_state_t state_b = get_pin_state(GPIO_B);
-
-    if (state_a == PIN_STATE_FLOATING && state_b == PIN_STATE_FLOATING)
-    {
-        return VERSION_FF;
-    }
-    else if (state_a == PIN_STATE_LOW && state_b == PIN_STATE_FLOATING)
-    {
-        return VERSION_0F;
-    }
-    else if (state_a == PIN_STATE_HIGH && state_b == PIN_STATE_FLOATING)
-    {
-        return VERSION_1F;
-    }
-    else if (state_a == PIN_STATE_FLOATING && state_b == PIN_STATE_LOW)
-    {
-        return VERSION_F0;
-    }
-    else if (state_a == PIN_STATE_FLOATING && state_b == PIN_STATE_HIGH)
-    {
-        return VERSION_F1;
-    }
-    else if (state_a == PIN_STATE_LOW && state_b == PIN_STATE_LOW)
-    {
-        return VERSION_00;
-    }
-    else if (state_a == PIN_STATE_LOW && state_b == PIN_STATE_HIGH)
-    {
-        return VERSION_01;
-    }
-    else if (state_a == PIN_STATE_HIGH && state_b == PIN_STATE_LOW)
-    {
-        return VERSION_10;
-    }
-    else if (state_a == PIN_STATE_HIGH && state_b == PIN_STATE_HIGH)
-    {
-        return VERSION_11;
-    }
-    else
-    {
-        return VERSION_UNKNOWN;
-    }
-}
-
-static int init_ver(void)
-{
-    hwver = detect_hw_version();
-
-    switch (hwver)
-    {
-        case VERSION_00:
-            hwver_name = "00";
-            printf("Hardware version: 00\n");
-            break;
-
-        case VERSION_01:
-            hwver_name = "01";
-            printf("Hardware version: 01\n");
-            break;
-
-        case VERSION_10:
-            hwver_name = "10";
-            printf("Hardware version: 10\n");
-            break;
-
-        case VERSION_11:
-            hwver_name = "11";
-            printf("Hardware version: 11\n");
-            break;
-
-        case VERSION_FF:
-            hwver_name = "FF";
-            printf("Hardware version: FF (both floating)\n");
-            break;
-
-        case VERSION_0F:
-            hwver_name = "0F";
-            printf("Hardware version: 0F (A low, B floating)\n");
-            break;
-
-        case VERSION_1F:
-            hwver_name = "1F";
-            printf("Hardware version: 1F (A high, B floating)\n");
-            break;
-
-        case VERSION_F0:
-            hwver_name = "F0";
-            printf("Hardware version: F0 (A floating, B low)\n");
-            break;
-
-        case VERSION_F1:
-            hwver_name = "F1";
-            printf("Hardware version: F1 (A floating, B high)\n");
-            break;
-
-        default:
-            hwver_name = "UK";
-            printf("Hardware version: Unknown\n");
-            break;
-    }
-
-    return 0;
-}
-
-static int my_spi_write_blocking(const uint8_t *src, size_t len)
-{
-    CS_LOW();
-    int retf = spi_write_blocking(SPI_ID, src, len);
-    CS_HIGH();
-
-    return retf;
-}
-
-static int my_spi_read_blocking(uint8_t *dst, size_t len)
-{
-    CS_LOW();
-    // repeated_tx_data is output repeatedly on TX as data is read in from RX. Generally this can be 0
-    int retf = spi_read_blocking(SPI_ID, 0, dst, len);
-    CS_HIGH();
-
-    return retf;
-}
-
-static int my_spi_write_read_blocking(const uint8_t *src, uint8_t *dst, size_t len)
-{
-    CS_LOW();
-    int retf = spi_write_read_blocking(SPI_ID, src, dst, len);
-    CS_HIGH();
-
-    return retf;
-}
-
-// Release every state machine claimed on a PIO block, so the four PS/2 programs can be
-// (re)loaded from a clean slate at startup (see pio_destroy).
-static void free_all_pio_state_machines(PIO pio)
-{
-    for (int sm = 0; sm < 4; sm++)
-    {
-        if (pio_sm_is_claimed(pio, sm))
-        {
-            pio_sm_unclaim(pio, sm);
-        }
-    }
-}
-
-static unsigned char *get_base_flash_space_addr(void)
-{
-    return (unsigned char *)XIP_BASE;
-}
-
-static uint32_t get_start_free_flash_space_addr(void)
-{
-    return ((((uint32_t)XIP_BASE) + ((uint32_t)__flash_binary_end) + (FLASH_PAGE_SIZE - 1)) & ~(FLASH_PAGE_SIZE - 1));
-}
-
-static uint32_t get_flash_end_address(void)
-{
-    return ((((((uint32_t)XIP_BASE)) + (PICO_FLASH_SIZE_BYTES - 1)) + (FLASH_PAGE_SIZE - 1)) & ~(FLASH_PAGE_SIZE - 1));
-}
-
-static uint32_t get_free_flash_space(void)
-{
-    return get_flash_end_address() - get_start_free_flash_space_addr();
-}
-
-static void erase_flash(void)
-{
-    flash_range_erase(0, PICO_FLASH_SIZE_BYTES);
-    reset_usb_boot(0, 0);
-}
 
 // ---------------------------------------------------------------------------------
 // Device->host capture SM control.
@@ -479,26 +223,6 @@ void pio1_irq(void)
     }
 }
 
-__attribute__((section(".uninitialized_data"))) uint32_t wait_20;
-
-void gpio_callback(uint gpio, uint32_t events)
-{
-    // For devboard :D
-    if (gpio == ESP_RESET_GPIO)
-    {
-        gpio_init(ESP_RESET_GPIO);
-        gpio_set_dir(ESP_RESET_GPIO, GPIO_IN);
-        gpio_init(EBOOT_MASTERDATAREADY_GPIO);
-        gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_IN);
-        gpio_init(ELOG_SLAVEREADY_GPIO);
-        gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
-
-        wait_20 = 0x69699696;
-        puts("\r\nexternal ESP-RESET detected!\r\nrebooting in 50 secs!!!\r\n");
-        watchdog_reboot(0, 0, 0);
-    }
-}
-
 void core1_main()
 {
     sleep_ms(2000);
@@ -507,192 +231,294 @@ void core1_main()
     gpio_pull_up(ESP_RESET_GPIO);
     sleep_ms(2000);
 
-    gpio_set_irq_enabled_with_callback(ESP_RESET_GPIO, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
+    esp_link_uart_init();
 
-    uart_init(uart0, 74880);
-    gpio_set_function(16, GPIO_FUNC_UART);
-    gpio_set_function(17, GPIO_FUNC_UART);
-    // UART 8N1: 1 start bit, 8 data bits, no parity bit, 1 stop bit
-    uart_set_hw_flow(uart0, false, false);
-    uart_set_format(uart0, DATA_BITS, STOP_BITS, PARITY);
-    uart_set_fifo_enabled(uart0, false);
-    uart_set_irq_enables(uart0, false, false);
+    // SLAVEREADY high means the ESP has a transaction armed: it raises the line in
+    // spi_post_setup_cb and drops it again in spi_post_trans_cb. This loop had the test the
+    // other way round, so it treated "armed" as "not ready" and spun printing thousands of
+    // lines down the same UART the ESP shares, then gave up and carried on anyway when the
+    // line went low, which is precisely when the ESP is NOT armed. The USB variant already
+    // reads it the right way round; this now matches it.
+    bool slave_ready = false;
 
-    gpio_init(ELOG_SLAVEREADY_GPIO);
-    gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
-    gpio_pull_up(ELOG_SLAVEREADY_GPIO);
     for (int i = 0; i < 3000; i++)
     {
         if (gpio_get(ELOG_SLAVEREADY_GPIO))
         {
-            printf("ESP slave not ready yet... %d\r\n", i);
-        }
-        else
-        {
+            slave_ready = true;
             break;
         }
+
         tight_loop_contents();
     }
-    gpio_init(EBOOT_MASTERDATAREADY_GPIO);
-    gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_OUT);
-    gpio_put(EBOOT_MASTERDATAREADY_GPIO, false);
 
-    unsigned int read_index = 0;
+    puts(slave_ready ? "SLAVE READY!" : "ESP slave not armed yet, the poll loop will keep retrying");
+
+    esp_link_master_init();
+
+    // FIX BY DREG: read_index is now the file-scope shared cursor, so core0 can bound the ring
     unsigned int total_packets_sended = 0;
-    unsigned int g = 0;
-    unsigned int z = 90000000 + 1;
-    unsigned int last_sended = 0;
+    // Sequence stamped into every capture record. Advances once per RECORD, never per attempt, so
+    // all attempts at the same record carry the same number and the ESP can drop the repeats.
+    uint8_t record_seq = SPI_RECORD_SEQ_MIN;
     while (1)
     {
-        static unsigned char line[32] = {0};
-        while (read_index != write_index)
+        // Wide enough for SPI_RECORD_HEADER plus the 27 byte record text and its NUL. It was [32],
+        // which fitted the text with four bytes to spare and would have been silently outgrown by
+        // the two byte sequence header.
+        static unsigned char line[48] = {0};
+        // FIX BY DREG
+        // Drain to the ESP only while a poll has confirmed it alive. The RP pulls
+        // ELOG_SLAVEREADY up, so while the ESP boots or resets that line floats high
+        // and wait_esp_ready() would report a slave that is not listening as ready,
+        // losing every keystroke clocked at it. esp_link_up is set only by a valid
+        // poll response the pull-up cannot fake, so gating here keeps the log in
+        // ringbuff until the ESP is back instead of dropping it.
+        while (esp_link_up && read_index != write_index)
+        // END FIX
         {
-            sprintf((char *)line, "%s   \r\n", (char *)&(ringbuff[read_index++ % (RING_BUFF_MAX_ENTRIES - 1)][32]));
-            gpio_put(EBOOT_MASTERDATAREADY_GPIO, true);
-            while (!gpio_get(ELOG_SLAVEREADY_GPIO))
+            // FIX BY DREG: stamp the record with its sequence (com.h). The SAME sequence is used
+            // for every attempt at this record, which is what makes a retry idempotent: the ESP
+            // drops a repeat instead of logging the keystroke twice. Without this the retry below
+            // could only ever trade losses for duplicates, because the SLAVEREADY handshake cannot
+            // tell "you never took it" from "you took it and were slow to say so".
+            line[0] = SPI_RECORD_MARKER;
+            line[1] = record_seq;
+            sprintf((char *)line + SPI_RECORD_HEADER, "%s   \r\n",
+                    (char *)&(ringbuff[read_index % RING_BUFF_MAX_ENTRIES][0]));
+            size_t line_len = SPI_RECORD_HEADER + strlen((char *)line + SPI_RECORD_HEADER);
+
+            // Deliver the record, and only advance the cursor once the ESP has ACKNOWLEDGED it.
+            //
+            // wait_esp_ready() tests a LEVEL, and that level goes stale. The ESP raises SLAVEREADY
+            // from spi_post_setup_cb when it arms a transaction and drops it from
+            // spi_post_trans_cb when one completes, both interrupt callbacks with their own
+            // latency. Coming straight back round for the next record, this loop could sample
+            // SLAVEREADY still HIGH from the PREVIOUS transaction, believe the slave was ready and
+            // clock a record at an ESP with nothing armed. spi_write_blocking succeeds whether or
+            // not anybody is listening, and with no transaction there is no callback on the ESP,
+            // so no counter moved on either side: the record vanished in silence. That is the bug
+            // the PS/2 adapter campaign chased for a whole session while blaming the capture PIO.
+            //
+            // SLAVEREADY FALLING after our transfer is spi_post_trans_cb running, the only
+            // evidence from outside that this exact frame was taken, so it is used as the ack. It
+            // costs nothing on the happy path (the fall lands within microseconds) and it is what
+            // makes retrying safe: measured on hardware over 565 records, unacknowledged and
+            // actually lost matched exactly, 2 and 2, so a retry re-sends only records the ESP
+            // never saw and cannot duplicate a keystroke.
+            //
+            // Giving up leaves the record in the ring with the cursor untouched, so the next pass
+            // through the outer loop tries it again after poll_esp_if_due() has had a turn.
+            bool delivered = false;
+            unsigned int sends = 0;
+
+            // Send at least SPI_RECORD_MIN_SENDS times whatever the handshake claims, then keep
+            // going only while it still says the record was not taken. The minimum is the point:
+            // the acknowledgement also lies the other way, claiming delivery of a frame that was
+            // never taken, and for those the retry would never fire at all.
+            while (sends < SPI_RECORD_ATTEMPTS && (sends < SPI_RECORD_MIN_SENDS || !delivered))
             {
-                tight_loop_contents();
+                sends++;
+                gpio_put(EBOOT_MASTERDATAREADY_GPIO, true);
+
+                if (!wait_esp_ready(SPI_READY_TIMEOUT_US))
+                {
+                    gpio_put(EBOOT_MASTERDATAREADY_GPIO, false);
+                    break;
+                }
+
+                gpio_put(EBOOT_MASTERDATAREADY_GPIO, false);
+                my_spi_write_blocking(line, line_len);
+
+                if (wait_esp_consumed(SPI_CONSUMED_TIMEOUT_US))
+                {
+                    delivered = true;
+                }
+                else
+                {
+                    spi_unacked++;
+                }
             }
-            gpio_put(EBOOT_MASTERDATAREADY_GPIO, false);
-            my_spi_write_blocking(line, strlen((char *)line));
-            printf("%s", line);
+
+            if (!delivered)
+            {
+                // The handshake lies in this direction too, claiming a record was not taken when
+                // it was. Without this the loop would re-send that record for ever while the ESP
+                // dropped every copy as a repeat, stalling the drain until the ring overflowed,
+                // which is a far worse failure than the loss being fixed here. The ESP publishes
+                // the sequence it last accepted, so believe that instead of the GPIO.
+                //
+                // Used ONLY to advance, never to rewind. Advancing past a record the ESP has
+                // confirmed cannot duplicate anything and cannot wedge; rewinding is the part that
+                // needs a wider de-duplication window and a resync escape hatch, and is not done.
+                if (esp_record_seq_seen && esp_record_seq == record_seq)
+                {
+                    delivered = true;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            record_seq = (record_seq >= SPI_RECORD_SEQ_MAX) ? SPI_RECORD_SEQ_MIN : (uint8_t)(record_seq + 1);
+            // END FIX
+
+            read_index++;
+            printf("%s", (char *)line + SPI_RECORD_HEADER);
             total_packets_sended++;
         }
-        if (last_sended != total_packets_sended && g++ > 20000000)
+
+        poll_esp_if_due();
+
+        // FIX BY DREG: refill holes from the ring, using what the ESP says it actually has.
+        //
+        // Read the history below before touching any of the three guards; each one is there
+        // because its absence was measured, not imagined.
+        //
+        // The ESP refuses to skip forward over a missing record and holds position, publishing the
+        // sequence it last accepted. So a report that is BEHIND what we sent means a real hole,
+        // and winding the ring cursor back over the difference re-sends exactly the missing run.
+        // Re-sending is free: the ESP recognises a whole re-sent run as duplicates.
+        //
+        //   GUARD 1, the drain must be idle. The ESP stamps its sequence into every queued
+        //   transmit buffer now, so the report is fresh, but the record we sent moments ago may
+        //   still be in flight. Rewinding only once the ring is fully drained removes that lag
+        //   entirely. Holes are refilled in the next gap between keystrokes, milliseconds later.
+        //
+        //   GUARD 2, the difference must be sane: inside the forward window and not past the
+        //   start of the ring.
+        //
+        //   GUARD 3, the safety valve. If rewinds ever exceed one per SPI_REWIND_BUDGET records,
+        //   rewinding is disabled permanently for this boot. An earlier build without this ran
+        //   away and turned 3062 records into 73791 frames sent. A runaway is now impossible by
+        //   construction rather than by judgement, and the fallback is simply the previous
+        //   behaviour, not a broken link.
+        //   GUARD 0, and this one is easy to get wrong: only look when a NEW POLL has arrived.
+        //   This loop spins thousands of times per poll, so comparing esp_record_seq between
+        //   iterations compares it against itself. An earlier attempt did exactly that, which is
+        //   why its "has the report settled" test was meaningless and let the rewind run away.
+        //   esp_poll_ok advances once per successful poll, so it is the clock this must run on.
+        static uint32_t recon_last_poll;
+        static uint8_t recon_prev_seq;
+        static bool recon_prev_valid;
+
+        if (esp_poll_ok != recon_last_poll)
         {
-            z = 0;
-            g = 0;
-            last_sended = total_packets_sended;
-            sprintf((char *)line, "HWv%s packets sended: 0x%x", hwver_name, total_packets_sended);
-            uart_write_blocking(uart0, line, strlen((char *)line) + 1);
-            puts((char *)line);
+            recon_last_poll = esp_poll_ok;
+
+            if (esp_link_up && esp_record_seq_seen && !spi_rewind_disabled && read_index == write_index)
+            {
+                uint8_t last_sent = (record_seq == SPI_RECORD_SEQ_MIN) ? SPI_RECORD_SEQ_MAX
+                                                                       : (uint8_t)(record_seq - 1);
+                uint8_t behind = spi_seq_delta(esp_record_seq, last_sent);
+
+                //   GUARD 1b, the report must have SETTLED: the same value across two consecutive
+                //   polls, both taken with the drain idle. Drain-idle alone is not enough, it
+                //   still catches the ESP part way through processing the last record, and that
+                //   transient is what produced 9 spurious rewinds at startup. With nothing left to
+                //   send and 50 ms between polls, a report still behind on the second look is a
+                //   real hole, not lag.
+                if (behind > 0 && behind <= SPI_SEQ_FORWARD_MAX && (unsigned int)behind <= read_index &&
+                    recon_prev_valid && recon_prev_seq == esp_record_seq)
+                {
+                    read_index -= behind;
+                    record_seq = spi_seq_next(esp_record_seq);
+                    spi_rewinds++;
+                    // Start a fresh pair of observations, so a rewind cannot immediately trigger
+                    // another one off the same stale pair.
+                    recon_prev_valid = false;
+
+                    if (spi_rewinds > (total_packets_sended / SPI_REWIND_BUDGET) + SPI_REWIND_FLOOR)
+                    {
+                        spi_rewind_disabled = true;
+                        printf("ps2 spi rewind DISABLED after %u rewinds in %u records, falling back\r\n", spi_rewinds,
+                               total_packets_sended);
+                    }
+                }
+                else
+                {
+                    recon_prev_seq = esp_record_seq;
+                    recon_prev_valid = true;
+                }
+            }
+            else
+            {
+                // Anything else, a busy drain included, breaks the pair.
+                recon_prev_valid = false;
+            }
         }
-        else if (z++ > 90000000)
+
+        // WHY THE GUARDS ABOVE EXIST, so none of this is tried again the easy way:
+        //
+        // First attempt had no guards at all. The status frame the RP reads is not merely filled
+        // "a moment early": SPI_QUEUE_DEPTH transactions are armed at once on the ESP, each with a
+        // buffer filled when that transaction last completed, so the frame that arrives can be
+        // EIGHT transactions old. Every poll therefore looked like a hole. On an idle bus that
+        // alone produced 214 duplicates against 4 real records.
+        //
+        // Second attempt gated on "the report has not moved across two polls", meant to tell a
+        // stale report from a stuck one. Worse: under real typing the value repeats often enough
+        // by chance to keep triggering, and it ran away. On the adapter from hell, 3062 real
+        // records became 73791 frames sent, 44367 rewinds and 144784 duplicates, a 24x
+        // amplification, with the ESP stuck at sequence 2. It captured every byte, and was
+        // unusable.
+        //
+        // The staleness is now fixed at its source: the ESP stamps the accepted sequence into
+        // every queued transmit buffer, not just the one it is refilling. The drain-idle guard
+        // covers the last record still in flight, and the safety valve bounds the failure mode
+        // that bit twice.
+        report_packets_sent(total_packets_sended);
+
+        // FIX BY DREG
+        // Surface ring overflow on the RP serial the moment it happens, so a log that backed up
+        // past the buffer during a long ESP outage is never a silent loss. Printed from core1
+        // only (core0 must not touch stdio while core1 does).
+        // Same idea as the ring overflow report below: surface it the moment it happens, on the
+        // one channel the bench can read live.
+        static unsigned int spi_unacked_reported = 0;
+        if (spi_unacked != spi_unacked_reported)
         {
-            z = 0;
-            g = 0;
-            sprintf((char *)line, "HWv%s packets sended: 0x%x", hwver_name, total_packets_sended);
-            uart_write_blocking(uart0, line, strlen((char *)line) + 1);
-            puts((char *)line);
+            spi_unacked_reported = spi_unacked;
+            printf("ps2 spi retried %u of %u records, %u holes refilled%s\r\n", spi_unacked, total_packets_sended,
+                   spi_rewinds, spi_rewind_disabled ? " (REWIND DISABLED)" : "");
         }
-    }
-}
 
-// Tear down every PS/2 state machine and wipe both PIO instruction memories, so the programs
-// can be reloaded into a known layout on each boot (see the ordering note in ps2.pio).
-static void pio_destroy(void)
-{
-    free_all_pio_state_machines(pio0);
-    free_all_pio_state_machines(pio1);
-    pio_clear_instruction_memory(pio0);
-    pio_clear_instruction_memory(pio1);
-}
-
-static bool bootsel_pressed_safely(void)
-{
-    const uint CS_INDEX = 1;
-    uint32_t flags = save_and_disable_interrupts();
-
-    hw_write_masked(&ioqspi_hw->io[CS_INDEX].ctrl, GPIO_OVERRIDE_LOW << IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_LSB,
-                    IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_BITS);
-
-    for (volatile int i = 0; i < 1000; ++i)
-    {
-        tight_loop_contents();
-    }
-
-    bool pressed = !(sio_hw->gpio_hi_in & (1u << CS_INDEX));
-
-    hw_write_masked(&ioqspi_hw->io[CS_INDEX].ctrl, GPIO_OVERRIDE_NORMAL << IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_LSB,
-                    IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_BITS);
-
-    restore_interrupts(flags);
-
-    return pressed;
-}
-
-static void boot_press(void)
-{
-    int x = 0;
-    for (int i = 0; i < 500; i++)
-    {
-        if (bootsel_pressed_safely())
+        static unsigned int ringbuff_dropped_reported = 0;
+        if (ringbuff_dropped != ringbuff_dropped_reported)
         {
-            x++;
+            ringbuff_dropped_reported = ringbuff_dropped;
+            printf("ps2 ringbuff dropped %u bytes (ESP down too long, log backed up)\r\n", ringbuff_dropped);
         }
-    }
-
-    if (x > 90)
-    {
-        /*
-        printf("Bootsel pressed!\r\n");
-        blink_led(5);
-        */
-        reset_usb_boot(0, 0);
+        // END FIX
     }
 }
 
 int main(void)
 {
+    watchdog_disable();
+
     boot_press();
+    ota_boot_check();
     blink_led(2);
 
-    if (wait_20 == 0x69699696)
-    {
-        stdio_init_all();
-        puts("\r\nwaiting 50 secs...\r\n");
-        wait_20 = 0;
-        sleep_ms(50000);
-    }
+    delay_boot_if_esp_reset_detected();
 
-    gpio_init(ESP_RESET_GPIO);
-    gpio_set_dir(ESP_RESET_GPIO, GPIO_OUT);
-    gpio_put(ESP_RESET_GPIO, false);
+    rp_board_boot_init();
 
-    gpio_init(EBOOT_MASTERDATAREADY_GPIO);
-    gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_IN);
-    gpio_init(ELOG_SLAVEREADY_GPIO);
-    gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
+    report_last_fault();
 
-    gpio_init(USSEL_PIN);
-    gpio_set_dir(USSEL_PIN, GPIO_OUT);
-    gpio_put(USSEL_PIN, false);
-
-    gpio_init(USOE_PIN);
-    gpio_set_dir(USOE_PIN, GPIO_OUT);
-    gpio_put(USOE_PIN, true);
-
-    init_ver();
-
-    // uart init must be called after init_ver(), because on devboard the same pins are used for UART
-    stdio_init_all();
-
-    gpio_put(USSEL_PIN, true);
-
-    sleep_ms(100);
-
-    printf("\r\nokhi started! Hardware v%s\r\nBuild Date %s %s\r\n", hwver_name, __DATE__, __TIME__);
+    printf("\r\nokhi PS2 started! Hardware v%s\r\nBuild Date %s %s\r\n", hwver_name, __DATE__, __TIME__);
     fflush(stdout);
 
-    uint32_t baud __attribute__((unused)) = spi_init(SPI_ID, SPI_BAUD);
-    gpio_set_function(SPI_SCK_PIN, GPIO_FUNC_SPI);
-    gpio_set_function(SPI_MOSI_PIN, GPIO_FUNC_SPI);
-    gpio_set_function(SPI_MISO_PIN, GPIO_FUNC_SPI);
-    // The CS pin is controlled manually
-    gpio_init(SPI_CS_PIN);
-    gpio_set_dir(SPI_CS_PIN, GPIO_OUT);
-    gpio_put(SPI_CS_PIN, true);
-    // SPI mode 0: 8 data bits, MSB first, CPOL=0, CPHA=0
-    spi_set_format(SPI_ID, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
-    printf("Firmware version: v%s\r\n", FIRMV_STR);
+    uint32_t baud __attribute__((unused)) = rp_spi_master_init();
     printf("SPI Mode 0: %.2f MHz (%d)\r\n", ((float)baud) / 1000000.0, baud);
 
     gpio_put(USOE_PIN, false);
 
-    printf("flash free space addr: 0x%08x\r\n"
-           "flash end addr: 0x%08x\r\n"
-           "flash free space size: 0x%08x bytes\r\n",
-           get_start_free_flash_space_addr(), get_flash_end_address(), get_free_flash_space());
+    report_flash_layout();
+    report_flash_size();
+    report_ota_state();
 
     // GPIO configuration for all PIO programs:
     gpio_init(DAT_GPIO);
@@ -870,8 +696,13 @@ int main(void)
     // tagged 'H' (host->device) or 'D' (device->host) with a timestamp and written to the ring
     // buffer; core1 ships those strings out. write_index is the producer cursor.
     // =================================================================================
+    // If the capture loop ever stalls for >4 s, reboot.
+    watchdog_enable(4000, 0);
+
     while (1)
     {
+        bool got_byte = false;
+
         /* The pushed value is an 8-bit sample positioned in the upper (most significant) byte of the
          32-bit FIFO word, In C, you can read this byte from:
 
@@ -881,16 +712,49 @@ int main(void)
         if (!pio_sm_is_rx_fifo_empty(pio1, kbd_h2d_sm))
         {
             uint8_t byte = *((io_rw_8 *)&pio1->rxf[kbd_h2d_sm] + 3);
-            sprintf((char *)&(ringbuff[write_index % (RING_BUFF_MAX_ENTRIES - 1)][32]), "%c:0x%02X t:0x%08X ; ", 'H',
-                    byte, us_to_ms(time_us_64()));
-            write_index++;
+            // FIX BY DREG
+            // Never overwrite a byte the drain has not read yet. When the ring is full (the ESP
+            // has been down long enough to back it up), drop the newest byte and count it instead
+            // of overwriting an unread entry the way the old blind write did, which lost the byte
+            // silently and could race core1 mid-sprintf.
+            if ((write_index - read_index) < RING_BUFF_MAX_ENTRIES)
+            {
+                sprintf((char *)&(ringbuff[write_index % RING_BUFF_MAX_ENTRIES][0]), "%c:0x%02X t:0x%08X ; ", 'H',
+                        byte, us_to_ms(time_us_64()));
+                write_index++;
+            }
+            else
+            {
+                ringbuff_dropped++;
+            }
+            // END FIX
+            got_byte = true;
         }
         if (!pio_sm_is_rx_fifo_empty(pio0, kbd_sm))
         {
             uint8_t byte = *((io_rw_8 *)&pio0->rxf[kbd_sm] + 3);
-            sprintf((char *)&(ringbuff[write_index % (RING_BUFF_MAX_ENTRIES - 1)][32]), "%c:0x%02X t:0x%08X ; ", 'D',
-                    byte, us_to_ms(time_us_64()));
-            write_index++;
+            // FIX BY DREG
+            if ((write_index - read_index) < RING_BUFF_MAX_ENTRIES)
+            {
+                sprintf((char *)&(ringbuff[write_index % RING_BUFF_MAX_ENTRIES][0]), "%c:0x%02X t:0x%08X ; ", 'D',
+                        byte, us_to_ms(time_us_64()));
+                write_index++;
+            }
+            else
+            {
+                ringbuff_dropped++;
+            }
+            // END FIX
+            got_byte = true;
+        }
+
+        if (got_byte)
+        {
+            capture_note_traffic();
+        }
+        else
+        {
+            capture_note_idle();
         }
     }
 

@@ -32,7 +32,7 @@ WARNING: BULLSHIT CODE X-)
 #ifndef __COM_RP__
 #define __COM_RP__
 
-#define RP_LED_GPIO 26 // From PCB v5
+#include "com_rp_pins.h"
 
 static void blink_led(int n)
 {
