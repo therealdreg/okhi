@@ -2103,6 +2103,18 @@ Somtimes is neccesary run a "Erase Flash Memory from Device" after build but bef
 
 ![](stuff/images/idffullera.png)
 
+# PS2 male to PS2 male adapter (MINI-DIN 6P)
+
+Instead of a PS/2 male-to-male cable, you can use a PS/2 male-to-male adapter, which is shorter and easier to work with.
+
+![](stuff/images/ps2male2ps2maleadapter.png)
+
+I have only found it for sale at one place, but I find it really handy.
+
+https://cablematic.com/es/productos/adaptador-de-conector-ps2-minidin-6-pin-macho-a-macho-CS015/
+
+![](stuff/images/resos.png)
+
 # Passive USB-to-PS/2 Adapters: the keyboard speaks PS/2, not the adapter
 
 You can test the PS2 implant with an ordinary low-speed USB keyboard plugged into an adapter that presents a USB female socket on one side and a PS/2 male plug on the other. These are the inexpensive molded adapters sold under names like "USB Adapter Converter Keyboard Mouse USB Female To PS2 PS/2 Male".
