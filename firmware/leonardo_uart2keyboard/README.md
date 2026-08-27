@@ -73,6 +73,16 @@ in the erase. Turning the board back into an ordinary Arduino is three avrdude c
 bootloaders you need are in [bootloaders/](bootloaders/) so you never have to go looking for them.
 Step by step in [section 4.9](#49-putting-the-board-back-to-factory-state).
 
+
+---
+
+A handy way to wire the PS/2 side is a breakout module: a female PS/2 (mini-DIN 6P) socket mounted on a small PCB that breaks the pins out to a 2.54mm (0.1") header, so you can plug it straight into a breadboard or solder it to perfboard instead of butchering a cable. The pads are labelled (DAT, CLK, VCC, GND), which saves you tracing the connector pinout by hand.
+
+![](../../stuff/images/ps2pinesboard.png)
+
+Sold on AliExpress as "PS2 Module PS 2 Mouse Keyboard Socket Compatible" for about 1 EUR.
+
+
 ---
 
 ## Contents
