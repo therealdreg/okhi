@@ -32,5 +32,401 @@ WARNING: BULLSHIT CODE X-)
 #ifndef __COM_COM__
 #define __COM_COM__
 
+// For the sequence helpers below. This header used to be macros only, so nothing pulled it in.
+#include <stdint.h>
+
+#define OKHI_VARIANT_PS2 "ps2"
+#define OKHI_VARIANT_USB "usb"
+
+#define OKHI_PACKAGE_TAG_PS2 "PS2"
+#define OKHI_PACKAGE_TAG_USB "USB"
+
+#define SPI_FRAME_SIZE 256
+#define SPI_FRAME_VERSION 3
+
+#define SPI_FRAME_TYPE_STATUS 1
+#define SPI_FRAME_TYPE_DATA 2
+#define SPI_FRAME_TYPE_BENCH 3
+#define SPI_FRAME_TYPE_UART_STATS 4
+
+#define SPI_CTRL_TYPE_POLL 1
+#define SPI_CTRL_TYPE_REQUEST_BLOCK 2
+#define SPI_CTRL_TYPE_BENCH 3
+#define SPI_CTRL_TYPE_BENCH_RESULT 4
+#define SPI_CTRL_TYPE_UART_SETUP 5
+#define SPI_CTRL_TYPE_SELFTEST 6
+
+#define SPI_FRAME_MAGIC_BYTES 'O', 'K', 'H', 'I'
+#define SPI_CTRL_MAGIC_BYTES 'O', 'K', 'H', 'C'
+
+#define SPI_FRAME_LEAD 16
+#define SPI_PAYLOAD_FROM_MAGIC 96
+#define SPI_BLOCK_PAYLOAD 128
+#define SPI_PAYLOAD_OFFSET (SPI_FRAME_LEAD + SPI_PAYLOAD_FROM_MAGIC)
+#define SPI_NO_BLOCK 0xFFFFFFFFu
+
+// FIX BY DREG: per block payload crc, carried in the unused header gap [63..95] measured from the
+// magic, so the receiver can reject and retry a single corrupt block instead of the whole image.
+#define SPI_BLOCK_CRC_OFF 64
+
+/*
+ * SPI_MAGIC_SEARCH_MAX CANNOT BE RAISED. ota_fetch_block() copies
+ * SPI_PAYLOAD_FROM_MAGIC + up to SPI_BLOCK_PAYLOAD bytes measured from the
+ * magic, so the worst case is 32 + 96 + 128 = 256, exactly SPI_FRAME_SIZE.
+ * A larger window lets a block read run past the end of the receive buffer.
+ */
+/*
+ * FIX BY DREG: sequenced capture records, so a retry cannot duplicate a keystroke.
+ *
+ * The RP is master for capture records and clocks them at an ESP that may not have a transaction
+ * armed; nothing detects that, because spi_write_blocking succeeds whether or not anyone is
+ * listening and with no transaction there is no callback on the ESP either. Retrying is the only
+ * cure, but a blind retry duplicates whatever DID land, and the SLAVEREADY handshake cannot tell
+ * the two apart: its falling edge says a transaction ended, not WHICH one. Measured on hardware,
+ * tuning that timeout only trades losses against duplicates (see ps2adapter.md 7.7b).
+ *
+ * So the record carries its own sequence and the ESP drops a repeat. A retry becomes idempotent,
+ * which means the RP no longer has to be right about whether a frame landed: it can retry freely.
+ *
+ * Wire format of a capture record, replacing the bare NUL terminated text:
+ *
+ *     [0] SPI_RECORD_MARKER
+ *     [1] sequence, 1..255, NEVER 0
+ *     [2..] the record text, NUL terminated, exactly as before
+ *
+ * The marker is 0x01 because a legacy record always began with printable 'D' or 'H', so a
+ * receiver can tell the two formats apart and neither side is wedged if only one is updated.
+ * The sequence skips 0 because spi_payload_length() measures to the first NUL, and a 0 there
+ * would truncate the frame to nothing.
+ */
+#define SPI_RECORD_MARKER 0x01
+#define SPI_RECORD_SEQ_MIN 1
+#define SPI_RECORD_SEQ_MAX 255
+#define SPI_RECORD_HEADER 2
+
+/*
+ * The sequence the ESP last ACCEPTED, echoed back in every STATUS frame so the RP can reconcile.
+ *
+ * The sequence alone stops a retry duplicating a keystroke, but it does not stop one going
+ * missing, because the RP still has to guess whether a frame landed and the SLAVEREADY handshake
+ * lies in both directions: its falling edge can arrive from the PREVIOUS transaction when ours was
+ * never taken, so the RP advances and the record is gone. Measured, that left 0.28% still lost.
+ *
+ * With this the RP stops guessing. It compares what it has sent against what the ESP says it has,
+ * rewinds its ring cursor over the difference and re-sends, which is free now that repeats are
+ * dropped. Byte 63 of the frame header is the one byte of the documented unused gap that the block
+ * CRC at SPI_BLOCK_CRC_OFF does not occupy.
+ */
+#define SPI_STATUS_RECORD_SEQ_OFF 63
+
+/*
+ * Sequence arithmetic, shared so both ends can never disagree about what "newer" means. The
+ * sequence ring is 1..255, 255 values, 0 reserved for "none yet" and forbidden on the wire.
+ *
+ * SPI_SEQ_FORWARD_MAX splits the ring in half: a delta of 1..127 is a record we have not seen,
+ * 128..254 is one we have already passed, i.e. the RP rewinding and re-sending. That is what lets
+ * the ESP recognise a whole re-sent RUN as duplicates instead of only the single record it holds.
+ *
+ * SPI_SEQ_RESYNC_AFTER is the escape hatch, and it is the reason this can be made strict at all.
+ * The ESP refuses to skip forward, holding its position so the RP can rewind and fill the hole;
+ * without a limit, two ends that lost each other would leave the ESP dropping everything for ever,
+ * which is far worse than the loss being fixed. After this many consecutive refusals it gives up
+ * and resynchronises, counting what it skipped. The RP reconciles on every poll, roughly every
+ * 50 ms or about 6 records of typing, so in normal operation this never fires; it only bounds the
+ * damage when the other end is old firmware, or wedged.
+ */
+#define SPI_SEQ_FORWARD_MAX 127
+#define SPI_SEQ_RESYNC_AFTER 64
+
+static inline uint8_t spi_seq_next(uint8_t seq)
+{
+    return (seq >= SPI_RECORD_SEQ_MAX) ? (uint8_t)SPI_RECORD_SEQ_MIN : (uint8_t)(seq + 1);
+}
+
+/* Steps forward from a to b around the 1..255 ring, 0..254. */
+static inline uint8_t spi_seq_delta(uint8_t a, uint8_t b)
+{
+    int d = (int)b - (int)a;
+
+    if (d < 0)
+    {
+        d += SPI_RECORD_SEQ_MAX;
+    }
+
+    return (uint8_t)d;
+}
+
+#define SPI_MAGIC_SEARCH_MAX 32
+
+#define SPI_IDENTITY_OFFSET 16
+#define SPI_IDENTITY_MAX 64
+
+#define SPI_FLAG_BENCH_ARMED 0x01
+#define SPI_FLAG_SELFTEST_ARMED 0x08
+#define SPI_FLAG_RP_IMAGE_READY 0x02
+#define SPI_FLAG_RP_COMMIT 0x04
+#define SPI_FLAG_RP_RESET 0x10
+#define SPI_FLAG_RP_BOOTSEL 0x20
+
+#define SPI_BENCH_MAX_STEPS 40
+#define SPI_BENCH_MIN_KHZ 200
+#define SPI_BENCH_MAX_KHZ 65000
+#define SPI_BENCH_MIN_MS 50
+#define SPI_BENCH_MAX_MS 2000
+#define SPI_BENCH_MIN_PASS_PERMIL 999
+
+#define SPI_BENCH_MIN_SOAK_MS 2000
+#define SPI_BENCH_MAX_SOAK_MS 10800000
+#define SPI_BENCH_SOAK_CHUNK_MS 2000
+#define SPI_BENCH_NO_STEP 0xFF
+
+#define SPI_BENCH_REFINE_KHZ 1000
+#define SPI_BENCH_MAX_STEPDOWNS 8
+#define SPI_BENCH_ROWS_PER_REPLY 12
+
+#define SPI_BENCH_PHASE_SWEEP 0
+#define SPI_BENCH_PHASE_REFINE 1
+#define SPI_BENCH_PHASE_CONFIRM 2
+
+#define SPI_BENCH_KIND_SPI 0
+#define SPI_BENCH_KIND_UART 1
+
+#define UART_BENCH_MAGIC0 'O'
+#define UART_BENCH_MAGIC1 'K'
+#define UART_BENCH_MAGIC2 'U'
+#define UART_BENCH_MAGIC3 'B'
+
+#define UART_BENCH_PAYLOAD 48
+#define UART_BENCH_SEQ_OFF 4
+#define UART_BENCH_DATA_OFF 8
+#define UART_BENCH_CRC_OFF (UART_BENCH_DATA_OFF + UART_BENCH_PAYLOAD)
+#define UART_BENCH_FRAME_LEN (UART_BENCH_CRC_OFF + 4)
+#define UART_BENCH_CRC_FROM UART_BENCH_SEQ_OFF
+#define UART_BENCH_CRC_LEN (UART_BENCH_PAYLOAD + 4)
+
+#define UART_BENCH_MIN_BAUD 9600
+#define UART_BENCH_MAX_BAUD 3000000
+#define UART_BENCH_SETUP_ATTEMPTS 150
+#define UART_BENCH_STATS_POLLS 24
+#define UART_BENCH_EDGE_SLACK 3
+
+#define SPI_UART_SETUP_BAUD_OFF 80
+#define SPI_UART_SETUP_SEED_OFF 84
+#define SPI_UART_SETUP_TOKEN_OFF 88
+#define SPI_UART_SETUP_FLAGS_OFF 89
+
+#define SPI_UART_STATS_TOKEN_OFF 8
+#define SPI_UART_STATS_READY_OFF 9
+#define SPI_UART_STATS_RX_OK_OFF 32
+#define SPI_UART_STATS_RX_BAD_OFF 36
+#define SPI_UART_STATS_RESYNC_OFF 40
+#define SPI_UART_STATS_TX_OFF 44
+#define SPI_UART_STATS_BAUD_OFF 48
+
+#define SPI_BENCH_STATUS_RUN_OFF 26
+#define SPI_BENCH_STATUS_STEPS_OFF 27
+#define SPI_BENCH_STATUS_MINKHZ_OFF 28
+#define SPI_BENCH_STATUS_MAXKHZ_OFF 30
+#define SPI_BENCH_STATUS_STATE_OFF 32
+#define SPI_BENCH_STATUS_ACK_OFF 33
+#define SPI_BENCH_STATUS_VERDICT_OFF 34
+#define SPI_BENCH_STATUS_RACK_OFF 35
+#define SPI_BENCH_STATUS_SOAKMS_OFF 36
+#define SPI_BENCH_STATUS_DOWN_OFF 40
+#define SPI_BENCH_STATUS_OC_OFF 41
+#define SPI_BENCH_STATUS_KIND_OFF 42
+#define SPI_SELFTEST_STATUS_RUN_OFF 43
+#define SPI_SELFTEST_STATUS_OPTS_OFF 44
+#define SPI_SELFTEST_STATUS_BLINK_OFF 45
+#define SPI_SELFTEST_STATUS_EBOOT_OFF 46
+
+// Byte 46 carries the live MASTERDATAREADY level in bit 0 plus a latch of both levels
+// the ESP has seen since the run was armed. The latch is what the self test reads: the
+// live bit alone is always low, because the RP releases the line before clocking the
+// very frame that reports it.
+#define EBOOT_SEEN_HIGH 0x02
+#define EBOOT_SEEN_LOW 0x04
+
+#define SPI_WIFI_MODE_OFF 47
+#define SPI_WIFI_IP_OFF 48
+#define SPI_UART_MIN_BAUD_OFF 52
+#define SPI_UART_MAX_BAUD_OFF 56
+
+// Which sniff line the web is asking the RP to probe with a ground wire: 1 for the
+// D+/DATA side, 2 for the D-/CLK side, 0 for nothing pending. The ESP clears it as soon
+// as the result row comes back, so the RP acts on the zero to non-zero edge only.
+#define SPI_SELFTEST_STATUS_PROBE_OFF 62
+
+// When the ESP re-arms a benchmark after a reset it lost mid-run, this carries
+// the kHz to resume the descending confirmation from, so the RP skips the sweep
+// and drops straight below the clock that caused the reset. 0 means a fresh run.
+#define SPI_BENCH_STATUS_RESUME_OFF 60
+
+#define WIFI_LINK_AP 0
+#define WIFI_LINK_STA 1
+#define WIFI_LINK_CONNECTING 2
+
+#define SPI_BENCH_STATE_IDLE 0
+#define SPI_BENCH_STATE_ARMED 1
+#define SPI_BENCH_STATE_RUNNING 2
+#define SPI_BENCH_STATE_DONE 3
+#define SPI_BENCH_STATE_TIMEOUT 4
+#define SPI_BENCH_STATE_ABORTED 5
+
+#define SPI_BENCH_MISO_SEQ_OFF 8
+#define SPI_BENCH_MISO_ACK_OFF 12
+#define SPI_BENCH_MISO_RUN_OFF 13
+#define SPI_BENCH_MISO_VERDICT_OFF 14
+#define SPI_BENCH_MISO_RACK_OFF 15
+#define SPI_BENCH_MISO_CRC_OFF 16
+#define SPI_BENCH_MISO_PATTERN_OFF 24
+
+#define SPI_BENCH_MOSI_STEP_OFF 7
+#define SPI_BENCH_MOSI_SEQ_OFF 8
+#define SPI_BENCH_MOSI_CRC_OFF 12
+#define SPI_BENCH_MOSI_RUN_OFF 79
+#define SPI_BENCH_MOSI_PATTERN_OFF 80
+
+#define SPI_BENCH_MOSI_PATTERN_LEN 176
+#define SPI_BENCH_MISO_PATTERN_LEN 200
+#define SPI_BENCH_TX_VARIANTS 8
+
+#define SPI_BENCH_MOSI_CRC_A_OFF 16
+#define SPI_BENCH_MOSI_CRC_A_LEN 208
+#define SPI_BENCH_MOSI_CRC_B_OFF 4
+#define SPI_BENCH_MOSI_CRC_B_LEN 8
+
+#define SPI_BENCH_MISO_CRC_A_OFF 20
+#define SPI_BENCH_MISO_CRC_A_LEN 204
+#define SPI_BENCH_MISO_CRC_B_OFF 0
+#define SPI_BENCH_MISO_CRC_B_LEN 16
+
+
+#define SPI_BENCH_RESULT_FLAGS_OFF 8
+#define SPI_BENCH_RESULT_TOTAL_OFF 9
+#define SPI_BENCH_RESULT_SEQ_OFF 10
+#define SPI_BENCH_RESULT_PHASE_OFF 11
+
+#define SPI_BENCH_RESULT_ACTUAL_OFF 80
+#define SPI_BENCH_RESULT_TARGET_OFF 84
+#define SPI_BENCH_RESULT_FRAMES_OFF 88
+#define SPI_BENCH_RESULT_MISO_OK_OFF 92
+#define SPI_BENCH_RESULT_MISO_BAD_OFF 96
+#define SPI_BENCH_RESULT_XFER_FAIL_OFF 100
+#define SPI_BENCH_RESULT_ELAPSED_MS_OFF 104
+#define SPI_BENCH_RESULT_OFFMIN_OFF 108
+#define SPI_BENCH_RESULT_OFFMAX_OFF 110
+#define SPI_BENCH_RESULT_CLKPERI_OFF 112
+#define SPI_BENCH_RESULT_STALE_OFF 116
+#define SPI_BENCH_RESULT_NATIVE_OFF 120
+#define SPI_BENCH_RESULT_FBDIV_OFF 124
+#define SPI_BENCH_RESULT_PD1_OFF 125
+#define SPI_BENCH_RESULT_PD2_OFF 126
+#define SPI_BENCH_RESULT_AUXSRC_OFF 127
+#define SPI_BENCH_RESULT_SYSCLK_OFF 128
+#define SPI_BENCH_RESULT_MOSI_OK_OFF 136
+#define SPI_BENCH_RESULT_MOSI_BAD_OFF 140
+#define SPI_BENCH_RESULT_PEER_TX_OFF 144
+#define SPI_BENCH_RESULT_KIND_OFF 148
+
+#define SPI_SELFTEST_ID_OFF 152
+#define SPI_SELFTEST_STATUS_OFF 153
+#define SPI_SELFTEST_FLAGS_OFF 154
+#define SPI_SELFTEST_A_OFF 156
+#define SPI_SELFTEST_B_OFF 160
+#define SPI_SELFTEST_TEXT_OFF 164
+#define SPI_SELFTEST_TEXT_MAX 36
+
+#define SPI_SELFTEST_FLAG_LAST 0x01
+#define SPI_SELFTEST_FLAG_ABORTED 0x02
+
+#define SPI_SELFTEST_MAX_RESULTS 48
+#define SPI_SELFTEST_ROWS_PER_REPLY 8
+
+#define SELFTEST_PASS 0
+#define SELFTEST_FAIL 1
+#define SELFTEST_WARN 2
+#define SELFTEST_SKIP 3
+#define SELFTEST_INFO 4
+#define SELFTEST_ASK 5
+
+#define SELFTEST_OPT_FLASH 0x01
+#define SELFTEST_OPT_LEDS 0x02
+#define SELFTEST_OPT_SWITCH 0x04
+
+#define ST_RP_FIRMWARE 0x01
+#define ST_RP_HWVER 0x02
+#define ST_RP_FLASH_ID 0x03
+#define ST_RP_FLASH_SIZE 0x04
+#define ST_RP_FLASH_RW 0x05
+#define ST_RP_CLK_SYS 0x06
+#define ST_RP_CLK_PERI 0x07
+#define ST_RP_CLK_USB 0x08
+#define ST_RP_CLK_ADC 0x09
+#define ST_RP_XOSC 0x0A
+#define ST_RP_ROSC 0x0B
+#define ST_RP_ADC_PIN 0x0C
+#define ST_RP_TEMP 0x0D
+#define ST_RP_GPIO_DRIVE 0x0E
+#define ST_RP_GPIO_PULL 0x0F
+#define ST_RP_GPIO_SHORT 0x10
+#define ST_RP_USB_MUX 0x11
+#define ST_RP_SNIFF 0x12
+#define ST_RP_OTA_META 0x13
+#define ST_RP_LED 0x14
+#define ST_RP_PIN_STATE 0x15
+#define ST_RP_SW_DP 0x16
+#define ST_RP_SW_DM 0x17
+
+#define ST_X_EBOOT 0x40
+#define ST_X_ELOG 0x41
+#define ST_X_SPI_LINK 0x42
+#define ST_X_UART_LINK 0x43
+#define ST_X_ESP_RESET 0x44
+
+#define ST_ESP_FIRMWARE 0x80
+#define ST_ESP_CHIP 0x81
+#define ST_ESP_MAC 0x82
+#define ST_ESP_FLASH 0x83
+#define ST_ESP_HEAP 0x84
+#define ST_ESP_RESET_REASON 0x85
+#define ST_ESP_PARTITIONS 0x86
+#define ST_ESP_SPIFFS 0x87
+#define ST_ESP_WIFI 0x88
+#define ST_ESP_SPI_COUNTERS 0x89
+#define ST_ESP_LED 0x8A
+#define ST_ESP_WIFI_SPEED 0x8B
+
+#define SPI_BENCH_RESULT_CRC_OFF 200
+#define SPI_BENCH_RESULT_CRC_FROM 4
+#define SPI_BENCH_RESULT_CRC_LEN 196
+
+
+
+
+#define SPI_BENCH_RESULT_FLAG_LAST 0x01
+#define SPI_BENCH_RESULT_FLAG_ABORTED 0x02
+#define SPI_BENCH_RESULT_FLAG_PROGRESS 0x04
+#define SPI_BENCH_RESULT_FLAG_SOAK_BEGIN 0x08
+
+#define RP_UART_BAUD 74880
+
+static void spi_bench_fill_pattern(unsigned char *dst, unsigned int len, unsigned int seed)
+{
+    unsigned int state = seed * 2654435761u + 0x9e3779b9u;
+
+    if (state == 0)
+    {
+        state = 0x9e3779b9u;
+    }
+
+    for (unsigned int i = 0; i < len; ++i)
+    {
+        state ^= state << 13;
+        state ^= state >> 17;
+        state ^= state << 5;
+        dst[i] = (unsigned char)(state >> 24);
+    }
+}
 
 #endif // __COM_COM__
