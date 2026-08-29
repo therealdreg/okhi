@@ -2261,6 +2261,31 @@ This adapter is one of the most reliable, as it is the easiest to parse. Saleae�
 
 ![](stuff/images/ps2adapter5.png)
 
+## Adapter 6 StarTech from Amazon 
+
+[Download Captures: Adapter 6 StarTech from Amazon](stuff/ps2caps/adapter_6_amazon.zip)
+
+Although this adapter is somewhat easier to parse, it still presents challenges. Saleae’s Logic software successfully decodes all events.
+
+![](stuff/images/ps2adapter6.png)
+
+## Adapter 7 from Aliexpress
+
+[Download Captures: Adapter 7 from Aliexpress](stuff/ps2caps/adapter_7_aliexpress.zip)
+
+This adapter is one of the most reliable, as it is the easiest to parse. Saleae’s Logic software successfully decodes all events.
+
+![](stuff/images/ps2adapter7.png)
+
+## Adapter 8 from Aliexpress
+
+[Download Captures: Adapter 8 from Aliexpress](stuff/ps2caps/adapter_8_aliexpress.zip)
+
+This adapter is one of the most reliable, as it is the easiest to parse. Saleae’s Logic software successfully decodes all events.
+
+![](stuff/images/ps2adapter8.png)
+
+
 # Hardware Design
 
 ## USB SWITCH
