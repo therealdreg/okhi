@@ -1975,7 +1975,6 @@ The photo above is one idea of how to wire that end-to-end setup, here in the PS
 
 Power the Leonardo from its own USB (or an external 5V), not from the UART adapter or USBasp, so each plug test is a real power-on. For USB mode instead of PS/2, skip the PS/2 breakout and let the implant sit between the Leonardo's USB and the host.
 
-
 The same rig again, rebuilt properly. This one is a **DIY Pro Micro board on perfboard**: it does exactly what the Arduino Leonardo setup above does, but with no Dupont jumpers anywhere. Every connection is soldered underneath in enamelled copper wire, which makes the whole thing far more compact and leaves a much tidier, cleaner setup, one that survives being picked up and moved without a wire working loose.
 
 ![](stuff/images/promicroboard.jpg)
@@ -1990,6 +1989,12 @@ What is on that perfboard, top to bottom:
 **The pins are not the same as on the Leonardo build.** A Pro Micro does not break out PF0 or PF1, so the PS/2 lines moved from A5/A4 to **D7/A7**. It also leaves out PC7, so the status LED moved to the board's own RX LED on PB0, which is wired the other way round and the firmware inverts it. The one thing genuinely lost is **BUSY** on PD6, which has no pad to reach it. Details in [firmware/leonardo_uart2keyboard/README.md](firmware/leonardo_uart2keyboard/README.md).
 
 To the right of the photo sits the okhi devboard itself with its ESP32-C2 and RP2040, a Raspberry Pi Debug Probe on the SWD header, and a powered USB hub feeding the whole bench.
+
+----
+
+Same setup for USB keyboard testing, with the Pro Micro's USB plugged:
+
+![](stuff/images/rigtestusb.png)
 
 ## Flash RP2040 Board PS2 firmware using Raspberry Pi Debug Probe
 

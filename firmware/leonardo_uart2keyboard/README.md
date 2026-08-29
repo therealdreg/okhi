@@ -48,6 +48,15 @@ The board can present itself two ways, and picks automatically at boot:
 - **PS/2 keyboard**, through two ordinary GPIO pins you wire to a PS/2 socket (**D7 = CLK,
   A7 = DATA**).
 
+
+-----
+
+Same setup for USB keyboard testing, with the Pro Micro's USB plugged:
+
+![](../../stuff/images/rigtestusb.png)
+
+-----
+
 Firmware `okhi-kbd-avr` v4.2, for the **ATmega32U4**. Developed on a **Pro Micro (5 V, 16 MHz)**,
 and it runs on an **Arduino Leonardo** too. **The two boards do not break out the same pins**, so
 read [section 3](#3-wiring-it-up) before you wire anything: the PS/2 lines, the status LED and the
