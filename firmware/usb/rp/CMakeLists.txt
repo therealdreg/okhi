@@ -15,22 +15,29 @@ if(WIN32)
 else()
     set(USERHOME $ENV{HOME})
 endif()
-set(sdkVersion 2.3.0)
+set(sdkVersion 2.3.1)
 set(toolchainVersion 15_2_Rel1)
-set(picotoolVersion 2.3.0)
+set(picotoolVersion 2.3.1)
 set(picoVscode ${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
 if (EXISTS ${picoVscode})
     include(${picoVscode})
 endif()
 # ====================================================================================
-set(PICO_BOARD pico CACHE STRING "Board type")
+list(APPEND PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR}/boards)
+set(PICO_BOARD okhi CACHE STRING "Board type")
+
+# Builds default to RelWithDebInfo, and the code is -O2 whatever the build type
+# (target_compile_options below), so every IDE button and script builds the image
+# that was tested. The SDK default, Release, is -O3: about 10 KB more code in RAM
+# (this is a copy_to_ram image) for nothing on a Cortex-M0+.
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
+endif()
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
 project(okhi C CXX ASM)
-
-set(PICO_DEOPTIMIZED_DEBUG 1)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
@@ -50,6 +57,8 @@ if (TARGET tinyusb_device)
             okhi.c
             )
 
+    target_compile_options(okhi PRIVATE -O2)
+
     # pull in common dependencies
     target_link_libraries(okhi 
     pico_stdlib 
@@ -60,7 +69,8 @@ if (TARGET tinyusb_device)
     hardware_spi 
     hardware_flash 
     hardware_sync
-    hardware_adc)
+    hardware_adc
+    hardware_pwm)
 
 pico_generate_pio_header(okhi ${CMAKE_CURRENT_LIST_DIR}/okhi.pio)
 
@@ -82,7 +92,6 @@ target_compile_definitions(okhi PRIVATE
 	PICO_DEFAULT_UART_TX_PIN=4
 	PICO_DEFAULT_UART_RX_PIN=5
     PICO_DEFAULT_UART_BAUD_RATE=921600
-    PICO_FLASH_SIZE_BYTES=16777216
 	)
 
 

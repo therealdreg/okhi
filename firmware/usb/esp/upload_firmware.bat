@@ -18,7 +18,11 @@ set /p COMPORT=Please enter the COM port (including full name e.g., COM3):
 if "%COMPORT%"=="" goto askCOM
 
 :loopez
-esptool.exe --port "%COMPORT%" --chip esp32c2 --baud 921600  write-flash -z --flash-mode dio --flash-freq 60m --flash-size 4MB 0x0000 bootloader.bin 0x8000 partition-table.bin 0x10000 okhi.bin 0x300000 storage.bin
+echo Erasing the whole flash first. This is required: the OTA partition table put
+echo otadata at 0xd000, where the old nvs partition used to live, so leftover data
+echo would make the bootloader read garbage from the boot selector.
+esptool.exe --port "%COMPORT%" --chip esp32c2 --baud 921600 erase-flash
+esptool.exe --port "%COMPORT%" --chip esp32c2 --baud 921600  write-flash -z --flash-mode dio --flash-freq 60m --flash-size 4MB 0x0000 bootloader.bin 0x8000 partition-table.bin 0x10000 okhi.bin 0x2d0000 storage.bin
 
 echo PRESS ENTER TO EXIT
 

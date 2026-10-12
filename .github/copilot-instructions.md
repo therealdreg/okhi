@@ -1,1 +1,0 @@
-Whenever I write a comment or text in Spanish, suggest replacing it with its fluent English equivalent.

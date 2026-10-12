@@ -8,7 +8,7 @@ CONFIG_IDF_TARGET="esp32c2"
 # Board crystal: 26 MHz (not the default 40 MHz)
 CONFIG_XTAL_FREQ_26=y
 
-# 4 MB flash (the 'storage' partition lives at 0x300000)
+# 4 MB flash (the 'storage' partition lives at 0x2d0000 and runs to the end)
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
 # Custom partition table (includes 'storage' for SPIFFS)
@@ -20,3 +20,39 @@ CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
 # SRAM / ~100 KB flash savings exclusive to v2.0, in exchange for full
 # compatibility with every ESP32-C2 in the field (advisory AR2025-001).
 CONFIG_ESP32C2_REV_MIN_1=y
+
+# The SPI slave ISR runs from IRAM so a transaction from the RP is served even
+# while the flash cache is disabled (SPIFFS reads, NVS writes). Its post_setup /
+# post_trans callbacks drive the SLAVEREADY handshake line with gpio_set_level,
+# so that function must live in IRAM too. Without this pair the handshake can
+# hang or crash exactly while the web page is being served.
+CONFIG_SPI_SLAVE_ISR_IN_IRAM=y
+CONFIG_GPIO_CTRL_FUNC_IN_IRAM=y
+
+# 1 ms tick instead of 10 ms. Every vTaskDelay(1) and select() timeout in the
+# firmware is an order of magnitude tighter, which keeps the HTTP server and
+# lwIP timers responsive.
+CONFIG_FREERTOS_HZ=1000
+
+# -O2 instead of -Og. The app partition has plenty of room and lwIP / the HTTP
+# server are compiled from source, so this is a direct win on page load time.
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+
+# 120 MHz, the maximum for the ESP32-C2.
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_120=y
+
+# On the ESP32-C2 IRAM and DRAM are the same physical pool, so every byte of
+# code placed in IRAM is a byte taken away from the heap. These two options
+# move WiFi code into IRAM to raise sustained throughput, which this firmware
+# does not have: it serves one small gzipped page and then short text lines.
+# Turning them off gives roughly 30 KB of DIRAM back to the heap at no
+# practical cost. Measured min_free_heap was only 12 KB with them enabled.
+CONFIG_ESP_WIFI_IRAM_OPT=n
+CONFIG_ESP_WIFI_RX_IRAM_OPT=n
+
+# OTA with automatic rollback. An app installed over the air boots in
+# "pending verify" state, and the bootloader reverts to the previous slot unless
+# the app calls esp_ota_mark_app_valid_cancel_rollback(). The firmware only does
+# that once it has served an HTTP request, which proves the whole chain works:
+# it boots, the radio comes up, stations associate and the server answers.
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y

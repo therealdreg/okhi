@@ -118,6 +118,7 @@ WARNING: BULLSHIT CODE X-)
 #include "hardware/timer.h"
 #include "hardware/uart.h"
 #include "hardware/watchdog.h"
+#include "hardware/vreg.h"
 #include "okhi.pio.h"
 #include "pico/bootrom.h"
 #include "pico/multicore.h"
@@ -129,8 +130,6 @@ WARNING: BULLSHIT CODE X-)
 
 #include "../../com/com.h"
 
-#include "../../com/com_rp.h"
-
 uint32_t __scratch_x("my_group_nameX") fooX = 23;
 uint32_t __scratch_y("my_group_nameY") fooY = 23;
 #define __core1_func(x) __scratch_y(__STRING(x)) x
@@ -139,14 +138,19 @@ uint32_t __scratch_y("my_group_nameY") fooY = 23;
 // uncomment to enable dev build
 // #define DEV_BUILD 1 // NOT USED YET
 
-// for UART debugging on devboard & HW version detection
-#define GPIO_A 4
-#define GPIO_B 5
+#define SPI_CS_SETUP_US 25
+#define delay_cs_pre() busy_wait_us_32(SPI_CS_SETUP_US);
 
-#define USSEL_PIN 8
-#define USOE_PIN 9
+#define RP_VARIANT OKHI_VARIANT_USB
+#define OTA_WATCHDOG_UPDATE() watchdog_update()
 
-#define BP() __asm("bkpt #1"); // breakpoint via software macro
+#include "../../com/com_rp.h"
+
+#include "../../com/com_rp_hw.h"
+
+#include "../../com/com_rp_ota.h"
+
+#include "../../com/com_rp_clock.h"
 
 // ---- USB capture GPIO mapping ----------------------------------------------
 // The PIO reads D+, D- and START through a single IN pin base, so these three
@@ -159,69 +163,9 @@ uint32_t __scratch_y("my_group_nameY") fooY = 23;
 #define START_INDEX 22   // PIO1 -> PIO0 START handshake -> PIO "PIN 2"
 #define TRIGGER_INDEX 18 // Optional external capture trigger (unused in this build)
 
-#ifndef FLASH_PAGE_SIZE
-#define FLASH_PAGE_SIZE 256
-#endif
-#ifndef FLASH_SECTOR_SIZE
-#define FLASH_SECTOR_SIZE 4096
-#endif
-#define FLASH_TOTAL_SIZE (16 * 1024 * 1024)
-
-#define UART_TO_ESP_BAUD_RATE 74880 // WARNING: Never change this value
-
-#define DATA_BITS 8
-#define STOP_BITS 1
-#define PARITY UART_PARITY_NONE
-
-#define SPI_BAUD 5000000 // ~4.6 mhz
-#define SPI_ID spi1
-#define SPI_SCK_PIN 10
-#define SPI_MOSI_PIN 11
-#define SPI_MISO_PIN 12
-#define SPI_CS_PIN 13
+#include "usb_bus.h"
 
 #define RP_ADC_GPIO 27 // From PCB v5
-
-#define EBOOT_MASTERDATAREADY_GPIO 14
-#define ELOG_SLAVEREADY_GPIO 15
-#define ESP_RESET_GPIO 28
-
-/*
-Attempting to achieve the minimum necessary delay for the ESP Slave SPI CS signal
--
-90 NOP at 125 MHz = 0.72 us. Our SPI runs at ~5 MHz, so 0.72 us is a delay of approximately 3.6 SPI clock cycles.
-Overclocking CPU frequency to 250 MHz reduces NOP execution time to 0.36 us,
-corresponding to approximately 1.8 SPI clock cycles.
--
-https://github.com/espressif/esp-idf/blob/v5.2.2/examples/peripherals/spi_slave/sender/main/app_main.c
-spi_device_interface_config_t devcfg = {
-...
-        .cs_ena_posttrans = 3,
-...
-Keep the CS low 3 cycles after transaction,
-to stop slave from missing the last bit when CS has less propagation delay than CLK
-*/
-#define delay_cs()                                                                                                     \
-    asm volatile("nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t"           \
-                 "nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t");
-
-#define delay_cs_pre() delay_cs();
-#define delay_cs_pos() delay_cs();
-#define CS_LOW()                                                                                                       \
-    asm volatile("nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop");                                                  \
-    gpio_put(SPI_CS_PIN, false);                                                                                       \
-    delay_cs_pre();
-#define CS_HIGH()                                                                                                      \
-    delay_cs_pos();                                                                                                    \
-    gpio_put(SPI_CS_PIN, true);                                                                                        \
-    asm volatile("nop \n\t nop \n\t nop \n\t nop \n\t nop \n\t nop");
 
 #define BUFFER_SIZE ((232 * 1024) / (int)sizeof(uint32_t))
 
@@ -250,29 +194,6 @@ to stop slave from missing the last bit when CS has less propagation delay than 
 
 #define ERROR_DATA_SIZE_LIMIT 16 // Max payload bytes to dump when printing an errored packet
 #define MAX_PACKET_DELTA 10000   // us; a larger gap between packets is treated as buffer corruption
-
-#define RING_BUFF_MAX_ENTRIES 800
-
-typedef enum
-{
-    VERSION_00 = 0,
-    VERSION_01,
-    VERSION_10,
-    VERSION_11,
-    VERSION_FF,
-    VERSION_0F,
-    VERSION_1F,
-    VERSION_F0,
-    VERSION_F1,
-    VERSION_UNKNOWN
-} hw_version_t;
-
-typedef enum
-{
-    PIN_STATE_LOW = 0,
-    PIN_STATE_HIGH,
-    PIN_STATE_FLOATING
-} pin_state_t;
 
 // ---- USB Packet IDs (PIDs) --------------------------------------------------
 // The byte after SYNC is the PID byte: the low nibble is the 4-bit PID, and the
@@ -384,20 +305,30 @@ typedef struct
     buffer_info_t g_buffer_info;
 } dbuff_t;
 
-extern char __flash_binary_end;
+// Room kept free for the packet being captured: the largest real one, a full speed 64-byte DATA
+// with worst-case bit stuffing, is about 22 words of 31 samples plus its 2 header words.
+#define CAPTURE_RESERVE_WORDS 64
 
-volatile static unsigned int write_index = 0;
-volatile static char ringbuff[RING_BUFF_MAX_ENTRIES][32];
+// A packet of at least this many line bits can be an 8-byte report (SYNC + PID + 64 + CRC16 is 96);
+// tokens, handshakes and keep-alives are 33 bits or less. Core 0 hands such a buffer over this long
+// after it arrived instead of waiting for the buffer to fill, which took 0.5 to 4.4 s.
+#define CAPTURE_REPORT_BITS 90
+#define CAPTURE_HANDOFF_US 100000
 
 static volatile unsigned int total_packets_sended = 0;
-
-static volatile char *hwver_name = "UNKNOWN";
-static volatile hw_version_t hwver = VERSION_UNKNOWN;
 
 // The ping-pong double buffer. While core 0 captures into curr_dbuff, core 1
 // decodes/displays last_dbuff; then the two roles swap.
 static volatile dbuff_t dbuff1;
 static volatile dbuff_t dbuff2;
+
+// Which buffers core 1 has finished with ([0] dbuff1, [1] dbuff2). Core 0 hands a full buffer over
+// without waiting and swaps only into one core 1 has released, so it never stops draining the PIO
+// RX FIFO (8 words, ~3 ms of traffic). It used to block on an acknowledgement until core 1 came back
+// round its loop; the FIFO overflowed and the next buffer started desynchronised (C8, which with
+// paced SPI cost a whole buffer of reports on 2026-10-11).
+static volatile bool dbuff_released[2] = {true, true};
+static volatile unsigned int capture_overruns; // packets dropped: core 1 a whole buffer behind
 
 static volatile dbuff_t *last_dbuff = NULL; // buffer being decoded/displayed (core 1)
 static volatile dbuff_t *curr_dbuff = NULL; // buffer being captured into (core 0)
@@ -508,218 +439,216 @@ static const char *display_fold_str[DisplayFoldCount] = {
     [DisplayFold_Disabled] = "Disabled",
 };
 
-static pin_state_t get_pin_state(uint gpio)
-{
-    gpio_init(gpio);
-    gpio_pull_up(gpio);
-    sleep_ms(5);
-    bool pull_up_state = gpio_get(gpio);
-
-    gpio_pull_down(gpio);
-    sleep_ms(5);
-    bool pull_down_state = gpio_get(gpio);
-
-    gpio_deinit(gpio);
-
-    if (pull_up_state && !pull_down_state)
-    {
-        return PIN_STATE_FLOATING;
-    }
-
-    return pull_up_state ? PIN_STATE_HIGH : PIN_STATE_LOW;
-}
-
-static hw_version_t detect_hw_version(void)
-{
-    pin_state_t state_a = get_pin_state(GPIO_A);
-    pin_state_t state_b = get_pin_state(GPIO_B);
-
-    if (state_a == PIN_STATE_FLOATING && state_b == PIN_STATE_FLOATING)
-    {
-        return VERSION_FF;
-    }
-    else if (state_a == PIN_STATE_LOW && state_b == PIN_STATE_FLOATING)
-    {
-        return VERSION_0F;
-    }
-    else if (state_a == PIN_STATE_HIGH && state_b == PIN_STATE_FLOATING)
-    {
-        return VERSION_1F;
-    }
-    else if (state_a == PIN_STATE_FLOATING && state_b == PIN_STATE_LOW)
-    {
-        return VERSION_F0;
-    }
-    else if (state_a == PIN_STATE_FLOATING && state_b == PIN_STATE_HIGH)
-    {
-        return VERSION_F1;
-    }
-    else if (state_a == PIN_STATE_LOW && state_b == PIN_STATE_LOW)
-    {
-        return VERSION_00;
-    }
-    else if (state_a == PIN_STATE_LOW && state_b == PIN_STATE_HIGH)
-    {
-        return VERSION_01;
-    }
-    else if (state_a == PIN_STATE_HIGH && state_b == PIN_STATE_LOW)
-    {
-        return VERSION_10;
-    }
-    else if (state_a == PIN_STATE_HIGH && state_b == PIN_STATE_HIGH)
-    {
-        return VERSION_11;
-    }
-    else
-    {
-        return VERSION_UNKNOWN;
-    }
-}
-
-static int init_ver(void)
-{
-    hwver = detect_hw_version();
-
-    switch (hwver)
-    {
-        case VERSION_00:
-            hwver_name = "00";
-            printf("Hardware version: 00\n");
-            break;
-
-        case VERSION_01:
-            hwver_name = "01";
-            printf("Hardware version: 01\n");
-            break;
-
-        case VERSION_10:
-            hwver_name = "10";
-            printf("Hardware version: 10\n");
-            break;
-
-        case VERSION_11:
-            hwver_name = "11";
-            printf("Hardware version: 11\n");
-            break;
-
-        case VERSION_FF:
-            hwver_name = "FF";
-            printf("Hardware version: FF (both floating)\n");
-            break;
-
-        case VERSION_0F:
-            hwver_name = "0F";
-            printf("Hardware version: 0F (A low, B floating)\n");
-            break;
-
-        case VERSION_1F:
-            hwver_name = "1F";
-            printf("Hardware version: 1F (A high, B floating)\n");
-            break;
-
-        case VERSION_F0:
-            hwver_name = "F0";
-            printf("Hardware version: F0 (A floating, B low)\n");
-            break;
-
-        case VERSION_F1:
-            hwver_name = "F1";
-            printf("Hardware version: F1 (A floating, B high)\n");
-            break;
-
-        default:
-            hwver_name = "UK";
-            printf("Hardware version: Unknown\n");
-            break;
-    }
-
-    return 0;
-}
-
-static int my_spi_write_blocking(const uint8_t *src, size_t len)
-{
-    CS_LOW();
-    int retf = spi_write_blocking(SPI_ID, src, len);
-    CS_HIGH();
-
-    return retf;
-}
-
 static int my_spi_to_esp_write_blocking(const uint8_t *src, size_t len)
 {
     gpio_put(EBOOT_MASTERDATAREADY_GPIO, true);
-    while (!gpio_get(ELOG_SLAVEREADY_GPIO))
+
+    // FIX BY DREG
+    // Bounded, like my_spi_to_esp_xfer_blocking already is. The bare spin here fed no
+    // watchdog, so an ESP that was rebooting, wedged or simply not driving the line took
+    // the RP down with it: four seconds later the watchdog rebooted the capture engine
+    // instead of this call just failing and the caller carrying on.
+    if (!wait_esp_ready(SPI_READY_TIMEOUT_US))
     {
-        tight_loop_contents();
+        gpio_put(EBOOT_MASTERDATAREADY_GPIO, false);
+        return -1;
     }
+    // END FIX
+
     gpio_put(EBOOT_MASTERDATAREADY_GPIO, false);
     return my_spi_write_blocking(src, len);
 }
 
-static int my_spi_read_blocking(uint8_t *dst, size_t len)
-{
-    CS_LOW();
-    // repeated_tx_data is output repeatedly on TX as data is read in from RX. Generally this can be 0
-    int retf = spi_read_blocking(SPI_ID, 0, dst, len);
-    CS_HIGH();
+// FIX BY DREG
+// Report ring for the ESP boot / reset window. The RP holds ELOG_SLAVEREADY with a
+// pull-up, so while the ESP is booting or in reset that line floats high and
+// my_spi_to_esp_write_blocking() above would clock a report at a slave that is not
+// listening, losing it. The PS/2 build already buffers its log in a ring; the USB path
+// decoded straight into the SPI write and had nowhere to hold a report during an outage.
+// Reports are queued here and drained in order only while esp_link_up is set, which
+// happens solely on a valid poll response the pull-up cannot fake. Producer and consumer
+// are both core 1 (process_packet and core1_main), so no locking is needed.
+#define USB_REPORT_RING_ENTRIES 64
+static char usb_report_ring[USB_REPORT_RING_ENTRIES][SPI_FRAME_SIZE];
+static unsigned int usb_report_head;
+static unsigned int usb_report_tail;
+static unsigned int usb_report_dropped;
 
-    return retf;
+// FIX BY DREG: sequenced delivery confirmed by the ESP's published sequence (go-back-N).
+//
+// Every report carries a sequence (com.h). The ESP accepts strictly in order, drops a repeat, and
+// stamps the last one it accepted into every status frame. That published sequence is the only
+// acknowledgement that cannot lie: SLAVEREADY can be stale (ps2adapter.md 6.1), so a write can
+// "succeed" into an ESP with nothing armed. So a report leaves the ring only once the ESP's
+// sequence has passed it. Reports go out once each, at most USB_SEND_WINDOW past the last
+// confirmed one, with a poll between windows; when the ESP stops advancing, everything after its
+// sequence goes out again. The window keeps the ESP's 8-deep SPI queue from being outrun and its
+// refusal budget (SPI_SEQ_RESYNC_AFTER) from ever running out.
+//
+// What this replaced, measured on 2026-10-10 with a browser polling the implant: two blind sends
+// per report, a GPIO acknowledgement, and a rewind of at most 16 that only ran with the ring idle.
+// A 300-report burst never left the ring idle, so after one lost frame the ESP refused 64 frames
+// waiting for a rewind that never came, then resynchronised: one lost frame became 32 lost reports.
+//
+// The ESP stops answering for tens to hundreds of ms while it writes flash (SPIFFS erases stall
+// everything not in IRAM), and its 8-deep queue runs dry. A missed poll is therefore waited out,
+// not taken as a dead link: the decode simply pauses, the reports are still in the capture buffer.
+// Only USB_PATIENCE_US without a single confirmation marks the ESP gone; from then on reports wait
+// in the ring until the poll loop sees it again. Patience runs from the last CONFIRMATION, not the
+// last answered poll, so nothing here can hold core 1 (and through the handoff, core 0's watchdog)
+// for longer than that. Polls that fail are spaced USB_POLL_IDLE_US apart: EBOOT is the ESP's boot
+// strap and a rebooting ESP should not be hammered.
+//
+// The ESP may hold any report clocked since the last confirmation, also ones before a resend
+// rewound the send cursor, so confirmations are bounded by usb_report_high, never by the cursor:
+// bounding them by the cursor rejected a real confirmation, and the report went out again under a
+// new number the ESP accepted twice.
+//
+// Once after boot, and after the ESP was given up on, the next sequence is aligned to the ESP's,
+// with nothing in flight, so an RP that rebooted under a running ESP does not send numbers the ESP
+// reads as already seen. Never in between: a renumbered report is a duplicate or a loss.
+#define USB_SEND_WINDOW 4
+#define USB_POLL_GAP_US 500
+#define USB_POLL_IDLE_US 5000
+#define USB_STALL_US 30000
+#define USB_PATIENCE_US 1500000
+
+static uint8_t usb_tail_seq = SPI_RECORD_SEQ_MIN; // sequence of the report at usb_report_tail
+static unsigned int usb_report_sent;              // next one to clock out, tail <= sent <= high
+static unsigned int usb_report_high;              // one past the furthest report clocked out
+static unsigned int usb_spi_resends;
+static bool usb_esp_gone;
+static bool usb_seq_synced;
+static uint8_t usb_spi_frame[SPI_FRAME_SIZE];
+
+static uint8_t usb_seq_add(uint8_t seq, unsigned int n)
+{
+    return (uint8_t)(((seq - SPI_RECORD_SEQ_MIN + n) % SPI_RECORD_SEQ_MAX) + SPI_RECORD_SEQ_MIN);
 }
 
-static int my_spi_write_read_blocking(const uint8_t *src, uint8_t *dst, size_t len)
+// Move the tail past every report the ESP's published sequence says it holds.
+static bool usb_report_confirm(void)
 {
-    CS_LOW();
-    int retf = spi_write_read_blocking(SPI_ID, src, dst, len);
-    CS_HIGH();
-
-    return retf;
-}
-
-static unsigned char *get_base_flash_space_addr(void)
-{
-    return (unsigned char *)XIP_BASE;
-}
-
-static uint32_t get_start_free_flash_space_addr(void)
-{
-    return ((((uint32_t)XIP_BASE) + ((uint32_t)__flash_binary_end) + (FLASH_PAGE_SIZE - 1)) & ~(FLASH_PAGE_SIZE - 1));
-}
-
-static uint32_t get_flash_end_address(void)
-{
-    return ((((((uint32_t)XIP_BASE)) + (PICO_FLASH_SIZE_BYTES - 1)) + (FLASH_PAGE_SIZE - 1)) & ~(FLASH_PAGE_SIZE - 1));
-}
-
-static uint32_t get_free_flash_space(void)
-{
-    return get_flash_end_address() - get_start_free_flash_space_addr();
-}
-
-static void erase_flash(void)
-{
-    flash_range_erase(0, PICO_FLASH_SIZE_BYTES);
-    reset_usb_boot(0, 0);
-}
-
-__attribute__((section(".uninitialized_data"))) uint32_t wait_20;
-
-void gpio_callback(uint gpio, uint32_t events)
-{
-    // For devboard :D
-    if (gpio == ESP_RESET_GPIO)
+    if (!esp_record_seq_seen)
     {
-        gpio_init(ESP_RESET_GPIO);
-        gpio_set_dir(ESP_RESET_GPIO, GPIO_IN);
-        gpio_init(EBOOT_MASTERDATAREADY_GPIO);
-        gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_IN);
-        gpio_init(ELOG_SLAVEREADY_GPIO);
-        gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
+        return false;
+    }
 
-        wait_20 = 0x69699696;
-        puts("\r\nexternal ESP-RESET detected!\r\nrebooting in 50 secs!!!\r\n");
-        watchdog_reboot(0, 0, 0);
+    uint8_t confirmed = spi_seq_delta(usb_seq_add(usb_tail_seq, SPI_RECORD_SEQ_MAX - 1), esp_record_seq);
+
+    if (confirmed == 0 || confirmed > usb_report_high - usb_report_tail)
+    {
+        return false;
+    }
+
+    usb_report_tail += confirmed;
+    usb_tail_seq = usb_seq_add(usb_tail_seq, confirmed);
+    total_packets_sended += confirmed;
+
+    if (usb_report_sent < usb_report_tail)
+    {
+        usb_report_sent = usb_report_tail;
+    }
+
+    return true;
+}
+
+static void usb_report_flush(void)
+{
+    if (usb_esp_gone && !esp_link_up)
+    {
+        return;
+    }
+
+    usb_esp_gone = false;
+
+    uint64_t confirmed = time_us_64();
+    uint64_t progress = confirmed;
+
+    while (usb_report_tail != usb_report_head)
+    {
+        if (time_us_64() - confirmed > USB_PATIENCE_US)
+        {
+            usb_esp_gone = true;
+            usb_seq_synced = false;
+            esp_link_up = false;
+            return;
+        }
+
+        if (!usb_seq_synced && usb_report_high == usb_report_tail && esp_record_seq_seen)
+        {
+            usb_tail_seq = spi_seq_next(esp_record_seq);
+            usb_seq_synced = true;
+        }
+
+        if (usb_report_sent != usb_report_head && usb_report_sent - usb_report_tail < USB_SEND_WINDOW)
+        {
+            usb_spi_frame[0] = SPI_RECORD_MARKER;
+            usb_spi_frame[1] = usb_seq_add(usb_tail_seq, usb_report_sent - usb_report_tail);
+            memcpy(usb_spi_frame + SPI_RECORD_HEADER, usb_report_ring[usb_report_sent % USB_REPORT_RING_ENTRIES],
+                   SPI_FRAME_SIZE - SPI_RECORD_HEADER);
+            // The report is a short NUL terminated line in a 256 byte frame, so the two bytes pushed
+            // off the end are padding. Belt and braces: guarantee the terminator survives.
+            usb_spi_frame[SPI_FRAME_SIZE - 1] = 0;
+
+            if (my_spi_to_esp_write_blocking(usb_spi_frame, SPI_FRAME_SIZE) >= 0)
+            {
+                // Not an acknowledgement (the sequence is), the pacing: wait for the ESP to close this
+                // transaction before the next frame. Back to back, a frame could land in the window of
+                // the previous one; the ESP stored a poll's tail glued to a report (2026-10-10).
+                wait_esp_consumed(SPI_CONSUMED_TIMEOUT_US);
+                usb_report_sent++;
+
+                if (usb_report_high < usb_report_sent)
+                {
+                    usb_report_high = usb_report_sent;
+                }
+
+                continue;
+            }
+        }
+
+        // Window full, everything sent and not yet confirmed, or the ESP not armed: look at its
+        // sequence. A missed poll is the ESP busy, not gone, until USB_PATIENCE_US says otherwise.
+        busy_wait_us(esp_link_up ? USB_POLL_GAP_US : USB_POLL_IDLE_US);
+        poll_esp();
+        wait_esp_consumed(SPI_CONSUMED_TIMEOUT_US);
+
+        uint64_t now = time_us_64();
+
+        if (esp_link_up && usb_report_confirm())
+        {
+            confirmed = now;
+            progress = now;
+        }
+        else if (esp_link_up && now - progress > USB_STALL_US)
+        {
+            usb_report_sent = usb_report_tail;
+            usb_spi_resends++;
+            progress = now;
+        }
     }
 }
+
+static void usb_report_dispatch(const char *frame)
+{
+    if (usb_report_head - usb_report_tail >= USB_REPORT_RING_ENTRIES)
+    {
+        if (usb_report_dropped == 0)
+        {
+            puts("usb report ring full while the ESP is down, dropping the newest report");
+        }
+        usb_report_dropped++;
+    }
+    else
+    {
+        memcpy(usb_report_ring[usb_report_head % USB_REPORT_RING_ENTRIES], frame, SPI_FRAME_SIZE);
+        usb_report_head++;
+    }
+
+    usb_report_flush();
+}
+// END FIX
 
 // How many packets to capture before handing the buffer to core 1. This build
 // hard-codes 5000 (the early return); the g_capture_limit switch below is the
@@ -769,6 +698,24 @@ static void reinit_dbuff(volatile dbuff_t *dbuff)
     dbuff->g_buffer_info.limit = capture_limit_value();
 }
 
+// Core 0: hand the full buffer to core 1 and carry on in the other one, if core 1 has released it.
+static bool capture_swap(void)
+{
+    int other = (curr_dbuff == &dbuff1) ? 1 : 0;
+
+    if (!dbuff_released[other])
+    {
+        return false;
+    }
+
+    __dmb();
+    dbuff_released[other ^ 1] = false;
+    multicore_fifo_push_blocking((uintptr_t)curr_dbuff);
+    curr_dbuff = other ? &dbuff2 : &dbuff1;
+    reinit_dbuff(curr_dbuff);
+    return true;
+}
+
 static void print_g_fold_count(int count)
 {
     printf("   ... : Folded ");
@@ -801,9 +748,14 @@ static bool print_packet(void)
     uint8_t *payload = (uint8_t *)&(last_dbuff->g_buffer[g_display_ptr + 2]);
     int pid = payload[1] & 0x0f;         // PID nibble (byte 0 is SYNC)
     static bool last_pid_in = false;     // did the previous packet start an IN?
-    static uint8_t *last_payload = NULL; // payload of that IN token
-
-    last_payload = (uint8_t *)&(last_dbuff->g_buffer[g_display_ptr + 2]);
+    // FIX BY DREG: addr/ep belong to the IN token, not the DATA that follows it. The old code
+    // reassigned last_payload to the current packet every call, so the DATA packet's own bytes were
+    // printed as addr/ep. Capture them as values when the IN token is seen; the report bytes still
+    // come from the DATA packet below.
+    static int last_in_addr = 0;
+    static int last_in_ep = 0;
+    // Per endpoint: the address and the 8 bytes of the last report forwarded.
+    static uint8_t last_report[16][9];
 
     // A huge time gap almost always means the buffer indexing has slipped; bail.
     if (g_check_delta && delta > MAX_PACKET_DELTA)
@@ -891,29 +843,45 @@ static bool print_packet(void)
     // Forwarding logic: we are interested in the device's response to an IN.
     if (pid == Pid_In)
     {
+        int v = (payload[3] << 8) | payload[2]; // IN token: addr in the low 7 bits, endpoint above
+        last_in_addr = v & 0x7f;
+        last_in_ep = (v >> 7) & 0xf;
         last_pid_in = true; // remember that this packet was an IN token
     }
     else
     {
-        // An IN token immediately followed by an 8-byte DATA packet is the classic
-        // Low-Speed HID report (e.g. a boot-protocol keyboard). size-4 strips the
+        // An IN token to an interrupt endpoint immediately followed by an 8-byte DATA
+        // packet is the classic Low-Speed HID report (e.g. a boot-protocol keyboard).
+        // EP0 is excluded: it only carries the enumeration's descriptors and control
+        // replies, 24 of them per plug-in, never a keystroke. size-4 strips the
         // SYNC+PID+CRC16 overhead, leaving the 8 report bytes. Format the report as
         // a text line and ship it to the ESP over SPI.
-        if (last_pid_in && (pid == Pid_Data0 || pid == Pid_Data1 || pid == Pid_Data2) && size - 4 == 8)
+        // A report equal to the last one on its endpoint holds no keystroke (a keyboard
+        // repeating at its idle rate, a resend after a lost ACK, a second interface
+        // mirroring an empty report): it is logged as "same" and not shipped, or such a
+        // keyboard would fill the keylog with nothing.
+        if (last_pid_in && last_in_ep != 0 && (pid == Pid_Data0 || pid == Pid_Data1 || pid == Pid_Data2) &&
+            size - 4 == 8)
         {
-            int v = (last_payload[3] << 8) | last_payload[2];
-            int addr = v & 0x7f;     // first report bytes reinterpreted as addr...
-            int ep = (v >> 7) & 0xf; // ...and endpoint for the log line's tag
+            uint8_t *last = last_report[last_in_ep];
+            if (last[0] == last_in_addr && memcmp(last + 1, &payload[2], 8) == 0)
+            {
+                printf("IN: 0x%x/0x%x same;\r\n", last_in_addr, last_in_ep);
+                last_pid_in = false;
+                return true;
+            }
+            last[0] = (uint8_t)last_in_addr;
+            memcpy(last + 1, &payload[2], 8);
 
-            char pkts[256] = {0};
-            size_t sizepkt = sprintf(pkts, "IN: 0x%x/0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x;\r\n", addr, ep,
-                                     last_payload[2], last_payload[3], last_payload[4], last_payload[5],
-                                     last_payload[6], last_payload[7], last_payload[8], last_payload[9]);
+            char pkts[SPI_FRAME_SIZE] = {0};
+            sprintf(pkts, "IN: 0x%x/0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x;\r\n", last_in_addr, last_in_ep,
+                    payload[2], payload[3], payload[4], payload[5], payload[6], payload[7], payload[8], payload[9]);
 
             puts(pkts);
 
-            my_spi_to_esp_write_blocking(pkts, sizepkt); // hand the report to the ESP
-            total_packets_sended++;
+            // FIX BY DREG
+            usb_report_dispatch(pkts); // queue the report; it is clocked to the ESP only once a poll confirms it alive
+            // END FIX
         }
 
         last_pid_in = false;
@@ -1072,9 +1040,26 @@ static void process_packet(int size)
     int stuff_count = 0;     // consecutive 1s, for bit de-stuffing
     int pid, npid;
 
+    // FIX BY DREG
+    // The read cursor had no upper bound here. size comes from the PIO as a bit count and
+    // process_buffer only rejects it above 0xffff, so a corrupt or desynchronised count of
+    // 65535 asks this loop for 2115 words. Start it near the end of a 16000 word buffer and
+    // it reads straight off the end, into g_buffer_info and the other ping-pong buffer.
+    // Stop at the edge and flag the packet instead.
+    const int raw_words = (int)(sizeof(last_dbuff->g_buffer) / sizeof(last_dbuff->g_buffer[0]));
+    // END FIX
+
     // The raw samples arrive packed 31 bits per word (PIO autopush threshold).
     while (size)
     {
+        // FIX BY DREG
+        if (g_rd_ptr >= raw_words)
+        {
+            error |= CAPTURE_ERROR_SIZE;
+            break;
+        }
+        // END FIX
+
         uint32_t w = last_dbuff->g_buffer[g_rd_ptr++];
         int bit_count;
 
@@ -1146,7 +1131,25 @@ static void process_packet(int size)
 
     if (out_size < 1)
     {
+        // FIX BY DREG
+        // Bailing out here still has to leave a well formed record behind. The caller has
+        // already counted this packet and advanced past its header and time slots, so
+        // returning without writing the header word leaves whatever was in that memory
+        // being read back as "flags | byte count". A large stale count makes the reader
+        // skip over everything after it, silently losing the rest of the buffer, which on
+        // a keylogger means losing keystrokes to one runt packet from noise or a
+        // connect/disconnect.
+        //
+        // handle_folding(-1, error) mirrors what the normal exit and the bus reset case
+        // already do: -1 is not a real PID (Sof 5, In 9, Nak 10), so it only counts the
+        // error and disqualifies this frame from being folded away as empty. Without it a
+        // buffer full of runts still reported "0 error".
         error |= CAPTURE_ERROR_SIZE;
+        handle_folding(-1, error);
+        last_dbuff->g_buffer[g_wr_ptr - 2] = error | out_size;
+        g_wr_ptr += (out_size + 3) / 4;
+        // END FIX
+
         return;
     }
 
@@ -1159,7 +1162,15 @@ static void process_packet(int size)
 
     if (out_size < 2)
     {
+        // FIX BY DREG
+        // Same reasoning as the out_size < 1 exit above: record what was decoded so the
+        // reader stays in step, rather than leaving a stale header word behind.
         error |= CAPTURE_ERROR_SIZE;
+        handle_folding(-1, error);
+        last_dbuff->g_buffer[g_wr_ptr - 2] = error | out_size;
+        g_wr_ptr += (out_size + 3) / 4;
+        // END FIX
+
         return;
     }
 
@@ -1252,11 +1263,12 @@ static void process_buffer(void)
         uint32_t time = start_time(last_dbuff->g_buffer[g_rd_ptr + 1], size); // packet start time
 
         // A bit count above 16 bits is impossible for a real packet: the PIO fell
-        // out of sync, usually because the speed setting is wrong.
+        // out of sync, usually because the speed setting is wrong. Everything decoded
+        // so far is intact (it was compacted behind the read pointer), so keep it and
+        // lose only the rest of this buffer.
         if (size > 0xffff)
         {
-            printf("Synchronization error. Check your speed setting.\r\n");
-            out_count = 0;
+            printf("Synchronization error after %d packets, the rest of this buffer is lost.\r\n", out_count);
             break;
         }
 
@@ -1339,27 +1351,6 @@ void pio0_irq(void)
     }
 }
 
-static void free_all_pio_state_machines(PIO pio)
-{
-    for (int sm = 0; sm < 4; sm++)
-    {
-        if (pio_sm_is_claimed(pio, sm))
-        {
-            pio_sm_unclaim(pio, sm);
-        }
-    }
-}
-
-// Release both PIO blocks (unclaim all state machines and wipe their instruction
-// memory) so the capture programs can be (re)loaded from a clean slate.
-static void pio_destroy(void)
-{
-    free_all_pio_state_machines(pio0);
-    free_all_pio_state_machines(pio1);
-    pio_clear_instruction_memory(pio0);
-    pio_clear_instruction_memory(pio1);
-}
-
 static dbuff_t *__attribute__((optimize("O0"))) GetLastDbuffAddr(void)
 {
     return last_dbuff;
@@ -1367,37 +1358,23 @@ static dbuff_t *__attribute__((optimize("O0"))) GetLastDbuffAddr(void)
 
 static void init_esp_seq(void)
 {
-    gpio_set_irq_enabled_with_callback(ESP_RESET_GPIO, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
+    esp_link_uart_init();
 
-    uart_init(uart0, UART_TO_ESP_BAUD_RATE);
-    gpio_set_function(16, GPIO_FUNC_UART);
-    gpio_set_function(17, GPIO_FUNC_UART);
-    // UART 8N1: 1 start bit, 8 data bits, no parity bit, 1 stop bit
-    uart_set_hw_flow(uart0, false, false);
-    uart_set_format(uart0, DATA_BITS, STOP_BITS, PARITY);
-    uart_set_fifo_enabled(uart0, false);
-    uart_set_irq_enables(uart0, false, false);
-
-    gpio_init(ELOG_SLAVEREADY_GPIO);
-    gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
-    gpio_pull_up(ELOG_SLAVEREADY_GPIO);
+    bool slave_ready = false;
 
     for (int i = 0; i < 3000; i++)
     {
         if (gpio_get(ELOG_SLAVEREADY_GPIO))
         {
-            printf("ESP slave not ready yet... %d\r\n", i);
-        }
-        else
-        {
-            puts("SLAVE READY!");
+            slave_ready = true;
             break;
         }
+
         tight_loop_contents();
     }
-    gpio_init(EBOOT_MASTERDATAREADY_GPIO);
-    gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_OUT);
-    gpio_put(EBOOT_MASTERDATAREADY_GPIO, false);
+
+    puts(slave_ready ? "SLAVE READY!" : "ESP slave not armed yet, the poll loop will keep retrying");
+    esp_link_master_init();
 }
 
 // CORE 1 ENTRY POINT: the decode/forward worker. It waits for core 0 to hand
@@ -1411,82 +1388,60 @@ void core1_main()
     init_esp_seq(); // bring up UART + SPI handshake to the ESP
 
     total_packets_sended = 0;
-    unsigned int last_sended = 0;
-    unsigned int g = 0;
-    unsigned int z = 90000000 + 1;
 
     while (1)
     {
-        static unsigned char line[32] = {0};
-
         if (multicore_fifo_rvalid())
         {
-            // Core 0 pushed a filled buffer pointer. Take ownership, acknowledge
-            // with a sentinel (0x69696969) so core 0 can proceed, then decode and
-            // display/forward it.
+            // Core 0 pushed a full buffer and is already capturing into the other one. Decode and
+            // forward this one, then release it so core 0 may swap back into it.
             last_dbuff = (volatile dbuff_t *)(uintptr_t)multicore_fifo_pop_blocking();
-            multicore_fifo_push_blocking(0x69696969);
             process_buffer();
             display_buffer();
+            __dmb();
+            dbuff_released[last_dbuff == &dbuff2 ? 1 : 0] = true;
         }
         else
         {
-            if (last_sended != total_packets_sended && g++ > 20000000)
+            uint32_t polls = esp_poll_ok + esp_poll_failed;
+            poll_esp_if_due();
+            // FIX BY DREG
+            if (esp_poll_ok + esp_poll_failed != polls)
             {
-                z = 0;
-                g = 0;
-                last_sended = total_packets_sended;
-                sprintf(line, "HWv%s packets sended: 0x%x", hwver_name, total_packets_sended);
-                uart_write_blocking(uart0, line, strlen(line) + 1);
-                puts(line);
+                wait_esp_consumed(SPI_CONSUMED_TIMEOUT_US); // pace the poll from the first report
             }
-            else if (z++ > 90000000)
+            usb_report_flush();
+
+            // Surface the recovery on the one channel the bench can read live, same as the PS/2
+            // build. Resends climbing while nothing is lost is the fix working, not a fault.
+            static unsigned int usb_spi_resends_reported = 0;
+            if (usb_spi_resends != usb_spi_resends_reported)
             {
-                z = 0;
-                g = 0;
-                sprintf(line, "HWv%s packets sended: 0x%x", hwver_name, total_packets_sended);
-                uart_write_blocking(uart0, line, strlen(line) + 1);
-                puts(line);
+                usb_spi_resends_reported = usb_spi_resends;
+                printf("usb spi resent from the esp's sequence %u times, %u reports confirmed\r\n", usb_spi_resends,
+                       total_packets_sended);
             }
+
+            static unsigned int capture_overruns_reported = 0;
+            if (capture_overruns != capture_overruns_reported)
+            {
+                capture_overruns_reported = capture_overruns;
+                printf("capture overrun: %u packets dropped, core 1 a whole buffer behind\r\n", capture_overruns);
+            }
+            // END FIX
+            report_packets_sent(total_packets_sended);
+            usb_bus_watch();
         }
     }
 }
 
 static void init_seq(void)
 {
-    if (wait_20 == 0x69699696)
-    {
-        stdio_init_all();
-        puts("\r\nwaiting 50 secs...\r\n");
-        wait_20 = 0;
-        sleep_ms(50000);
-    }
+    delay_boot_if_esp_reset_detected();
 
-    gpio_init(ESP_RESET_GPIO);
-    gpio_set_dir(ESP_RESET_GPIO, GPIO_OUT);
-    gpio_put(ESP_RESET_GPIO, false);
+    rp_board_boot_init();
 
-    gpio_init(EBOOT_MASTERDATAREADY_GPIO);
-    gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_IN);
-    gpio_init(ELOG_SLAVEREADY_GPIO);
-    gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
-
-    gpio_init(USSEL_PIN);
-    gpio_set_dir(USSEL_PIN, GPIO_OUT);
-    gpio_put(USSEL_PIN, false);
-
-    gpio_init(USOE_PIN);
-    gpio_set_dir(USOE_PIN, GPIO_OUT);
-    gpio_put(USOE_PIN, true);
-
-    init_ver();
-
-    // uart init must be called after init_ver(), because on devboard the same pins are used for UART
-    stdio_init_all();
-
-    gpio_put(USSEL_PIN, true);
-
-    sleep_ms(100);
+    report_last_fault();
 
     printf("\r\nokhi USB started! Hardware v%s\r\nBuild Date %s %s\r\n", hwver_name, __DATE__, __TIME__);
     fflush(stdout);
@@ -1494,23 +1449,12 @@ static void init_seq(void)
     gpio_set_dir(ESP_RESET_GPIO, GPIO_IN);
     gpio_pull_up(ESP_RESET_GPIO);
 
-    uint32_t baud __attribute__((unused)) = spi_init(SPI_ID, SPI_BAUD);
-    gpio_set_function(SPI_SCK_PIN, GPIO_FUNC_SPI);
-    gpio_set_function(SPI_MOSI_PIN, GPIO_FUNC_SPI);
-    gpio_set_function(SPI_MISO_PIN, GPIO_FUNC_SPI);
-    // The CS pin is controlled manually
-    gpio_init(SPI_CS_PIN);
-    gpio_set_dir(SPI_CS_PIN, GPIO_OUT);
-    gpio_put(SPI_CS_PIN, true);
-    // SPI mode 0: 8 data bits, MSB first, CPOL=0, CPHA=0
-    spi_set_format(SPI_ID, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
-    printf("Firmware version: v%s\r\n", FIRMV_STR);
-    printf("SPI Mode 0: %.2f MHz (%d)\r\n", ((float)baud) / 1000000.0, baud);
+    uint32_t baud __attribute__((unused)) = rp_spi_master_init();
+    printf("SPI Mode 0 at the boot clock: %.2f MHz (%d)\r\n", ((float)baud) / 1000000.0, baud);
 
-    printf("flash free space addr: 0x%08x\r\n"
-           "flash end addr: 0x%08x\r\n"
-           "flash free space size: 0x%08x bytes\r\n",
-           get_start_free_flash_space_addr(), get_flash_end_address(), get_free_flash_space());
+    report_flash_layout();
+    report_flash_size();
+    report_ota_state();
 
     gpio_put(USOE_PIN, false);
 
@@ -1525,53 +1469,13 @@ static void init_seq(void)
     printf("Raw value: 0x%03x, voltage: %f V\n", result, result * conversion_factor);
 }
 
-static bool bootsel_pressed_safely(void)
-{
-    const uint CS_INDEX = 1;
-    uint32_t flags = save_and_disable_interrupts();
-
-    hw_write_masked(&ioqspi_hw->io[CS_INDEX].ctrl, GPIO_OVERRIDE_LOW << IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_LSB,
-                    IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_BITS);
-
-    for (volatile int i = 0; i < 1000; ++i)
-    {
-        tight_loop_contents();
-    }
-
-    bool pressed = !(sio_hw->gpio_hi_in & (1u << CS_INDEX));
-
-    hw_write_masked(&ioqspi_hw->io[CS_INDEX].ctrl, GPIO_OVERRIDE_NORMAL << IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_LSB,
-                    IO_QSPI_GPIO_QSPI_SS_CTRL_OEOVER_BITS);
-
-    restore_interrupts(flags);
-
-    return pressed;
-}
-
-static void boot_press(void)
-{
-    int x = 0;
-    for (int i = 0; i < 500; i++)
-    {
-        if (bootsel_pressed_safely())
-        {
-            x++;
-        }
-    }
-
-    if (x > 90)
-    {
-        /*
-        printf("Bootsel pressed!\r\n");
-        blink_led(5);
-        */
-        reset_usb_boot(0, 0);
-    }
-}
-
 int main(void)
 {
+    watchdog_disable();
+
     boot_press();
+    ota_boot_check();
+    clock_mode_boot_check();
     blink_led(2);
 
     /*
@@ -1584,11 +1488,14 @@ int main(void)
     */
     bool success = set_sys_clock_khz(120000, true);
 
+    uint32_t spi_baud_effective = spi_set_baudrate(SPI_ID, SPI_BAUD);
+
     init_seq();
 
     if (watchdog_caused_reboot())
     {
-        printf("Watchdog caused reset!\r\n");
+        printf("Watchdog caused reset! (expected after flashing and after an OTA commit, "
+               "investigate if it happens on a cold power up)\r\n");
         blink_led(10);
     }
 
@@ -1600,6 +1507,9 @@ int main(void)
     {
         printf("Failed to set the clock\r\n");
     }
+
+    printf("SPI re-clocked after the sys clock change: %.2f MHz (%u)\r\n",
+           ((float)spi_baud_effective) / 1000000.0, (unsigned)spi_baud_effective);
 
     // GPIO for PIO CONF, DP & DM input, START output low
     gpio_init(START_INDEX);
@@ -1675,6 +1585,11 @@ int main(void)
     // 'packet' = start slot (header) of the packet currently being received.
     int index = 0;
     int packet = 0;
+    bool dropping = false;
+    bool overrun = false;
+    bool report_waiting = false;
+    uint32_t report_at = 0;
+    const int words = sizeof(dbuff1.g_buffer) / sizeof(dbuff1.g_buffer[0]);
 
     // Initialise the ping-pong double buffer and start capturing into dbuff1.
     last_dbuff = NULL;
@@ -1724,12 +1639,50 @@ int main(void)
     // ------------------------------------------------------------------------
     while (1)
     {
-        uint32_t v = pio_sm_get_blocking(pio0, pio0_sm); // blocks until a word is captured
+        if (pio_sm_is_rx_fifo_empty(pio0, pio0_sm))
+        {
+            capture_note_idle();
+            continue;
+        }
 
-        watchdog_update(); // keep the 4 s watchdog happy as long as traffic flows
+        capture_note_traffic();
+
+        uint32_t v = pio_sm_get(pio0, pio0_sm);
 
         if (v & 0x80000000)
         {
+            // SIZE word of a packet whose samples did not fit: forget it and reuse its slots,
+            // so the buffer stays aligned on packet boundaries.
+            if (dropping)
+            {
+                dropping = false;
+                index = packet + 2;
+                continue;
+            }
+
+            // Core 1 is a whole buffer behind: keep draining the PIO, count what is lost, and swap
+            // at the first packet boundary after it releases the other buffer.
+            if (overrun)
+            {
+                capture_overruns++;
+
+                if (capture_swap())
+                {
+                    overrun = false;
+                    report_waiting = false;
+                    index = 2;
+                    packet = 0;
+                }
+
+                continue;
+            }
+
+            if (!report_waiting && 0xffffffff - v >= CAPTURE_REPORT_BITS)
+            {
+                report_waiting = true;
+                report_at = time_us_32();
+            }
+
             // SIZE word: end of a packet. Recover the bit count (0xFFFFFFFF - v)
             // into this packet's header, timestamp it, and open the next packet.
             curr_dbuff->g_buffer[packet + 0] = 0xffffffff - v;
@@ -1738,37 +1691,44 @@ int main(void)
             packet = index; // next packet's header starts where data will follow
             index += 2;     // reserve its SIZE + TIME header slots
 
-            // Buffer full (packet limit reached): hand it to core 1 and ping-pong.
-            if (curr_dbuff->g_buffer_info.count == curr_dbuff->g_buffer_info.limit)
+            // Buffer full (packet limit reached, or less room left than the largest possible
+            // packet): hand it to core 1 and ping-pong, always between two packets. Heavy
+            // traffic fills the words before the 5000 packets; handing off mid-packet split
+            // a packet across both buffers and desynchronised the next one, which then lost
+            // every report it held.
+            if (curr_dbuff->g_buffer_info.count == curr_dbuff->g_buffer_info.limit ||
+                index > words - CAPTURE_RESERVE_WORDS)
             {
-                multicore_fifo_push_blocking((uintptr_t)curr_dbuff);      // give buffer to core 1
-                multicore_fifo_pop_blocking();                            // wait for its ack (0x69696969)
-                curr_dbuff = (curr_dbuff == &dbuff1) ? &dbuff2 : &dbuff1; // swap buffers
-                memset((void *)&(curr_dbuff->g_buffer_info), 0, sizeof(curr_dbuff->g_buffer_info));
+                if (capture_swap())
+                {
+                    report_waiting = false;
+                    index = 2;
+                    packet = 0;
+                }
+                else
+                {
+                    overrun = true;
+                }
+            }
+            // A report waits in a buffer that is not full: hand it over early if core 1 is free,
+            // otherwise keep filling, exactly as before.
+            else if (report_waiting && time_us_32() - report_at >= CAPTURE_HANDOFF_US && capture_swap())
+            {
+                report_waiting = false;
                 index = 2;
                 packet = 0;
-                reinit_dbuff(curr_dbuff);
             }
         }
-        else
+        else if (!overrun && !dropping && index < words - 4)
         {
-            // DATA word: append the packed samples, unless the buffer is nearly
-            // full (leave a few words spare in case a reset marker arrives next).
-            if (index < (sizeof(curr_dbuff->g_buffer) - 4)) // Reserve the space for a possible reset
-            {
-                curr_dbuff->g_buffer[index++] = v;
-            }
-            else
-            {
-                // Out of room: hand off early and swap to the other buffer.
-                multicore_fifo_push_blocking((uintptr_t)curr_dbuff);
-                multicore_fifo_pop_blocking();
-                curr_dbuff = (curr_dbuff == &dbuff1) ? &dbuff2 : &dbuff1;
-                memset((void *)&(curr_dbuff->g_buffer_info), 0, sizeof(curr_dbuff->g_buffer_info));
-                index = 2;
-                packet = 0;
-                reinit_dbuff(curr_dbuff);
-            }
+            // DATA word: append the packed samples. The reserve above keeps room for any
+            // real packet; only a packet longer than CAPTURE_RESERVE_WORDS (line noise, never
+            // USB) gets here without room, and it is dropped whole instead of split.
+            curr_dbuff->g_buffer[index++] = v;
+        }
+        else if (!overrun)
+        {
+            dropping = true;
         }
     }
 
