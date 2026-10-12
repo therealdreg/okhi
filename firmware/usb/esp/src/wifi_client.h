@@ -11,7 +11,7 @@ https://github.com/therealdreg/okhi
 #if defined(__has_include)
 #if __has_include("wifi_secret.h")
 #include "wifi_secret.h"
-#pragma message("wifi_secret.h is compiled in: this binary CONTAINS YOUR WIFI PASSWORD in clear text, and firmware/*/esp/build/okhi.bin and okhi.elf are TRACKED IN GIT. Do not commit or release this build.")
+#pragma message("wifi_secret.h is compiled in: this binary CONTAINS YOUR WIFI PASSWORD in clear text. Do not publish this build or a release made from it.")
 #endif
 #endif
 
