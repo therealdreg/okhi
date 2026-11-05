@@ -72,12 +72,11 @@ GCC_DIR = os.path.dirname(GCC) if GCC else ""
 OBJCOPY = os.path.join(GCC_DIR, "avr-objcopy" + EXE) if GCC_DIR else shutil.which("avr-objcopy")
 SIZE = os.path.join(GCC_DIR, "avr-size" + EXE) if GCC_DIR else shutil.which("avr-size")
 
-# A standalone avrdude (AVRDUDESS and friends) keeps its conf next to the binary; the Arduino
+# An AVRDUDESS portable unzipped in Downloads comes before the Arduino package's avrdude. A
+# standalone avrdude (AVRDUDESS and friends) keeps its conf next to the binary; the Arduino
 # package keeps it in ../etc. Try both, in that order, around whatever binary we resolved.
-AVRDUDESS = r"C:\Users\regue\Downloads\AVRDUDESS-2.20-portable (1)"
-AVRDUDE = os.environ.get("OKHI_AVRDUDE")
-if not AVRDUDE and os.path.exists(os.path.join(AVRDUDESS, "avrdude" + EXE)):
-    AVRDUDE = os.path.join(AVRDUDESS, "avrdude" + EXE)
+AVRDUDESS = newest(os.path.join(os.path.expanduser("~"), "Downloads", "AVRDUDESS*", "avrdude" + EXE))
+AVRDUDE = os.environ.get("OKHI_AVRDUDE") or AVRDUDESS
 if not AVRDUDE:
     AVRDUDE = find_tool("OKHI_AVRDUDE", "avrdude", "avrdude", os.path.join("bin", "avrdude" + EXE))
 

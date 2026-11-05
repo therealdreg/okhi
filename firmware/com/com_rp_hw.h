@@ -554,6 +554,10 @@ static void delay_boot_if_esp_reset_detected(void)
     }
 }
 
+// Set by a variant that has already turned the USB switch on and is capturing through it when this
+// runs (the USB build starts its capture before the rest of the board): the switch is left alone.
+static bool rp_switch_on_early;
+
 static void rp_board_boot_init(void)
 {
     gpio_init(ESP_RESET_GPIO);
@@ -565,20 +569,26 @@ static void rp_board_boot_init(void)
     gpio_init(ELOG_SLAVEREADY_GPIO);
     gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
 
-    gpio_init(USSEL_PIN);
-    gpio_set_dir(USSEL_PIN, GPIO_OUT);
-    gpio_put(USSEL_PIN, false);
+    if (!rp_switch_on_early)
+    {
+        gpio_init(USSEL_PIN);
+        gpio_set_dir(USSEL_PIN, GPIO_OUT);
+        gpio_put(USSEL_PIN, false);
 
-    gpio_init(USOE_PIN);
-    gpio_set_dir(USOE_PIN, GPIO_OUT);
-    gpio_put(USOE_PIN, true);
+        gpio_init(USOE_PIN);
+        gpio_set_dir(USOE_PIN, GPIO_OUT);
+        gpio_put(USOE_PIN, true);
+    }
 
     init_ver();
 
     // uart init must be called after init_ver(), because on devboard the same pins are used for UART
     stdio_init_all();
 
-    gpio_put(USSEL_PIN, true);
+    if (!rp_switch_on_early)
+    {
+        gpio_put(USSEL_PIN, true);
+    }
 
     sleep_ms(100);
 }

@@ -45,7 +45,7 @@
 ;
 ;      * tar_pio1        (runs on PIO block 1) - a one-shot START synchroniser.
 ;                        It waits for a clean SE0 (both data lines low) and then
-;                        pulses a START signal that releases PIO0 so that capture
+;                        raises a START signal that releases PIO0 so that capture
 ;                        always begins from a known, well-defined bus state.
 ;
 ;  The PIO programs deliberately do the *minimum* work needed to recover bits in
@@ -56,10 +56,11 @@
 ;
 ;  Ported to the Raspberry Pi Pico SDK from Alex Taradov's "usb-sniffer-lite":
 ;      https://github.com/ataradov/usb-sniffer-lite   (BSD-3-Clause)
-;  This port is trimmed to USB LOW SPEED only (1.5 Mbit/s), the speed used by
-;  most keyboards and mice. Full-speed support would add a second PIO0 program
-;  (or patch PIO0 at run time) because the idle-line polarity is inverted between
-;  the two speeds - see the notes on the WAIT / JMP-PIN pins below.
+;  This port captures USB LOW SPEED (1.5 Mbit/s) and FULL SPEED (12 Mbit/s) with
+;  this one program. The idle-line polarity is inverted between the two speeds,
+;  so usb_speed.h rewrites the two WAITs on the J line (instructions 1 and 2),
+;  moves the JMP pin and changes the clock divider while the state machines are
+;  stopped - see the notes on the WAIT / JMP-PIN pins below.
 ;
 ;  Protocol references:
 ;      https://www.usbmadesimple.co.uk/
@@ -73,7 +74,7 @@
 ;  USB is a differential bus on two wires, D+ and D-. Only a handful of line
 ;  states exist, and their meaning depends on the bus speed:
 ;
-;      Line state | D+   | D-   | Meaning at LOW SPEED (this build)
+;      Line state | D+   | D-   | Meaning at LOW SPEED
 ;      -----------+------+------+----------------------------------------------
 ;      J (idle)   | low  | high | Bus idle / logical resting state
 ;      K          | high | low  | The "other" signalling state
@@ -81,7 +82,7 @@
 ;      SE1        | high | high | Illegal - never occurs on a healthy bus
 ;
 ;  (At FULL SPEED the J/K polarity is reversed: J = D+ high / D- low. That is the
-;  single reason a full-speed build must sample the opposite line.)
+;  single reason the sampler waits on and branches off the opposite line there.)
 ;
 ;  NRZI encoding: USB does not send raw bit levels. A data bit of 0 is sent as a
 ;  TRANSITION (J<->K), and a data bit of 1 is sent as NO transition (the line
@@ -106,12 +107,16 @@
 ;  CLOCKING
 ; -----------------------------------------------------------------------------
 ;
-;  PIO0 and PIO1 both run at 15 MHz. One PIO cycle is therefore 1/15 MHz =
+;  At LOW SPEED PIO0 and PIO1 both run at 15 MHz. One PIO cycle is 1/15 MHz =
 ;  66.67 ns (0.06667 us). One USB low-speed bit is 1/1.5 MHz = 666.67 ns.
 ;  So the PIO runs exactly 10x faster than the USB low-speed bit rate, i.e.
 ;  there are exactly 10 PIO cycles per captured bit. Each sampling loop below is
 ;  hand-tuned to take exactly those 10 cycles, which is how the state machine
 ;  acts as its own bit clock.
+;
+;  At FULL SPEED both run at 120 MHz instead (divider 1): one PIO cycle is
+;  8.33 ns and one 12 Mbit/s bit is 83.33 ns, the same 10 cycles per bit, so the
+;  same cycle-counted loops serve both speeds.
 ;
 ;  WARNING: the RP2040 system clock must be 120 MHz (NOT the default 125 MHz).
 ;  The PIO clock divider is 120 MHz / 15 MHz = 8.000 exactly, an integer divider
@@ -141,8 +146,8 @@
 ;  no data - a bus reset / line reset. It is only ever emitted as a SIZE word,
 ;  never as a DATA word.
 ;
-;  The PIO does not track wall-clock time. Inter-packet timing is reconstructed
-;  on the host from the known PIO/USB clock rate and the per-packet bit counts.
+;  The PIO does not track wall-clock time, and core 0 leaves each packet's time
+;  slot at 0 (okhi.c), so this build records no inter-packet timing.
 ;
 ; -----------------------------------------------------------------------------
 ;  PIN MAPPING (configured in the C source via sm_config_set_in_pins/jmp_pin)
@@ -150,7 +155,7 @@
 ;      IN base + 0 : D+       (GPIO DP_INDEX)   -> "PIN 0"
 ;      IN base + 1 : D-       (GPIO DM_INDEX)   -> "PIN 1"
 ;      IN base + 2 : START    (GPIO START_INDEX)-> "PIN 2"  (PIO1 -> PIO0 signal)
-;      JMP PIN     : D+       (low speed; a full-speed build would use D-)
+;      JMP PIN     : D+ at low speed, D- at full speed (usb_speed_set())
 ;
 ;  Why the "::PINS" (bit-reverse) trick is used: the pins arrive in the order
 ;  D+, D-, START (bits 0,1,2). The state machine wants D+ and D- but must ignore
@@ -188,13 +193,25 @@ idle:
                              ;    DOWN (one decrement per sampled bit) so its top
                              ;    bit stays set and marks it as a SIZE word later.
     wait 1 PIN 1             ; 01 Wait for D- high = bus idle (J) at low speed.
-                             ;    (Full speed would wait on D+ / PIN 0 instead.)
+                             ;    (At full speed usb_speed_set() rewrites it to
+                             ;    wait 1 PIN 0, D+.)
     wait 0 PIN 1             ; 02 Wait for D- to fall = the J->K edge of SOP.
-                             ;    (Full speed: wait 0 PIN 0.)
+                             ;    (Full speed: wait 0 PIN 0, rewritten the same way.)
 start0:
-    nop [1]                  ; 03 Resync anchor: 2-cycle delay that re-centres the
+    nop [2]                  ; 03 Resync anchor: 3-cycle delay that re-centres the
                              ;    sampling instant near the middle of the bit cell
-                             ;    after an edge has just been detected.
+                             ;    after an edge has just been detected. With 2
+                             ;    cycles the edge window of 16-19 sat early: an edge
+                             ;    about 1 cycle late missed it, and the bit after it
+                             ;    could be read twice. In a cycle model of this
+                             ;    program (2026-11-04) 3 cycles took the full speed
+                             ;    jitter tolerance from 4 to 8-10 ns, the D+/D-
+                             ;    crossing skew from 6 to 14 ns and a slow low speed
+                             ;    device from +0.5% to +1.75% with key reports
+                             ;    (1.25% with all-0xFF data). A model of the whole
+                             ;    capture path replayed 46 of 46 analyzer captures
+                             ;    exactly with 3 cycles and 13 with 2, the captures'
+                             ;    one-sample SE0 and SE1 at the crossings kept.
 read0:
     jmp X-- pio0_label_4     ; 04 Tick the bit counter (X--). The target is simply
                              ;    the next instruction, so this only decrements X.
@@ -214,6 +231,7 @@ pio0_label_4:
     jmp PIN read0            ; 10 Test D+ (the low-speed JMP pin). If D+ is still
                              ;    high (line unchanged, K) stay in read0; if D+ has
                              ;    fallen (K->J transition) fall through into read1.
+                             ;    (At full speed the JMP pin is D-, high in K.)
 read1:
     jmp X-- pio0_label_6     ; 11 Tick the bit counter (mirror of 04).
 pio0_label_6:
@@ -221,10 +239,10 @@ pio0_label_6:
     mov OSR, ::PINS          ; 13 Bit-reversed pin snapshot (mirror of 06).
     out Y, 2                 ; 14 Extract Y = {D+, D-} (mirror of 07).
     jmp !Y eop               ; 15 SE0 => End-Of-Packet (mirror of 08).
-    jmp PIN start0           ; 16 Edge search / phase resync (part 1 of 4): poll D+.
-    jmp PIN start0           ; 17 A J->K transition (D+ low->high) can land on any
+    jmp PIN start0           ; 16 Edge search / phase resync (part 1 of 4): poll the JMP pin.
+    jmp PIN start0           ; 17 A J->K transition (the JMP pin rising) can land on any
     jmp PIN start0           ; 18 of these four consecutive cycles; whichever cycle
-    jmp PIN start0           ; 19 catches it jumps to start0, whose nop[1] re-centres
+    jmp PIN start0           ; 19 catches it jumps to start0, whose nop[2] re-centres
                              ;    the sample point. Spreading the test over 4 cycles
                              ;    absorbs the phase offset between the PIO clock and
                              ;    the incoming USB bit clock (a DPLL-style resync).
@@ -245,8 +263,13 @@ poll_loop:
     out Y, 2                 ; 26 Y = {D+, D-}.
     jmp Y-- idle             ; 27 Y != 0 => bus has left SE0 => normal EOP, return
                              ;    to idle. (The Y-- side effect is unused here.)
-    jmp X-- poll_loop        ; 28 Still SE0: keep polling until X underflows
-                             ;    (~32 samples of sustained SE0 = a reset).
+    jmp X-- poll_loop [5]    ; 28 Still SE0: keep polling until X underflows
+                             ;    (32 polls 9 cycles apart = a reset: about 19 us at
+                             ;    low speed, 2.4 us at full speed). With no delay it
+                             ;    was 1.07 us at full speed, under the 1.25 to 1.5 us
+                             ;    low speed EOP that a hub sends to its full speed
+                             ;    ports after a PRE (USB 2.0 11.8.4) and that ends a
+                             ;    resume (7.1.7.7): each one was taken for a reset.
     mov ISR, !NULL           ; 29 Sustained SE0 = bus/line reset. Load 0xFFFFFFFF
                              ;    into the ISR as the reset marker.
     push noblock             ; 30 Push 0xFFFFFFFF => the host reads bit count 0 =
@@ -260,7 +283,7 @@ poll_loop:
 ;
 ; RP2040 program-counter update rule after each instruction (rp2040-datasheet):
 ;   1. If the instruction is a JMP whose condition is true, PC = jump target.
-;   2. Else if PC == EXECCTRL_WRAP_TOP, PC = EXECCTRL_WRAP_BOTTOM (the .wrap above).
+;   2. Else if PC == EXECCTRL_WRAP_TOP (the .wrap above), PC = EXECCTRL_WRAP_BOTTOM (the .wrap_target).
 ;   3. Else PC = PC + 1, or 0 if PC was 31.   <-- case used by instruction 31.
 
 

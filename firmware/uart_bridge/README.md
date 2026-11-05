@@ -17,7 +17,7 @@ What the fork changes:
 - `tud_cdc_line_state_cb()` maps the CDC control lines onto the ESP32: RTS drives CHIP_PU (GPIO28), DTR drives EBOOT (GPIO14). ELOG is GPIO15.
 - BOOTSEL is polled at startup and jumps to `reset_usb_boot()`, so the board can be reflashed without unplugging it.
 
-The build is deliberately left off `PICO_DEOPTIMIZED_DEBUG`, unlike the okhi RP projects: the UART FIFOs are disabled, so RX takes one interrupt per byte, and flashing runs at 921600 baud.
+It builds at `-O2` whatever the build type, like the okhi RP projects, which matters here: the UART FIFOs are disabled, so RX takes one interrupt per byte, and flashing runs at 921600 baud.
 
 `uart_bridge.uf2` is a release input. `make_release.py` builds this project and copies the `.uf2` out of `build/`. Build output is not versioned, so a release always compiles it first.
 
@@ -32,16 +32,14 @@ Raspberry Pi Pico Pinout
 Building
 --------
 
-Same as any other okhi RP target. From VS Code, open this folder with the Raspberry Pi Pico extension. From the command line:
+Same as any other okhi RP target. From VS Code, open this folder with the Raspberry Pi Pico extension. From the command line, at the root of the repository, with the tools that extension installs:
 
 ```powershell
-& "C:\Users\regue\.pico-sdk\cmake\v4.3.4\bin\cmake.exe" -G Ninja `
-  -S "c:\Users\regue\Desktop\okhi\firmware\uart_bridge" `
-  -B "c:\Users\regue\Desktop\okhi\firmware\uart_bridge\build" `
-  -DCMAKE_BUILD_TYPE=Debug `
-  -DCMAKE_MAKE_PROGRAM="C:/Users/regue/.pico-sdk/ninja/v1.13.2/ninja.exe"
+& "$env:USERPROFILE\.pico-sdk\cmake\v4.3.4\bin\cmake.exe" -G Ninja `
+  -S firmware\uart_bridge -B firmware\uart_bridge\build `
+  -DCMAKE_MAKE_PROGRAM="$env:USERPROFILE\.pico-sdk\ninja\v1.13.2\ninja.exe"
 
-& "C:\Users\regue\.pico-sdk\ninja\v1.13.2\ninja.exe" -C "c:\Users\regue\Desktop\okhi\firmware\uart_bridge\build"
+& "$env:USERPROFILE\.pico-sdk\ninja\v1.13.2\ninja.exe" -C firmware\uart_bridge\build
 ```
 
 Disclaimer

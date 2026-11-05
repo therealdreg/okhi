@@ -497,7 +497,7 @@ static const uint8_t PROGMEM config_descriptor[CONFIG_DESC_LEN] = {
   EP1_INTERVAL
 };
 
-/* Two-interface config for KRO_HYBRID2 (format 6, K63 style): IF0 boot 6KRO on EP1 (8 B),
+/* Two-interface config for KRO_HYBRID2 (format 6): IF0 boot 6KRO on EP1 (8 B),
    IF1 non-boot NKRO keyboard on EP2 (16 B). */
 #define CONFIG2_LEN 59
 #define CONFIG2_HID0_OFF 18

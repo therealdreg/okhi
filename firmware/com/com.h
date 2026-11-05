@@ -60,13 +60,15 @@ WARNING: BULLSHIT CODE X-)
 #define SPI_CTRL_MAGIC_BYTES 'O', 'K', 'H', 'C'
 
 // What the USB variant's RP sees attached to its capture port, carried in a byte of every control
-// frame that older firmware and the PS/2 variant leave at 0.
+// frame that older firmware and the PS/2 variant leave at 0. WIDE is a full speed keyboard that has
+// sent reports longer than 8 bytes since its last bus reset; an ESP that predates it reads unknown.
 #define SPI_CTRL_USB_BUS_OFF 7
 #define USB_BUS_UNKNOWN 0
 #define USB_BUS_LOW 1
 #define USB_BUS_FULL 2
 #define USB_BUS_NONE 3
 #define USB_BUS_INVALID 4
+#define USB_BUS_WIDE 5
 
 // Crystal calibration modes, in which the RP stops capturing and uses the two sniff pins instead:
 // GPIO21 carries its crystal clock out, or measures one coming in. The ESP asks for a mode in its
@@ -112,7 +114,7 @@ WARNING: BULLSHIT CODE X-)
  * listening and with no transaction there is no callback on the ESP either. Retrying is the only
  * cure, but a blind retry duplicates whatever DID land, and the SLAVEREADY handshake cannot tell
  * the two apart: its falling edge says a transaction ended, not WHICH one. Measured on hardware,
- * tuning that timeout only trades losses against duplicates (see ps2adapter.md 7.7b).
+ * tuning that timeout only trades losses against duplicates.
  *
  * So the record carries its own sequence and the ESP drops a repeat. A retry becomes idempotent,
  * which means the RP no longer has to be right about whether a frame landed: it can retry freely.

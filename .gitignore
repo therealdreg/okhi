@@ -8,7 +8,7 @@
 # cannot happen by accident, ever, regardless of what any build script does.
 #
 # The trade is deliberate: to produce a release you now clone, build all five
-# targets, and then run make_release.ps1. See "Releases" in CLAUDE.md.
+# targets, and then run make_release.py. See "Generating a New Release" in README.md.
 
 # ESP-IDF generated config. Rebuilt from sdkconfig.defaults on every build and
 # verified byte-identical, so versioning it only adds noise. sdkconfig.defaults,
@@ -17,10 +17,10 @@
 firmware/*/esp/sdkconfig
 firmware/*/esp/sdkconfig.old
 
-# Every build tree, in full.
-firmware/*/esp/build/
-firmware/*/rp/build/
-firmware/uart_bridge/build/
+# Every build tree, in full, whatever it is called (build/, build_debug/, ...).
+firmware/*/esp/build*/
+firmware/*/rp/build*/
+firmware/uart_bridge/build*/
 
 # Claude Code working files. Kept local on purpose: CLAUDE.md is a set of notes to
 # an assistant about this specific machine (toolchain paths, build quirks, what
@@ -36,7 +36,7 @@ CLAUDE.md
 # never been in the index and cannot be committed by accident.
 firmware/*/esp/src/wifi_secret.h
 
-# Release output. make_release.ps1 drops release/<yyyyMMddHHmmss>/ holding the
+# Release output. make_release.py drops release/<yyyyMMddHHmmss>/ holding the
 # built images plus a copy of stuff/last_esptool, which is hundreds of megabytes.
 # None of it belongs in the history: it is all reproducible from the tree, and a
 # release built for testing carries whatever was in wifi_secret.h at the time.
@@ -55,11 +55,14 @@ firmware/*/esp/src/wifi_secret.h
 __pycache__/
 *.pyc
 
-# NOTE: ps2captures/ is deliberately NOT ignored. It holds the evidence behind
-# every number in ps2adapter.md: one directory per adapter per run with the
-# Saleae .sal (reopens in the Logic 2 GUI), the exported CSV, the implant keylog,
-# the RP serial slice and what the host actually typed. A session is about 300 KB
-# and cannot be reproduced without the physical adapter and a human at the
-# keyboard, so it is worth keeping. If a run ever contains real typing rather than
-# deliberate key mashing, delete that session before committing: notepad.txt and
-# keylog.txt are, by construction, a keystroke log.
+# okhi-kbd's chip readback. build.py --flash writes it on every flash to verify the
+# write: a dump of one particular chip, not a build output anyone needs.
+firmware/leonardo_uart2keyboard/build/readback.hex
+
+# Side outputs of webgen.js: the page as C arrays (webuff*.txt) and a copy of the gzip
+# it embeds (index.orig.gz), rewritten next to index.html on every run. The firmware
+# takes firmware/<variant>/esp/main/index.html.gz and nothing reads these.
+/webusb/webuff*.txt
+/webps2/webuff*.txt
+/webusb/index.orig.gz
+/webps2/index.orig.gz

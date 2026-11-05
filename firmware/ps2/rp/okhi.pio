@@ -121,8 +121,8 @@
 .program inhibited_signal
 ; PIO0_0, must run at 1 MHz (each PIO cycle ~= 1 microsecond).
 ;
-; Purpose: watch the PS/2 bus for a HOST-INHIBIT condition (CLOCK held LOW while DATA stays
-; HIGH) lasting ~90 us, then tell the main core whether the host followed it with a
+; Purpose: watch the PS/2 bus for a HOST-INHIBIT condition (CLOCK held LOW, whatever DATA
+; does) lasting ~90 us, then tell the main core whether the host followed it with a
 ; Request-to-Send (DATA pulled low) or not.
 ;
 ; The protocol threshold for a real inhibit is ~100 us. We use ~90 us on purpose: some
@@ -130,11 +130,11 @@
 ; safe lower bound that still never fires on ordinary clock-low half-cycles (those last at
 ; most ~50 us).
 ;
-; IRQ meaning (handled by pio0_irq in ps2.c):
+; IRQ meaning (handled by pio0_irq in okhi.c):
 ;   IRQ0 -> inhibited communication detected.
 ;   IRQ1 -> inhibit ended WITHOUT a Request-to-Send (host released the bus, no data coming).
 ;
-; State-machine configuration (set up in ps2.c):
+; State-machine configuration (set up in okhi.c):
 ;   FIFO_JOIN_RX : RX FIFO 8 words deep, TX FIFO disabled.
 ;   IN  PIN 0    : DAT
 ;   IN  PIN 1    : CLOCK
@@ -172,7 +172,7 @@ check_inhibited:
 ; The external "go" signal is the AUX_D2H_JMP_GPIO pin driven by the main core, NOT the PS/2
 ; clock. Holding that pin HIGH parks this program at line 00; driving it LOW lets a capture
 ; begin. That is how the main core arms and disarms device-to-host sniffing (see
-; start/stop_device_to_host_sm in ps2.c).
+; start/stop_device_to_host_sm in okhi.c).
 ;
 ; Why the host may need to reset this state machine mid-capture:
 ;   - Some PS/2-to-USB adapters emit glitches and odd waveforms between valid packets.
@@ -187,7 +187,7 @@ check_inhibited:
 ;     an anomaly and reset this SM before a wrong byte is pushed.
 ;   - The 'jmp pin' at line 10 is the abort hook the main core uses to discard malformed data.
 ;
-; State-machine configuration (set up in ps2.c):
+; State-machine configuration (set up in okhi.c):
 ;   FIFO_JOIN_RX : RX FIFO 8 words deep, TX FIFO disabled.
 ;   IN  PIN 0    : DAT
 ;   IN  PIN 1    : CLOCK
@@ -243,7 +243,7 @@ skip_parity_and_stop_bits:
 ; Important:
 ;   - Do NOT move the 'push' or enable autopush without understanding the consequences.
 ;
-; State-machine configuration (set up in ps2.c):
+; State-machine configuration (set up in okhi.c):
 ;   FIFO_JOIN_RX : RX FIFO 8 words deep, TX FIFO disabled.
 ;   IN  PIN 0    : DAT
 ;   IN  PIN 1    : CLOCK
@@ -297,10 +297,10 @@ skip_ack_bit:
 ;   (Note: the sibling detectors inhibited_signal/host_to_device reach ~90 us with a 3- and
 ;    2-instruction loop respectively; this one has an extra instruction per pass, hence ~124 us.)
 ;
-; IRQ meaning (handled by pio1_irq in ps2.c):
+; IRQ meaning (handled by pio1_irq in okhi.c):
 ;   IRQ0 -> IDLE detected.
 ;
-; State-machine configuration (set up in ps2.c):
+; State-machine configuration (set up in okhi.c):
 ;   FIFO_JOIN_RX : RX FIFO 8 words deep, TX FIFO disabled.
 ;   IN  PIN 0    : DAT
 ;   IN  PIN 1    : CLOCK
@@ -323,7 +323,7 @@ idle_detected:
 ; =====================================================================================
 ;  AUXILIARY / EXPERIMENTAL PROGRAMS
 ;
-;  The programs below are helpers that are NOT loaded by the current ps2.c firmware. They
+;  The programs below are helpers that are NOT loaded by the current okhi.c firmware. They
 ;  exist for bring-up, bus debugging and for tackling the glitchy adapters documented in the
 ;  developer notes: some PS/2-to-USB adapters emit an extra long CLOCK pulse during "idle",
 ;  fast ~1.8 us low pulses, and wild ~8 us spikes on CLOCK before the real packet. These

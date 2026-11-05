@@ -639,7 +639,7 @@ int main(void)
     // Main capture loop - drain both RX FIFOs and log every parsed byte.
     //
     // Each PIO program leaves its 8-bit result in the TOP byte of the 32-bit FIFO word, so the
-    // byte is read through an 8-bit view offset by +3 (see the ISR note in ps2.pio). Bytes are
+    // byte is read through an 8-bit view offset by +3 (see the ISR note in okhi.pio). Bytes are
     // tagged 'H' (host->device) or 'D' (device->host) with a timestamp and written to the ring
     // buffer; core1 ships those strings out. write_index is the producer cursor.
     // =================================================================================
