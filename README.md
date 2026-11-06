@@ -16,7 +16,7 @@ okhi is based on two chips: an RP2040 that sniffs and parses the keyboard data, 
 
 The RP2040 has a dual-core Arm Cortex-M0+ processor, so it handles several tasks at the same time (PIO rlz!).
 
-The ESP32-C2 is a new chip from Espressif, specifically the ESP8684, with a small single-core RISC-V CPU. The ESP8266, ESP8285, and ESP8654 are different chips: do not confuse them with the ESP8684.
+The ESP32-C2 is a new chip from Espressif, specifically the ESP8684, with a small single-core RISC-V CPU. The ESP8266, ESP8285, and ESP8685 are different chips: do not confuse them with the ESP8684.
 
 ----
 
@@ -986,9 +986,9 @@ GPIO9, the `EBOOT` line, sets the boot mode. It is the ESP's BOOT pin, the equiv
 - GPIO9 = 1 selects SPI boot (run the app in flash). This is the default: GPIO9 has an internal weak pull-up (datasheet table 10), so left alone it reads 1.
 - GPIO9 = 0 selects Joint Download Boot, the UART flashing mode that esptool drives.
 
-The rule the okhi RP follows: **while the ESP is in reset the RP must not pull GPIO9 low, or the ESP drops into flashing mode instead of running the app.** So the RP leaves `EBOOT` as an input (high-Z) during the ESP's boot (`rp_board_boot_init()` in [firmware/com/com_rp_hw.h](firmware/com/com_rp_hw.h) sets `GPIO_IN`), and the ESP's own pull-up wins and selects SPI boot. `esp_link_master_init()` turns `EBOOT` into a driven output later, once the ESP is up. To enter flashing mode on purpose, hold GPIO9 low and reset.
+The rule the okhi RP follows: **while the ESP is in reset the RP must not pull GPIO9 low, or the ESP drops into flashing mode instead of running the app.** So the RP leaves `EBOOT` as an input with its pad pulls off (high-Z) during the ESP's boot (`rp_board_boot_init()` in [firmware/com/com_rp_hw.h](firmware/com/com_rp_hw.h)), and the ESP's own pull-up selects SPI boot. The pulls have to be turned off: an RP2040 pad leaves reset with a 50 to 80 kΩ pull-down that `gpio_init()` keeps, and against the ESP's 45 kΩ pull-up it would hold GPIO9 at about 1.7 to 2.1 V, under the 0.75 × VDD the ESP needs to read a 1 (ESP8684 datasheet table 17). `esp_link_master_init()` turns `EBOOT` into a driven output 1 s after the ESP leaves reset (2 s on PS/2 and in the clock modes), long after the 3 ms the strap must hold. To enter flashing mode on purpose, hold GPIO9 low and reset.
 
-GPIO8, the `ELOG` line, is the other strap: it controls ROM-log printing. For SPI boot its level does not matter for the boot mode itself (datasheet table 12), but together with the `EFUSE_UART_PRINT_CONTROL` eFuse it still decides whether the boot ROM prints its messages on UART0 (table 13). Unlike GPIO9 it has no internal pull at all (table 10, "N/A"), so whatever pull you attach externally sets that strap at every reset. okhi puts an internal pull-up on `ELOG` from the RP side (`esp_link_uart_init()` in com_rp_hw.h), which pins the ROM-log strap high.
+GPIO8, the `ELOG` line, is the other strap: it controls ROM-log printing. For SPI boot its level does not matter for the boot mode itself (datasheet table 12), but together with the `EFUSE_UART_PRINT_CONTROL` eFuse it still decides whether the boot ROM prints its messages on UART0 (table 13). Unlike GPIO9 it has no internal pull at all (table 10, "N/A"), so whatever pull you attach externally sets that strap at every reset. okhi puts an internal pull-up on `ELOG` from the RP side before the ESP leaves reset (`rp_board_boot_init()` in com_rp_hw.h, and again in `esp_link_uart_init()`), which pins the ROM-log strap high.
 
 Because the RP holds `ELOG` high with that pull-up, there is a window right after any ESP reset (an OTA of the ESP, a WiFi settings change that restarts it, a brownout, the first seconds of power-on) where the ESP has not yet driven GPIO8, so the line floats high on the RP's pull-up. The master then reads `SLAVEREADY = high = armed` while the slave is still booting, clocks a frame at it, and those bytes are lost. **Never solve a strapping-pin problem by changing the strap**: flipping the RP pull to a pull-down, so that a floating line reads not-ready, would change what the ESP samples at every reset, because that pin is the ROM-log strap. The fix stays in software on the master side: the RP keeps the keystrokes in its own buffer (the PS/2 build sends none until a poll has come back with a valid answer from the ESP, `esp_link_up`), never has more than four unconfirmed ones out, and the sequence confirmation described in quirk 4 sends again anything that still got lost.
 
@@ -997,6 +997,7 @@ If you are wiring your own two-chip board:
 - Read the strapping table before you assign a handshake to GPIO8 or GPIO9.
 - Choose any pull on a strapping pin to match the level the strap needs at reset, not just the level your handshake wants when idle.
 - Prefer to leave a strapping pin at its strap default (high-Z, let its own pull decide) during the other chip's reset, and drive it only once that chip is past boot, as the `EBOOT` input-then-output flip does here. The strapping setup/hold window is short (datasheet table 11: hold 3 ms after CHIP_EN is released), but short is not zero, so a line that stays quiet across the other chip's reset is the safe design.
+- On an RP2040 that includes the pad pulls: `gpio_init()` and `gpio_set_dir()` keep the reset pull-down, so call `gpio_disable_pulls()`, or set the pull the strap needs, before you release the other chip from reset.
 
 ### ESP-IDF specifics
 
@@ -4199,7 +4200,10 @@ from the page). Each
 write goes to the next sector with the next record number
 (`usb hid: maps of <n> devices kept in flash, <bytes> B, record <r> in sector <s>`). At boot each
 device of the newest record is read back parked under its old address
-(`usb hid: 0x<addr> <vid>:<pid> maps from flash, parked until it shows up`).
+(`usb hid: 0x<addr> <vid>:<pid> maps from flash, parked until it shows up`). On the test bench a
+Corsair K63 and a Logitech Unifying receiver each came through a watchdog reset and a reset from
+the page with every key state exact (73 and 66 on the K63, 68 and 66 on the receiver), and none
+of the receiver's 284 touchpad reports reached the keylog.
 
 A device with no map takes the raw path: an 8-byte DATA packet answering an IN token on an
 endpoint other than 0 is forwarded as `IN: 0x<addr>/0x<ep> b0 ... b7;`, and the page reads it

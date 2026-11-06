@@ -22,14 +22,6 @@ firmware/*/esp/build*/
 firmware/*/rp/build*/
 firmware/uart_bridge/build*/
 
-# Claude Code working files. Kept local on purpose: CLAUDE.md is a set of notes to
-# an assistant about this specific machine (toolchain paths, build quirks, what
-# has already been tried), and .claude/ holds per-user settings. None of it is
-# useful to anyone cloning the project, so it stays out of the public remote. The
-# user keeps their own backups.
-CLAUDE.md
-.claude/
-
 # Developer WiFi credentials. Never commit these. wifi_client.h is the tracked
 # mechanism and stays empty; wifi_secret.h is the file that actually holds a
 # SSID and a password, and it is deliberately a different name so that it has

@@ -564,10 +564,19 @@ static void rp_board_boot_init(void)
     gpio_set_dir(ESP_RESET_GPIO, GPIO_OUT);
     gpio_put(ESP_RESET_GPIO, false);
 
+    // The ESP reads its straps as it leaves reset: GPIO9 (EBOOT) must be 1 for SPI boot, GPIO8
+    // (ELOG) sets the ROM log. An RP2040 pad leaves reset with its pull-down on (50 to 80k) and
+    // gpio_init() keeps it (EBOOT's pad read 0x56 by SWD). The implant has no other pull on either
+    // line, so with that pull-down EBOOT would sit between it and the ESP's 45k pull-up, about 1.7
+    // to 2.1 V against an input high of 0.75 x VDD, and ELOG would read 0. EBOOT gets no pull, so
+    // the ESP's own pull-up decides. ELOG gets here the pull-up that esp_link_uart_init() sets
+    // again later.
     gpio_init(EBOOT_MASTERDATAREADY_GPIO);
     gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_IN);
+    gpio_disable_pulls(EBOOT_MASTERDATAREADY_GPIO);
     gpio_init(ELOG_SLAVEREADY_GPIO);
     gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
+    gpio_pull_up(ELOG_SLAVEREADY_GPIO);
 
     if (!rp_switch_on_early)
     {

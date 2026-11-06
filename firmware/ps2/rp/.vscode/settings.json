@@ -51,14 +51,6 @@
     "editor.inlineSuggest.enabled": true,
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,
-    "github.copilot.enable": {
-        "*": true,
-        "yaml": true,
-        "plaintext": true,
-        "markdown": true,
-        "javascript": true,
-        "python": true
-    },
     "files.associations": {
         "*.embeddedhtml": "html",
         "*.php": "html",

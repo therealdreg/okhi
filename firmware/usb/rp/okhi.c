@@ -31,7 +31,7 @@ WARNING: BULLSHIT CODE X-)
 
 /*
   Dreg's note: I have tried to document everything as best as possible and make the code and project
-  as accessible as possible for beginners. There may be errors (I am a lazy bastard using COPILOT)
+  as accessible as possible for beginners. There may be errors (I am a lazy bastard)
   if you find any, please make a PR
 */
 
