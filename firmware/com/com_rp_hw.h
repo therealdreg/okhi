@@ -558,7 +558,10 @@ static void delay_boot_if_esp_reset_detected(void)
 // runs (the USB build starts its capture before the rest of the board): the switch is left alone.
 static bool rp_switch_on_early;
 
-static void rp_board_boot_init(void)
+// Holds the ESP in reset and sets its two strap lines. At a power-up the ESP leaves reset by itself
+// once its EN capacitor charges (about 14 ms with R7 and C24) and reads its straps then, so a
+// variant calls this before anything slow in main().
+static void rp_esp_hold(void)
 {
     gpio_init(ESP_RESET_GPIO);
     gpio_set_dir(ESP_RESET_GPIO, GPIO_OUT);
@@ -577,6 +580,11 @@ static void rp_board_boot_init(void)
     gpio_init(ELOG_SLAVEREADY_GPIO);
     gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
     gpio_pull_up(ELOG_SLAVEREADY_GPIO);
+}
+
+static void rp_board_boot_init(void)
+{
+    rp_esp_hold();
 
     if (!rp_switch_on_early)
     {

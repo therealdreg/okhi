@@ -444,12 +444,15 @@ int main(void)
 {
     watchdog_disable();
 
+    // The ESP is held before the boot checks and blinks, which take about 1.2 s; the wait for an
+    // esptool flash comes first, as the hold would cut it.
+    delay_boot_if_esp_reset_detected();
+    rp_esp_hold();
+
     boot_press();
     ota_boot_check();
     clock_mode_boot_check();
     blink_led(2);
-
-    delay_boot_if_esp_reset_detected();
 
     rp_board_boot_init();
 
