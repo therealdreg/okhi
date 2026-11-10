@@ -497,7 +497,7 @@ static const uint8_t PROGMEM config_descriptor[CONFIG_DESC_LEN] = {
   EP1_INTERVAL
 };
 
-/* Two-interface config for KRO_HYBRID2 (format 6, K63 style): IF0 boot 6KRO on EP1 (8 B),
+/* Two-interface config for KRO_HYBRID2 (format 6): IF0 boot 6KRO on EP1 (8 B),
    IF1 non-boot NKRO keyboard on EP2 (16 B). */
 #define CONFIG2_LEN 59
 #define CONFIG2_HID0_OFF 18
@@ -649,6 +649,14 @@ static void settings_erase(void) {
 static uint8_t poll_bInterval(void) {
   if (g_lowSpeed && g_cfg.poll < 10) return 10;
   return g_cfg.poll;
+}
+
+/* How long a two-interface report waits for its endpoint's bank, in ep_write() steps of 50 us:
+   one polling interval and 20 ms more (600 at POLL 10). A host may poll at the declared
+   bInterval: Linux 7.0 polled 64 every 64 ms on the test PC (Windows 11 every 32), longer than
+   a fixed 30 ms. */
+static uint16_t ep_wait_steps(void) {
+  return (uint16_t)(poll_bInterval() * 20u + 400u);
 }
 
 /* Report descriptor for the active format (interface 0 for the two-interface variant). */
@@ -1390,7 +1398,7 @@ static uint8_t kb_flush(void) {
       } else {
         buf[0] = kb_report[0];
         for (uint8_t i = 0; i < NKRO_BYTES; i++) buf[1 + i] = nkro_map[i];
-        ok = ep_write(2, buf, NKRO_REPORT_LEN, 200);
+        ok = ep_write(2, buf, NKRO_REPORT_LEN, ep_wait_steps());
       }
     } else if (g_cfg.kro == KRO_LSMULTI) {
       /* Two 6-key boot interfaces: keys 0..5 on IF0 (EP1), 6..11 on IF1 (EP2), no report IDs.
@@ -1399,14 +1407,14 @@ static uint8_t kb_flush(void) {
       uint8_t total = fill_array(all, ARRAY_KEYS);
       buf[0] = kb_report[0]; buf[1] = 0;
       for (uint8_t s = 0; s < 6; s++) buf[2 + s] = (s < total) ? all[s] : 0;
-      if (!ep_write(1, buf, 8, 600)) ok = 0;
+      if (!ep_write(1, buf, 8, ep_wait_steps())) ok = 0;
       buf[0] = kb_report[0]; buf[1] = 0;
       for (uint8_t s = 0; s < 6; s++) { uint8_t idx = (uint8_t)(6 + s); buf[2 + s] = (idx < total) ? all[idx] : 0; }
-      if (!ep_write(2, buf, 8, 600)) ok = 0;
+      if (!ep_write(2, buf, 8, ep_wait_steps())) ok = 0;
     } else {
       /* KRO_LSCONS: keyboard on IF0 (EP1); the consumer report (IF1, EP2) is sent on demand. */
       for (uint8_t i = 0; i < KB_REPORT_LEN; i++) buf[i] = kb_report[i];
-      ok = ep_write(1, buf, KB_REPORT_LEN, 600);
+      ok = ep_write(1, buf, KB_REPORT_LEN, ep_wait_steps());
     }
     if (ok) g_reportsOk++;
     return ok;

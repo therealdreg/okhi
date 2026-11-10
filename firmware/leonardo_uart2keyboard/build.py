@@ -72,12 +72,11 @@ GCC_DIR = os.path.dirname(GCC) if GCC else ""
 OBJCOPY = os.path.join(GCC_DIR, "avr-objcopy" + EXE) if GCC_DIR else shutil.which("avr-objcopy")
 SIZE = os.path.join(GCC_DIR, "avr-size" + EXE) if GCC_DIR else shutil.which("avr-size")
 
-# A standalone avrdude (AVRDUDESS and friends) keeps its conf next to the binary; the Arduino
+# An AVRDUDESS portable unzipped in Downloads comes before the Arduino package's avrdude. A
+# standalone avrdude (AVRDUDESS and friends) keeps its conf next to the binary; the Arduino
 # package keeps it in ../etc. Try both, in that order, around whatever binary we resolved.
-AVRDUDESS = r"C:\Users\regue\Downloads\AVRDUDESS-2.20-portable (1)"
-AVRDUDE = os.environ.get("OKHI_AVRDUDE")
-if not AVRDUDE and os.path.exists(os.path.join(AVRDUDESS, "avrdude" + EXE)):
-    AVRDUDE = os.path.join(AVRDUDESS, "avrdude" + EXE)
+AVRDUDESS = newest(os.path.join(os.path.expanduser("~"), "Downloads", "AVRDUDESS*", "avrdude" + EXE))
+AVRDUDE = os.environ.get("OKHI_AVRDUDE") or AVRDUDESS
 if not AVRDUDE:
     AVRDUDE = find_tool("OKHI_AVRDUDE", "avrdude", "avrdude", os.path.join("bin", "avrdude" + EXE))
 
@@ -114,7 +113,10 @@ CFLAGS = [
 ]
 LDFLAGS = ["-mmcu=atmega32u4", "-Wl,--gc-sections", "-Wl,--relax"]
 
-EXPECTED_FUSES = (("lfuse", 0xFF), ("hfuse", 0xD9), ("efuse", 0xCB))
+# Name, value, and the bits the fuse really has, the only ones compared: the ATmega32U4's efuse has
+# four (avrdude.conf, part m16u4: bitmask 0x0f) and the other four read as 1, so a board written 0xCB
+# reads back 0xFB.
+EXPECTED_FUSES = (("lfuse", 0xFF, 0xFF), ("hfuse", 0xD9, 0xFF), ("efuse", 0xCB, 0x0F))
 
 
 def run(cmd, **kw):
@@ -215,12 +217,13 @@ def fuse_check(do_fix):
     print("=== fuse check ===")
     bad = []
     unread = 0
-    for name, want in EXPECTED_FUSES:
+    mask = {name: bits for name, _want, bits in EXPECTED_FUSES}
+    for name, want, bits in EXPECTED_FUSES:
         got = read_fuse(name)
         if got is None:
             print("  %-5s could not be read, is the usbasp connected?" % name)
             unread += 1
-        elif got == want:
+        elif got & bits == want & bits:
             print("  %-5s 0x%02X ok" % (name, got))
         else:
             print("  %-5s 0x%02X WRONG, expected 0x%02X" % (name, got, want))
@@ -233,7 +236,7 @@ def fuse_check(do_fix):
             r = run([AVRDUDE, "-C", AVRCONF, "-c", "usbasp", "-p", "m32u4",
                      "-U", "%s:w:0x%02X:m" % (name, want)])
             now = read_fuse(name) if r.returncode == 0 else None
-            if now == want:
+            if now is not None and now & mask[name] == want & mask[name]:
                 print("  %-5s now 0x%02X ok" % (name, now))
             else:
                 print("  %-5s FAILED to set to 0x%02X" % (name, want))

@@ -209,6 +209,7 @@ static void clock_request_check(void)
 
     printf("web requested clock mode %u, rebooting into it\r\n", (unsigned)mode);
     fflush(stdout);
+    RP_STATE_FLUSH();
     watchdog_reboot(0, 0, 0);
 
     while (1)

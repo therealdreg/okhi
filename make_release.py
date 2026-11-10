@@ -4,7 +4,8 @@ okhi release builder - by Dreg
 
 Builds every firmware target and packages a release. Replaces make_release.ps1,
 which only packaged and only ran on Windows. Pure standard library, no pip
-installs, and the same behaviour on Windows, Linux and macOS.
+installs. Written for Windows, Linux and macOS; run on Windows 11 and Ubuntu
+26.04, never on macOS.
 
     python make_release.py                 build everything, then package
     python make_release.py --no-build      package what is already built
@@ -147,8 +148,11 @@ def find_pico_tool(name, env_var):
     roots = [Path.home() / ".pico-sdk" / name]
     for root in roots:
         if root.is_dir():
-            # Newest version directory wins.
-            hits = sorted(glob.glob(str(root / "*" / "**" / exe), recursive=True), reverse=True)
+            # Newest version directory wins. Only an executable file: without the .exe the pattern
+            # also matches folders named cmake, such as share/cmake-4.3/Help/manual/cmake in the
+            # extension's cmake on Linux.
+            hits = sorted((h for h in glob.glob(str(root / "*" / "**" / exe), recursive=True)
+                           if os.path.isfile(h) and os.access(h, os.X_OK)), reverse=True)
             if hits:
                 return hits[0]
 
@@ -273,7 +277,12 @@ def build_esp(variant, idf, no_ccache):
             fail("cannot build %s/esp: %s not found" % (variant, export))
             return False
         sh = 'export IDF_CCACHE_ENABLE=%s; . "%s" >/dev/null && idf.py -C "%s" build' % (ccache, export, project)
-        rc, out = run(["bash", "-lc", sh])
+        # export.sh looks for the IDF python under IDF_TOOLS_PATH, ~/.espressif by default, so the
+        # tools folder OKHI_IDF_TOOLS_PATH names has to reach it through the environment
+        env = dict(os.environ)
+        if idf.get("tools"):
+            env["IDF_TOOLS_PATH"] = idf["tools"]
+        rc, out = run(["bash", "-lc", sh], env=env)
 
     warnings_seen = out.count("warning:")
     # idf.py prints this after every successful build, a no-op one included; an exit
@@ -591,6 +600,7 @@ def stage(variant, out_dir, ignore_stale):
     items = [
         "firmware/%s/esp/esptool.exe" % variant,
         "firmware/%s/esp/upload_firmware.bat" % variant,
+        "firmware/%s/esp/upload_firmware.sh" % variant,
         "firmware/%s/esp/build/okhi.bin" % variant,
         "firmware/%s/esp/build/bootloader/bootloader.bin" % variant,
         "firmware/%s/esp/build/partition_table/partition-table.bin" % variant,
@@ -601,6 +611,17 @@ def stage(variant, out_dir, ignore_stale):
     ]
     for item in items:
         copy_verified(REPO / item, dest / Path(item).name, item)
+
+    # bash stops at once on a script with CRLF line ends, and the execute bit set here survives
+    # only in a release folder or archive made on Linux or macOS (the script runs as
+    # "bash upload_firmware.sh" without it)
+    sh = dest / "upload_firmware.sh"
+    if sh.is_file():
+        if b"\r" in sh.read_bytes():
+            fail("upload_firmware.sh has CR line ends, bash cannot run it (.gitattributes keeps it LF)")
+        else:
+            sh.chmod(0o755)
+            ok("upload_firmware.sh has LF line ends")
 
     # Renamed so both chips can sit side by side in the same folder.
     copy_verified(REPO / ("firmware/%s/esp/build/okhi.bin" % variant), dest / "ota_esp.bin", "esp ota payload")

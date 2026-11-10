@@ -2051,16 +2051,10 @@
                 console.error('Error fetching Rp buffer:', error);
             });
         }
+        // One record per line: an 8 byte report ("IN: ...;") or a key state ("KB: ...;").
         function formatData(data) {
-            let parts = data.split("IN:");
-            let resultado = [];
-            parts.forEach(part => {
-                let trimmed = part.trim();
-                if (trimmed !== '') {
-                    resultado.push("\nIN: " + trimmed);
-                }
-            });
-            return resultado.join("");
+            const records = data.match(/(?:IN|KB):[^;]*;/g) || [];
+            return records.map(r => "\n" + r.replace(/\s+/g, " ").trim()).join("");
         }
         let bufferCursor = 0;
         let bufferBusy = false;
@@ -2107,10 +2101,13 @@
         }
         // The RP reads what is attached to the capture port from the idle level of D+/D- and the
         // ESP passes it on with every /buffer reply, so the warning costs no request of its own.
+        // Low and full speed keyboards are both captured; wide is a full speed keyboard that sends
+        // reports longer than the 8 byte boot layout while the RP has not read its descriptors (it
+        // was not capturing when the keyboard was plugged in), so it cannot decode them.
         const BUS_ALERTS = {
-            full: 'A full speed USB device is attached. okhi captures low speed keyboards only: its keystrokes are NOT being logged.',
-            none: 'No low speed keyboard on the capture port. Either nothing is plugged in, or the keyboard is high speed, which okhi does not capture.',
-            invalid: 'The USB data lines read an invalid state (D+ and D- both high). Check the capture wiring.'
+            none: 'No low speed or full speed keyboard on the capture port. Either nothing is plugged in, or the keyboard is high speed, which okhi does not capture.',
+            invalid: 'The USB data lines read an invalid state (D+ and D- both high). Check the capture wiring.',
+            wide: 'This keyboard sends reports longer than 8 bytes (NKRO, a long key array or report IDs), and okhi was not running when it was plugged in, so it cannot decode them: those keys are NOT being logged. Unplug the keyboard and plug it back in.'
         };
         function showBusAlert(state) {
             const el = document.getElementById('busAlert');
@@ -2327,9 +2324,19 @@
             }
         };
         var currentLayout = 'english';
-        // The RP forwards every 8 byte IN DATA packet an interrupt endpoint returns,
-        // except one equal to the previous on its endpoint (it holds no keystroke),
-        // formatted by firmware/usb/rp/okhi.c as
+        // The RP sends two kinds of record. For a keyboard it saw enumerate, it reads
+        // every report with the keyboard's own HID descriptors (firmware/usb/rp/usb_hid.h)
+        // and sends the keyboard's whole key state on every change:
+        //
+        //     KB: <a> <modifiers> <usage> <usage> ...;
+        //
+        // where <a> is the device address and the usages are the keys held, in the
+        // order they went down. NKRO bitmaps, long key arrays, report IDs and several
+        // keyboard interfaces all arrive this way.
+        //
+        // For a keyboard whose descriptors it did not see, it forwards every 8 byte IN
+        // DATA packet an interrupt endpoint returns, except one equal to the previous
+        // on its endpoint (it holds no keystroke), formatted by firmware/usb/rp/okhi.c as
         //
         //     IN: <a>/<e> <b0> <b1> <b2> <b3> <b4> <b5> <b6> <b7>;
         //
@@ -2390,11 +2397,53 @@
             }
             return true;
         }
+        // The characters of the keys in keys that were not in prev: a held key is
+        // repeated in every report until it is let go, so a character is emitted only
+        // on the edge where a key first appears.
+        function hidEmit(mod, keys, prev) {
+            // bit 1 = left shift, bit 5 = right shift, bit 6 = right alt (AltGr).
+            // Shift and AltGr select the character instead of being reported.
+            var shift = (mod & 0x22) !== 0;
+            var altgr = (mod & 0x40) !== 0;
+            var prefix = '';
+            if (mod & 0x11) prefix += '[CTRL]';
+            if (mod & 0x04) prefix += '[ALT]';
+            if (mod & 0x88) prefix += '[GUI]';
+            var output = '';
+            for (var i = 0; i < keys.length; i++) {
+                if (prev.indexOf(keys[i]) >= 0) {
+                    continue;
+                }
+                if (keys[i] === 57) {
+                    hidCapsLock = !hidCapsLock;
+                    continue;
+                }
+                var char = keycodeToChar(keys[i], shift, altgr, hidCapsLock);
+                if (char) {
+                    output += prefix + char;
+                }
+            }
+            return output;
+        }
         function parseKeyboardHID(data) {
             var lines = data.split('\n');
             var output = '';
             for (var line of lines) {
                 var parts = line.trim().split(/\s+/);
+                if (parts[0] === 'KB:') {
+                    // the address, the modifier byte, then the keys held (never a modifier)
+                    var v = parts.slice(1).map(function (x) { return parseInt(x.replace(';', ''), 16); });
+                    var held = v.slice(2);
+                    if (v.length < 2 || v.some(isNaN) || v[1] > 0xff || held.some(function (k) {
+                        return k < 4 || k > 0xff || (k >= 0xe0 && k <= 0xe7);
+                    })) {
+                        continue;
+                    }
+                    var tag = 'kb' + v[0];
+                    output += hidEmit(v[1], held, hidPrevKeys[tag] || []);
+                    hidPrevKeys[tag] = held;
+                    continue;
+                }
                 if (parts[0] === 'IN:') {
                     parts.shift();
                 }
@@ -2410,37 +2459,13 @@
                 if (b.some(isNaN) || !hidReportIsPlausible(b, ep)) {
                     continue;
                 }
-                var prev = hidPrevKeys[ep] || [];
-                var mod = b[0];
-                // bit 1 = left shift, bit 5 = right shift, bit 6 = right alt (AltGr).
-                // Shift and AltGr select the character instead of being reported.
-                var shift = (mod & 0x22) !== 0;
-                var altgr = (mod & 0x40) !== 0;
-                var prefix = '';
-                if (mod & 0x11) prefix += '[CTRL]';
-                if (mod & 0x04) prefix += '[ALT]';
-                if (mod & 0x88) prefix += '[GUI]';
                 var keys = [];
                 for (var i = 2; i < 8; i++) {
                     if (b[i] !== 0) {
                         keys.push(b[i]);
                     }
                 }
-                // A held key is repeated in every report until it is let go, so a
-                // character is emitted only on the edge where a key first appears.
-                for (var i = 0; i < keys.length; i++) {
-                    if (prev.indexOf(keys[i]) >= 0) {
-                        continue;
-                    }
-                    if (keys[i] === 57) {
-                        hidCapsLock = !hidCapsLock;
-                        continue;
-                    }
-                    var char = keycodeToChar(keys[i], shift, altgr, hidCapsLock);
-                    if (char) {
-                        output += prefix + char;
-                    }
-                }
+                output += hidEmit(b[0], keys, hidPrevKeys[ep] || []);
                 hidPrevKeys[ep] = keys;
             }
             return output;

@@ -61,8 +61,8 @@ Firmware `okhi-kbd-avr` v4.2, for the **ATmega32U4**. Developed on a **Pro Micro
 and it runs on an **Arduino Leonardo** too. **The two boards do not break out the same pins**, so
 read [section 3](#3-wiring-it-up) before you wire anything: the PS/2 lines, the status LED and the
 BUSY output all differ between them. This file is the whole
-documentation: what to buy, how to wire it, how to flash it, worked examples for both modes, the
-complete command reference and the test suite. **Setting one up for the first time? Start at
+documentation: what to buy, how to wire it, how to flash it, worked examples for both modes and the
+complete command reference. **Setting one up for the first time? Start at
 [What you need](#2-what-you-need).**
 
 | Path | What |
@@ -70,7 +70,6 @@ complete command reference and the test suite. **Setting one up for the first ti
 | [okhi_kbd.c](okhi_kbd.c) | The firmware, one translation unit |
 | [build.py](build.py) | Build and flash |
 | [bootloaders/](bootloaders/) | The stock Arduino and SparkFun bootloaders, to put a board back to factory, see [section 4.9](#49-putting-the-board-back-to-factory-state) |
-| [test/](test/) | Hardware test suite, see [section 17](#17-test-suite) |
 
 There is no Arduino core and no Arduino IDE involved. The firmware carries its own USB stack, which
 is how it fits nine selectable HID report formats, two keyboard layouts and a bit-banged PS/2
@@ -121,8 +120,7 @@ Sold on AliExpress as "PS2 Module PS 2 Mouse Keyboard Socket Compatible" for abo
 14. [Error reference](#14-error-reference)
 15. [What survives a power cycle](#15-what-survives-a-power-cycle)
 16. [Driving it from a script](#16-driving-it-from-a-script)
-17. [Test suite](#17-test-suite)
-18. [Troubleshooting](#18-troubleshooting)
+17. [Troubleshooting](#17-troubleshooting)
 
 ---
 ---
@@ -367,26 +365,26 @@ one-command job ([section 4.9](#49-putting-the-board-back-to-factory-state)).
 
 ### 4.3 Installing the toolchain
 
-You need the compiler, not the Arduino IDE. The build script looks for these exact paths:
+You need the compiler, not the Arduino IDE. The build script looks in these places, and an
+environment variable (`OKHI_AVR_GCC`, `OKHI_AVRDUDE`, `OKHI_AVRDUDE_CONF`) wins over all of them:
 
 | What | Where the script looks |
 |---|---|
-| avr-gcc | `%LOCALAPPDATA%\Arduino15\packages\arduino\tools\avr-gcc\7.3.0-atmel3.6.1-arduino7\bin` |
-| avrdude (preferred) | `C:\Users\regue\Downloads\AVRDUDESS-2.20-portable (1)\avrdude.exe` |
-| avrdude (fallback) | `%LOCALAPPDATA%\Arduino15\packages\arduino\tools\avrdude\8.0.0-arduino1\bin\avrdude.exe` |
+| avr-gcc | the newest `%LOCALAPPDATA%\Arduino15\packages\arduino\tools\avr-gcc\<version>\bin`, then `PATH` |
+| avrdude (preferred) | an AVRDUDESS portable unzipped in your Downloads folder, `%USERPROFILE%\Downloads\AVRDUDESS*\avrdude.exe` |
+| avrdude (fallback) | the newest `%LOCALAPPDATA%\Arduino15\packages\arduino\tools\avrdude\<version>\bin\avrdude.exe`, then `PATH` |
 
 Easiest way to get avr-gcc is to install the Arduino IDE once, let it download the AVR board
-package, and then never open it again. The versions above are **hard coded**, there is no version
-search, so if yours differ you must edit `build.py`.
+package, and then never open it again. `python build.py --help` prints the paths it actually picked.
 
 > Building and flashing needs nothing else. `Caterina-Leonardo.hex` is worth having only for the
 > factory restore in [section 4.9](#49-putting-the-board-back-to-factory-state), and the same board
 > package installs it.
 
-#### Versions installed on this machine
+#### Known-good versions
 
 The IDE is only a delivery mechanism for the toolchain. What actually matters is the **board package
-and tool versions**, because `build.py` hard-codes them in its paths.
+and tool versions**. These are the ones the firmware is built and flashed with:
 
 | Component | Version | Location |
 |---|---|---|
@@ -394,18 +392,25 @@ and tool versions**, because `build.py` hard-codes them in its paths.
 | Board package `arduino:avr` | **1.8.8** | `%LOCALAPPDATA%\Arduino15\packages\arduino\hardware\avr\1.8.8` |
 | avr-gcc | **7.3.0-atmel3.6.1-arduino7** | `...\packages\arduino\tools\avr-gcc\` |
 | avrdude (Arduino's, the fallback) | **8.0.0-arduino1** | `...\packages\arduino\tools\avrdude\` |
-| avrdude (preferred by `build.py`) | **8.1**, from AVRDUDESS 2.20 portable | `C:\Users\regue\Downloads\AVRDUDESS-2.20-portable (1)` |
+| avrdude (preferred by `build.py`) | **8.1**, from AVRDUDESS 2.20 portable | `%USERPROFILE%\Downloads\AVRDUDESS-2.20-portable` |
 
-Each of those is the **only** version present, so there is no ambiguity about which one gets picked.
+With several versions installed `build.py` takes the newest of each.
 
 > **You never open the IDE to build.** `build.py` calls avr-gcc directly, and the IDE could not
 > compile this firmware anyway: it is a plain C file with its own USB stack, not a sketch.
 
-> **On another PC it should just work.** `build.py` takes the newest avr-gcc and avrdude installed
-> by the Arduino AVR package, on Windows, Linux or macOS, and falls back to whatever is on `PATH`.
-> The one hard-coded path left is a personal AVRDUDESS folder, tried first and skipped when absent.
+> **On another PC.** `build.py` looks for the newest avr-gcc and avrdude installed by the Arduino
+> AVR package, on Windows, Linux or macOS, and falls back to whatever is on `PATH`. The one
+> hard-coded path left is a personal AVRDUDESS folder, tried first and skipped when absent.
 > Override any of it with `OKHI_AVR_GCC`, `OKHI_AVRDUDE` and `OKHI_AVRDUDE_CONF`, and run
-> `python build.py --help` to see what it actually resolved.
+> `python build.py --help` to see what it actually resolved. Apart from Windows it has run on
+> Ubuntu 26.04, with those three variables pointing at Arduino's avr-gcc 7.3.0-atmel3.6.1-arduino7
+> and avrdude 8.0.0-arduino1: the build matched a Windows build of the same source byte for byte
+> but for the 9 bytes of the build date, and `--flash` wrote and verified a board through a
+> USBasp, opened without root through a udev rule (`16c0:05dc`, group `plugdev`). Its own search
+> of the Arduino package was not tried on Linux, and nothing has been run on macOS. After a build,
+> `git status` shows `build/okhi_kbd.hex` and `.elf` as changed (the build date is in them); on
+> Linux the `.elf` also changes mode: the linker makes it executable and git tracks it as 644.
 
 ### 4.4 Setting up the USBasp
 
@@ -476,10 +481,11 @@ ribbon cable's red stripe marks pin 1. If you only have the bare 10-pin cable, t
 target. Close it if the board is not powered any other way. Remember
 [section 3.4](#34-power-rules-read-this-one): open it again before you test USB behaviour.
 
-**Step 4, check it is alive.** This reads the chip signature and does nothing else:
+**Step 4, check it is alive.** This reads the chip signature and does nothing else (put your own avrdude.conf path in place of
+`<avrdude.conf>`):
 
 ```bash
-avrdude -C "C:/Users/regue/Downloads/AVRDUDESS-2.20-portable (1)/avrdude.conf" -c usbasp -p m32u4
+avrdude -C "<avrdude.conf>" -c usbasp -p m32u4
 ```
 
 A working setup reports the ATmega32U4 signature `1e 95 87`. If it says it cannot find the
@@ -503,7 +509,8 @@ recognise is an error**, so a typo like `--fix-fuse` stops the run with `unknown
 code 2 instead of quietly doing nothing.
 
 `--flash` reads `lfuse`, `hfuse` and `efuse` before it writes anything and compares them against the
-values in [section 4.7](#47-the-fuse-set-it-once). A mismatch prints a loud block naming the bit and
+values in [section 4.7](#47-the-fuse-set-it-once), the `efuse` only in the four bits the 32U4 has. A
+mismatch prints a loud block naming the bit and
 what it costs you, and that block is printed again at the very end of the run so it cannot scroll
 away behind the flash progress. The flash still goes ahead and the exit code does not change: a
 wrong fuse is a warning, not a build failure. **No fuse is ever written unless you pass
@@ -697,7 +704,8 @@ avrdude -C "<avrdude.conf>" -c usbasp -p m32u4 \
   -U lfuse:r:-:h -U hfuse:r:-:h -U efuse:r:-:h -U lock:r:-:h
 ```
 
-Expect `0xff`, `0xd8`, `0xcb`, and then `0xef` if you did step 4 or `0xff` if you skipped it.
+Expect `0xff`, `0xd8`, an `efuse` of `0xcb` or `0xfb` (only its low four bits exist, and the test
+board reads the other four as 1), and then `0xef` if you did step 4 or `0xff` if you skipped it.
 
 > **`0xef` is correct even though you wrote `0x2F`.** The AVR lock byte only defines bits 0 to 5;
 > bits 6 and 7 are unused and always read back as 1. `0x2F` and `0xEF` are identical in every bit
@@ -1185,8 +1193,7 @@ very next `TYPE` or `LINE`, with no re-enumeration and no reboot. `INFO` reports
 
 Get it wrong and letters and digits still come out right, because those sit on the same keys in both
 layouts, while punctuation and accents do not. Typing `;\@(?` with `LAYOUT US` into a machine set to
-Spanish gives `ñç")_`, which is a quick way to recognise the mistake, and is exactly what
-`test_layout.ps1` asserts ([17](#17-test-suite)).
+Spanish gives `ñç")_`, which is a quick way to recognise the mistake.
 
 Text is decoded as UTF-8.
 
@@ -1720,133 +1727,9 @@ Cmd-Wait "COMBO CTRL+S"
 $ser.Close()
 ```
 
-For a fuller version with focus handling and screen readback, see
-[test/ps2lib.ps1](test/ps2lib.ps1).
-
 ---
 
-## 17. Test suite
-
-In [test/](test/). These are **hardware** tests: they drive a real board over the UART and
-verify what it actually types into a real Windows application, byte for byte. They work in both
-`usb` and `ps2` mode.
-
-### 17.1 How they verify
-
-- **Readback uses UI Automation**, not the clipboard and not by reading keystrokes back. It cannot
-  be corrupted by a stale clipboard and does not depend on focus timing.
-- **Focus is verified by window handle**, not by title. Windows 11 Notepad rewrites its title as you
-  type (it adds a `*` and the first line), which breaks title-based activation. The handle is stable.
-- **Synchronisation is by the firmware's `OK`**, which it prints only after the whole line has been
-  typed, so a readback is never premature.
-- **Focus is taken with `AttachThreadInput`.** Windows refuses `SetForegroundWindow` to a process
-  that is not already in the foreground, which is exactly the case when the suite is launched from
-  another window. Attaching to the current foreground thread for the duration of the call lifts that
-  restriction, and it is what stops the tests reporting phantom focus failures.
-- If focus still cannot be secured, a test **aborts instead of typing**, so keystrokes can never leak
-  into another window.
-
-### 17.2 Prerequisites
-
-1. **Notepad open.** The tests force it to the foreground and check before every burst. **Do not
-   touch the keyboard or mouse while a test runs.**
-2. **Serial adapter** on pins 0/1/GND. Default port is **COM35**, override with `-Port COMxx`.
-3. **Board reachable and in `usb` or `ps2` mode.** In USB mode it must be powered from its own USB
-   connector so it enumerates as a keyboard on the machine running the test.
-4. **Windows keyboard layout set to Spanish (ES)** so the accent tests match. `test_layout.ps1` also
-   needs the **US** layout available, and switches between the two by itself.
-
-No administrator rights are needed.
-
-### 17.3 The scripts
-
-| Script | Parameters | Covers | Pass looks like |
-|---|---|---|---|
-| `run_all.ps1` | `-Port -Lines -LineLen -AccentReps -Seed -KeyReps -Full` | Driver. Runs `test_uart`, `test_settings`, `test_content`, `test_keys` and `test_layout`; with `-Full`, also `test_all` | A `SUITE RESULT` table and `ALL <n> PASSED` |
-| `test_uart.ps1` | `-Port -Baud` | UART line handling: echo ON by default, CR / LF / CRLF / LFCR terminators, two-char-pair collapse, NUL padding dropped, `SET ECHO OFF\|ON`. **Pure serial: no Notepad, focus, layout or PS/2 link needed** | `UART line-handling: 10 PASS, 0 FAIL` |
-| `test_settings.ps1` | `-Port` | The settings mirror: every `SET` persistent on its own, `SPEED`/`KRO`/`POLL`/`LAYOUT` riding in the same image, and what `RESET` and `FACTORY_RESET` each clear. **Pure serial too: it types nothing** | `SETTINGS MIRROR: 8 PASS, 0 FAIL` |
-| `test_content.ps1` | `-Port -Lines -LineLen -AccentReps -Seed -Press -Gap -Settle` | Random content lines, the ES accent set, protocol health soak | `BAD=0` on both tests, zero `skipped`/`rxdrop`/`aborts` deltas |
-| `test_keys.ps1` | `-Port -Reps` | Backspace, Tab, Enter, repeat, arrows, Delete, Shift combos | `SUMMARY: PASS=<8 x Reps> FAIL=0` |
-| `test_layout.ps1` | `-Port` | `LAYOUT` command: each map against its matching Windows layout, the same text producing different keys under each, en-US keys read by a Spanish layout, accents dropped in en-US, EEPROM persistence | `LAYOUT: 9 PASS, 0 FAIL, 0 SKIP` |
-| `test_nkro.ps1` | `-Port -Keys` | Rollover cap for the format currently set | `RESULT: PASS (kro=<fmt> cap=<n>, registered <n>)` |
-| `test_all.ps1` | `-Port -Lines -LineLen -RollKeys -Seed` | Full acceptance: all nine formats, edit keys, bus speed, polling, EEPROM persistence | `FAIL=0` in the TOTAL line |
-
-`ps2lib.ps1` is the shared helper library. It is dot-sourced by the others and is never run
-directly.
-
-### 17.4 Exit codes
-
-Every script reports a verdict you can act on, so the suite can be wired into anything:
-
-| Code | Meaning |
-|---|---|
-| `0` | Everything checked passed |
-| `1` | A real failure. Something the firmware did was wrong |
-| `2` | Could not verify. Focus, a missing keyboard layout, or an unreachable board. Nothing failed, nothing was proved |
-
-`run_all.ps1` collects the children, prints a `SUITE RESULT` table and exits with the worst of them.
-`$LASTEXITCODE` after it is the single answer to "did the board pass".
-
-### 17.5 Running them
-
-```powershell
-# the usual pass, a few minutes
-powershell -NoProfile -ExecutionPolicy Bypass -File .\run_all.ps1 -Port COM35
-
-# everything, including the full acceptance matrix
-powershell -NoProfile -ExecutionPolicy Bypass -File .\run_all.ps1 -Port COM35 -Full
-
-# heavier content soak on its own
-powershell -NoProfile -ExecutionPolicy Bypass -File .\test_content.ps1 -Port COM35 -Lines 100 -LineLen 72 -AccentReps 40
-
-# rollover for one format: set the format first
-powershell -NoProfile -ExecutionPolicy Bypass -File .\test_nkro.ps1 -Port COM35 -Keys 12
-
-# EEPROM behaviour on its own, no Notepad needed, about a minute
-powershell -NoProfile -ExecutionPolicy Bypass -File .\test_settings.ps1 -Port COM35
-
-# just the verdict
-.\run_all.ps1 -Port COM35 > run.log; "exit $LASTEXITCODE"
-```
-
-### 17.6 Things to know before you run them
-
-- **`test_all.ps1` rewrites your saved settings.** It walks all nine `KRO` formats, changes `SPEED`
-  and `POLL`, and reboots the board twice. It restores `KRO BOOT`, `SPEED DEFAULT` and
-  `POLL DEFAULT` before finishing, but if it aborts halfway the board is left on whatever format it
-  had reached.
-- **`test_nkro.ps1` does not set the format.** It only reads `kro=` from `INFO`, so send `KRO <fmt>`
-  over the UART first. Expected caps: `BOOT`/`CONSUMER`/`LSCONSUMER` 6, `MULTI`/`LSMULTI` 12,
-  `ARRAY` 16, `NKRO`/`HYBRID`/`HYBRID2` unlimited.
-- **`test_settings.ps1` ends with a `FACTORY_RESET`**, deliberately. It walks the board through
-  saved profiles and reboots, and clearing everything at the end is the only way to leave it in a
-  state you can name. Expect `SPEED`, `KRO`, `POLL`, `LAYOUT` and any saved timings to be gone
-  afterwards.
-- **`test_layout.ps1` moves two settings and puts them back.** It changes the board's saved `LAYOUT`
-  and the keyboard layout of the Notepad window, and reboots the board once to prove the setting is
-  persisted. Both are restored at the end. Its counter deltas are meant to be non-zero:
-  `skipped=6` are the six accents en-US cannot type, `errors=1` is the deliberate bad argument.
-- **`test_content.ps1` auto-retries with escalating timing.** A `rawTypeFails` count above zero is
-  not a failure; it means a line needed a slower profile, which is the documented host behaviour
-  from [section 10](#10-timing-and-why-it-is-a-correctness-knob). Only `BAD` counts.
-- **`-Press -Gap -Settle` on `test_content.ps1`** pin the per-character timing for a whole run.
-  That is the knob to reach for when reproducing or ruling out a case flip.
-- **SKIP is not a failure.** `test_all.ps1` reports focus problems as SKIP and says so explicitly:
-  they are infrastructure, not firmware.
-- **The harness silences the echo.** Firmware local echo is ON by default, but `Open-Ser` in
-  `ps2lib.ps1` sends `SET ECHO OFF` at connect so serial parsing stays clean and deterministic. Real
-  users keep echo on; `test_uart.ps1` is the one script that exercises it (it manages echo itself).
-
-### 17.7 The PowerShell 5.1 encoding gotcha
-
-Windows PowerShell 5.1 reads `.ps1` files as ANSI unless they carry a UTF-8 BOM. These scripts
-therefore build every non-ASCII character from explicit code points (`[char]0x00F1` for `ñ`), never
-as literals in the file. **Keep it that way**, or a future accented literal will be typed as
-mojibake.
-
----
-
-## 18. Troubleshooting
+## 17. Troubleshooting
 
 | Symptom | Look at |
 |---|---|

@@ -525,21 +525,67 @@ static void boot_press(void)
     }
 }
 
+// CHIP_PU has to stay low this long before the RP takes it for an external reset of the ESP: esptool
+// held it low about 105 ms each time, on Linux and on Windows, through the DevKit's auto-reset
+// circuit. Plugging or unplugging a keyboard in the dev board's sniff port made the RP count falls
+// whose logged durations were 1 us at most (4 in 11 replugs of a K63 on Linux, 10 in 3 of a
+// Unifying receiver on Windows, 2026-11-09). A restart on such a fall would leave the RP decoding
+// nothing for 50 s, and a keyboard enumerating in that time is not captured until its next one.
+#define ESP_RESET_HOLD_US 10000
+// The ESP latches its straps up to 3 ms after CHIP_PU rises (ESP8684 datasheet v2.3, table 11), so
+// EBOOT stays released this long after a shorter pulse, which may still have reset it.
+#define ESP_STRAP_HOLD_US 5000
+
+// Falls of CHIP_PU that came back up within ESP_RESET_HOLD_US, and how long the last one stayed low
+// as the RP saw it. Core 1's idle loop logs them.
+static volatile uint32_t esp_reset_glitches;
+static volatile uint32_t esp_reset_glitch_us;
+
 void gpio_callback(uint gpio, uint32_t events)
 {
     // For devboard :D
     if (gpio == ESP_RESET_GPIO)
     {
-        gpio_init(ESP_RESET_GPIO);
-        gpio_set_dir(ESP_RESET_GPIO, GPIO_IN);
-        gpio_init(EBOOT_MASTERDATAREADY_GPIO);
+        // EBOOT lets go at once: an ESP in reset reads its boot strap there as it leaves reset.
+        bool eboot_driven = gpio_is_dir_out(EBOOT_MASTERDATAREADY_GPIO);
         gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_IN);
-        gpio_init(ELOG_SLAVEREADY_GPIO);
-        gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
 
-        wait_20 = 0x69699696;
-        puts("\r\nexternal ESP-RESET detected!\r\nrebooting in 50 secs!!!\r\n");
-        watchdog_reboot(0, 0, 0);
+        uint32_t t0 = time_us_32();
+
+        while (!gpio_get(ESP_RESET_GPIO))
+        {
+            if (time_us_32() - t0 >= ESP_RESET_HOLD_US)
+            {
+                gpio_init(ESP_RESET_GPIO);
+                gpio_set_dir(ESP_RESET_GPIO, GPIO_IN);
+                gpio_init(EBOOT_MASTERDATAREADY_GPIO);
+                gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_IN);
+                gpio_init(ELOG_SLAVEREADY_GPIO);
+                gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
+
+                wait_20 = 0x69699696;
+                puts("\r\nexternal ESP-RESET detected!\r\nrebooting in 50 secs!!!\r\n");
+                watchdog_reboot(0, 0, 0);
+
+                while (1)
+                {
+                    tight_loop_contents();
+                }
+            }
+        }
+
+        esp_reset_glitch_us = time_us_32() - t0;
+        esp_reset_glitches++;
+
+        for (uint32_t t1 = time_us_32(); time_us_32() - t1 < ESP_STRAP_HOLD_US;)
+        {
+            tight_loop_contents();
+        }
+
+        if (eboot_driven)
+        {
+            gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_OUT);
+        }
     }
 }
 
@@ -554,31 +600,50 @@ static void delay_boot_if_esp_reset_detected(void)
     }
 }
 
+// Set by a variant that has already turned the USB switch on and is capturing through it when this
+// runs (the USB build starts its capture before the rest of the board): the switch is left alone.
+static bool rp_switch_on_early;
+
 static void rp_board_boot_init(void)
 {
     gpio_init(ESP_RESET_GPIO);
     gpio_set_dir(ESP_RESET_GPIO, GPIO_OUT);
     gpio_put(ESP_RESET_GPIO, false);
 
+    // The ESP reads its straps as it leaves reset: GPIO9 (EBOOT) must be 1 for SPI boot, GPIO8
+    // (ELOG) sets the ROM log. An RP2040 pad leaves reset with its pull-down on (50 to 80k) and
+    // gpio_init() keeps it (EBOOT's pad read 0x56 by SWD). The implant has no other pull on either
+    // line, so with that pull-down EBOOT would sit between it and the ESP's 45k pull-up, about 1.7
+    // to 2.1 V against an input high of 0.75 x VDD, and ELOG would read 0. EBOOT gets no pull, so
+    // the ESP's own pull-up decides. ELOG gets here the pull-up that esp_link_uart_init() sets
+    // again later.
     gpio_init(EBOOT_MASTERDATAREADY_GPIO);
     gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_IN);
+    gpio_disable_pulls(EBOOT_MASTERDATAREADY_GPIO);
     gpio_init(ELOG_SLAVEREADY_GPIO);
     gpio_set_dir(ELOG_SLAVEREADY_GPIO, GPIO_IN);
+    gpio_pull_up(ELOG_SLAVEREADY_GPIO);
 
-    gpio_init(USSEL_PIN);
-    gpio_set_dir(USSEL_PIN, GPIO_OUT);
-    gpio_put(USSEL_PIN, false);
+    if (!rp_switch_on_early)
+    {
+        gpio_init(USSEL_PIN);
+        gpio_set_dir(USSEL_PIN, GPIO_OUT);
+        gpio_put(USSEL_PIN, false);
 
-    gpio_init(USOE_PIN);
-    gpio_set_dir(USOE_PIN, GPIO_OUT);
-    gpio_put(USOE_PIN, true);
+        gpio_init(USOE_PIN);
+        gpio_set_dir(USOE_PIN, GPIO_OUT);
+        gpio_put(USOE_PIN, true);
+    }
 
     init_ver();
 
     // uart init must be called after init_ver(), because on devboard the same pins are used for UART
     stdio_init_all();
 
-    gpio_put(USSEL_PIN, true);
+    if (!rp_switch_on_early)
+    {
+        gpio_put(USSEL_PIN, true);
+    }
 
     sleep_ms(100);
 }
@@ -602,6 +667,9 @@ static uint32_t rp_spi_master_init(void)
 
 static void esp_link_uart_init(void)
 {
+    // The lowest priority: the frequency meter's PWM wrap interrupt on the same core preempts the
+    // waits in gpio_callback().
+    irq_set_priority(IO_IRQ_BANK0, PICO_LOWEST_IRQ_PRIORITY);
     gpio_set_irq_enabled_with_callback(ESP_RESET_GPIO, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
 
     uart_init(ESP_UART_ID, RP_UART_BAUD);

@@ -76,6 +76,11 @@ pico_generate_pio_header(okhi ${CMAKE_CURRENT_LIST_DIR}/okhi.pio)
 
 pico_set_binary_type(okhi copy_to_ram)
 
+# The SDK's W25Q080 boot stage 2 with the ring oscillator sped up while crt0 copies this image to
+# RAM, so the capture starts sooner after a reset (boot2_okhi.S says why).
+pico_define_boot_stage2(okhi_boot2 ${CMAKE_CURRENT_LIST_DIR}/boot2_okhi.S)
+pico_set_boot_stage2(okhi okhi_boot2)
+
 pico_enable_stdio_uart(okhi 1)
 pico_enable_stdio_usb(okhi 0)
 

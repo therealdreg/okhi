@@ -437,6 +437,14 @@ void core1_main()
             printf("ps2 ringbuff dropped %u bytes (ESP down too long, log backed up)\r\n", ringbuff_dropped);
         }
         // END FIX
+
+        static uint32_t esp_reset_glitches_reported = 0;
+        if (esp_reset_glitches != esp_reset_glitches_reported)
+        {
+            esp_reset_glitches_reported = esp_reset_glitches;
+            printf("esp reset line low for %u us and back up: not an external reset, no restart (%u so far)\r\n",
+                   (unsigned)esp_reset_glitch_us, (unsigned)esp_reset_glitches);
+        }
     }
 }
 
@@ -639,7 +647,7 @@ int main(void)
     // Main capture loop - drain both RX FIFOs and log every parsed byte.
     //
     // Each PIO program leaves its 8-bit result in the TOP byte of the 32-bit FIFO word, so the
-    // byte is read through an 8-bit view offset by +3 (see the ISR note in ps2.pio). Bytes are
+    // byte is read through an 8-bit view offset by +3 (see the ISR note in okhi.pio). Bytes are
     // tagged 'H' (host->device) or 'D' (device->host) with a timestamp and written to the ring
     // buffer; core1 ships those strings out. write_index is the producer cursor.
     // =================================================================================

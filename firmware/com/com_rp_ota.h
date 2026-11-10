@@ -93,6 +93,15 @@
 #define OTA_WATCHDOG_UPDATE() ((void)0)
 #endif
 
+/*
+ * Called right before every intentional reboot here and in com_rp_clock.h (an OTA commit, a web
+ * reset, BOOTSEL, a clock mode), so that a variant can write out what it keeps in flash and has not
+ * written yet (the USB variant's HID maps). Nothing by default.
+ */
+#ifndef RP_STATE_FLUSH
+#define RP_STATE_FLUSH() ((void)0)
+#endif
+
 #define RP_IDENTITY "v" FIRMV_STR " " RP_VARIANT " " __DATE__ " " __TIME__
 
 #define OTA_APP_OFFSET 0x000000u
@@ -551,6 +560,14 @@ static void ota_commit_staged_image(void)
         return;
     }
 
+    // Only the image the ESP offers in this same frame. The ESP drops a package's RP half when its
+    // esp half is not confirmed, and the copy staged here stays: a commit asked for later, after
+    // an /rpimage of the running build for example, must not apply it.
+    if (!esp_rp_image_ready || meta.staging_size != esp_rp_image_size || meta.staging_crc != esp_rp_image_crc)
+    {
+        return;
+    }
+
     if (meta.staging_size == 0 || meta.staging_size > OTA_SLOT_SIZE)
     {
         return;
@@ -611,6 +628,7 @@ static void ota_commit_staged_image(void)
     {
         OTA_WATCHDOG_UPDATE();
         printf("rp commit did NOT verify, the next boot retries from staging\r\n");
+        RP_STATE_FLUSH();
         watchdog_reboot(0, 0, 0);
 
         while (1)
@@ -629,6 +647,7 @@ static void ota_commit_staged_image(void)
 
     printf("rp commit done, rebooting into the new image\r\n");
 
+    RP_STATE_FLUSH();
     watchdog_reboot(0, 0, 0);
 
     while (1)
@@ -903,6 +922,69 @@ static void ota_flash_sector(uint32_t offset, uint8_t *data, uint32_t used)
     restore_interrupts(flags);
 }
 
+/*
+ * Flash for a variant's own state across a restart: the last RP_STATE_SECTORS sectors of the
+ * detected flash, past the OTA map, so they need the same 8 MB part. Returns the offset of the
+ * first, 0 when there is no room. A reflash or an OTA writes only the app slot and the OTA map,
+ * so they survive both. The USB variant keeps its HID maps there (usb_hid.h), each write in the
+ * next sector, so no sector wears faster than a sixteenth of the writes.
+ */
+#define RP_STATE_SECTORS 16u
+
+static uint32_t rp_state_area(void)
+{
+    uint32_t size = get_detected_flash_size();
+
+    if (size > (16u << 20))
+    {
+        size = 16u << 20; // what the XIP window maps
+    }
+
+    if (size > (uint32_t)PICO_FLASH_SIZE_BYTES)
+    {
+        size = (uint32_t)PICO_FLASH_SIZE_BYTES; // the SDK's flash calls assert past it
+    }
+
+    return size >= OTA_MAP_END + RP_STATE_SECTORS * FLASH_SECTOR_SIZE ? size - RP_STATE_SECTORS * FLASH_SECTOR_SIZE
+                                                                      : 0;
+}
+
+static const uint8_t *rp_state_read(uint32_t offset)
+{
+    return (const uint8_t *)(XIP_BASE + offset);
+}
+
+// A RAM buffer of one sector to build the state in: the OTA's, which only poll_esp_if_due() uses,
+// so the caller must run on core 1 outside it.
+static uint8_t *rp_state_buffer(void)
+{
+    return ota_transfer_buffer;
+}
+
+// Erase the sector and write len bytes of buf (a RAM buffer of FLASH_SECTOR_SIZE bytes, padded
+// to whole pages here). Core 1 blocks for about 50 ms; core 0 runs from RAM and keeps capturing.
+static void rp_state_write(uint32_t offset, uint8_t *buf, uint32_t len)
+{
+    uint32_t pages = (len + FLASH_PAGE_SIZE - 1) & ~(uint32_t)(FLASH_PAGE_SIZE - 1);
+
+    if (pages > FLASH_SECTOR_SIZE)
+    {
+        return;
+    }
+
+    memset(buf + len, 0xff, FLASH_SECTOR_SIZE - len);
+
+    uint32_t flags = save_and_disable_interrupts();
+    flash_range_erase(offset, FLASH_SECTOR_SIZE);
+
+    if (pages)
+    {
+        flash_range_program(offset, buf, pages);
+    }
+
+    restore_interrupts(flags);
+}
+
 static bool ota_fetch_block(uint32_t block, uint8_t *dst, uint16_t *out_len)
 {
     for (int attempt = 0; attempt < SPI_BLOCK_ATTEMPTS; ++attempt)
@@ -990,6 +1072,22 @@ static void ota_receive_rp_image_if_offered(void)
     }
 
     printf("rp image offered: %u bytes crc %08x, capture SUSPENDED\r\n", (unsigned)size, (unsigned)expected_crc);
+
+    // The fetch writes over staging from its first sector, so meta stops naming what was staged
+    // there. Left as it was, a failed fetch followed by an offer of the image staged before it
+    // skipped the fetch above, and every commit then refused that image on its CRC. A committed
+    // image on trial keeps its state (its rollback reads golden, not staging).
+    if (ota_meta_valid(&meta) && meta.staging_size != 0 && meta.state != OTA_STATE_APPLYING)
+    {
+        if (meta.state == OTA_STATE_STAGED)
+        {
+            meta.state = OTA_STATE_IDLE;
+        }
+
+        meta.staging_size = 0;
+        meta.staging_crc = 0;
+        ota_meta_write(&meta);
+    }
 
     uint32_t crc = 0xffffffffu;
     uint32_t written = 0;
@@ -3521,6 +3619,7 @@ static void poll_esp_if_due(void)
 
         rp_bootsel_request = RP_BOOTSEL_MAGIC;
 
+        RP_STATE_FLUSH();
         watchdog_reboot(0, 0, 0);
 
         while (1)
@@ -3544,6 +3643,7 @@ static void poll_esp_if_due(void)
     {
         printf("web requested a reset, rebooting the RP (this resets the ESP too)\r\n");
         fflush(stdout);
+        RP_STATE_FLUSH();
         watchdog_reboot(0, 0, 0);
 
         while (1)

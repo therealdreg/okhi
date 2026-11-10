@@ -166,6 +166,8 @@ SOFTWARE.
 #define RP_WINDOW_SIZE 4096
 
 #define OTA_VALIDATE_TIMEOUT_MS 300000
+#define OTA_UNCONFIRMED_TEXT                                                                                           \
+    "this firmware is not confirmed yet (a flash write failed): try again; unconfirmed, it rolls back 5 min after boot\n"
 #define OTA_REBOOT_DELAY_MS 500
 #define OTA_MIN_IMAGE_SIZE 8192
 
@@ -237,7 +239,7 @@ typedef struct
     // FIX BY DREG: spi_dups counts records the RP re-sent that we already had, so it measures how
     // often the hand-off went wrong AND was recovered. spi_gaps counts sequence numbers that
     // simply never arrived, which is the first true loss counter this firmware has ever had: every
-    // other counter stays flat when a record vanishes (see ps2adapter.md 7.1).
+    // other counter stays flat when a record vanishes.
     uint32_t spi_dups;
     uint32_t spi_gaps;
     // Forward jumps refused while holding position for the RP to rewind. Healthy traffic shows
@@ -346,7 +348,21 @@ static uint32_t ota_rp_got;
 static uint32_t ota_rp_running;
 static bool ota_esp_validated;
 static bool ota_rp_validated;
+static uint64_t ota_esp_sha; // first 8 bytes of the app_elf_sha256 of the esp image being uploaded
 static bool rp_commit_pending;
+
+// The first 8 bytes of an app_elf_sha256, the esp_image of /versions.
+static uint64_t ota_sha8(const uint8_t *sha)
+{
+    uint64_t v = 0;
+
+    for (int i = 0; i < 8; i++)
+    {
+        v = (v << 8) | sha[i];
+    }
+
+    return v;
+}
 static volatile bool rp_commit_completed;
 static volatile bool rp_image_in_use;
 
@@ -487,6 +503,23 @@ static bench_step_t spi_bench_steps[SPI_BENCH_MAX_STEPS];
 static volatile uint32_t rp_image_size;
 static volatile uint32_t rp_image_crc;
 static volatile bool rp_image_ready;
+// The CRC32 of the app the RP last reported running (0 when it has no OTA record), and whether a
+// report came since this boot. An RP commit is not asked for before either is known.
+static volatile uint32_t rp_reported_app_crc;
+static volatile bool rp_report_seen;
+// Set by every POST before it confirms an esp image on trial: no RP commit for RP_COMMIT_HOLD_MS,
+// until the upload it starts owns upload_owner.
+#define RP_COMMIT_HOLD_MS 2000u
+static volatile bool rp_commit_hold;
+static volatile uint32_t rp_commit_hold_at;
+// When SPI_FLAG_RP_COMMIT first went out for the image on offer (its CRC). An RP that cannot apply
+// it never completes (a golden restore after the image failed its boots, a flash map that does not
+// fit, six failed transfers), and the image stayed offered, the ESP refusing what busy_reason()
+// refuses, until the next upload. A commit that works completes in seconds.
+#define RP_COMMIT_GIVE_UP_MS (5u * 60u * 1000u)
+static volatile bool rp_commit_asked;
+static volatile uint32_t rp_commit_asked_at;
+static volatile uint32_t rp_commit_asked_crc;
 // Why the RP image staged before the last reboot was or was not picked up again. A package
 // that updates both chips reboots the ESP between staging the RP image and serving it, so
 // when the RP silently stays on its old firmware this is the only thing that says why. The
@@ -1509,25 +1542,39 @@ static void spi_fill_frame(uint8_t *frame, int index)
         head[SPI_BENCH_STATUS_RESUME_OFF + 1] = (uint8_t)(rbench_resume_khz >> 8);
     }
 
-    if (rp_image_ready && !ota_reboot_pending)
+    // Not offered while this esp image is on trial: the RP would stage the package's RP half, and
+    // if the esp half then rolls back, an RP firmware that commits whatever is staged applies it
+    // on the next commit asked for any reason.
+    if (rp_image_ready && !ota_reboot_pending && !app_awaiting_validation)
     {
         flags |= SPI_FLAG_RP_IMAGE_READY;
         spi_put_u32(head + 12, rp_image_size);
         spi_put_u32(head + 16, rp_image_crc);
     }
 
-    if (rp_commit_pending && !app_awaiting_validation && !ota_reboot_pending)
-    {
-        flags |= SPI_FLAG_RP_COMMIT;
-    }
-
     int64_t req_now_ms = bench_now_ms();
+
+    // No commit while an upload is starting or running: the upload's own request confirms an esp
+    // image on trial, and an RP commit reboots the RP, which resets the ESP in the middle of the
+    // upload. None before the RP has said what it runs, nor for an image it runs already: an RP
+    // firmware without the offer check in ota_commit_staged_image() would apply a stale staged
+    // image instead. The same for a commit asked through /rpcommit (esp_rp_commit_until_ms).
+    bool commit_ok = rp_image_ready && !app_awaiting_validation && !ota_reboot_pending && upload_owner == NULL &&
+                     !(rp_commit_hold && (uint32_t)((uint32_t)req_now_ms - rp_commit_hold_at) < RP_COMMIT_HOLD_MS) &&
+                     rp_report_seen && !(rp_reported_app_crc != 0 && rp_reported_app_crc == rp_image_crc);
 
     // FIX BY DREG: time-budgeted, like the reset and bootsel requests below it. See the
     // declaration of esp_rp_commit_until_ms for what the old frame budget did.
-    if (req_now_ms < esp_rp_commit_until_ms)
+    if (commit_ok && (rp_commit_pending || req_now_ms < esp_rp_commit_until_ms))
     {
         flags |= SPI_FLAG_RP_COMMIT;
+
+        if (!rp_commit_asked || rp_commit_asked_crc != rp_image_crc)
+        {
+            rp_commit_asked_at = (uint32_t)req_now_ms;
+            rp_commit_asked_crc = rp_image_crc;
+            rp_commit_asked = true;
+        }
     }
 
     if (req_now_ms < esp_rp_bootsel_until_ms)
@@ -1644,7 +1691,12 @@ static void spi_handle_control_frame(const uint8_t *frame)
 
     uint32_t reported_app_crc = spi_get_u32(frame + 12);
 
-    if (rp_commit_pending && rp_image_ready && reported_app_crc != 0 && reported_app_crc == rp_image_crc)
+    rp_reported_app_crc = reported_app_crc;
+    rp_report_seen = true;
+
+    // The RP runs the image on offer: committed, or it was its running build all along (an
+    // /rpimage of that build), which would otherwise stay offered and keep the ESP busy.
+    if (rp_image_ready && reported_app_crc != 0 && reported_app_crc == rp_image_crc)
     {
         rp_commit_completed = true;
     }
@@ -2017,8 +2069,12 @@ static bool wifi_cfg_save(const char *ssid, const char *pass, bool sta)
     return ok;
 }
 
-static bool ota_nvs_get_rp_pending(uint32_t *size, uint32_t *crc);
-static void ota_nvs_set_rp_pending(uint32_t size, uint32_t crc);
+static bool ota_nvs_get_rp_pending(uint32_t *size, uint32_t *crc, uint64_t *esp_sha, bool *legacy);
+static void ota_nvs_set_rp_pending(uint32_t size, uint32_t crc, uint64_t esp_sha, bool legacy);
+static void ota_nvs_clear_rp_pending(void);
+
+// Set when this boot found NVS from another esp build and wiped it (wifi_cfg_load()).
+static bool ota_new_build_boot;
 
 // Bump the persistent boot counter. Call AFTER wifi_cfg_load so it runs on the
 // clean NVS a firmware change leaves behind, which is why the count resets to 1
@@ -2075,8 +2131,11 @@ static void wifi_cfg_load(void)
 
         uint32_t rp_size = 0;
         uint32_t rp_crc = 0;
-        bool rp_pending = ota_nvs_get_rp_pending(&rp_size, &rp_crc);
+        uint64_t rp_esp_sha = 0;
+        bool rp_legacy = false;
+        bool rp_pending = ota_nvs_get_rp_pending(&rp_size, &rp_crc, &rp_esp_sha, &rp_legacy);
 
+        ota_new_build_boot = true;
         nvs_flash_erase();
         nvs_flash_init();
 
@@ -2084,7 +2143,7 @@ static void wifi_cfg_load(void)
         {
             ESP_LOGW(WIFI_TAG, "carrying the pending RP image across the wipe: %u bytes crc %08x",
                      (unsigned)rp_size, (unsigned)rp_crc);
-            ota_nvs_set_rp_pending(rp_size, rp_crc);
+            ota_nvs_set_rp_pending(rp_size, rp_crc, rp_esp_sha, rp_legacy && !app_awaiting_validation);
         }
 
         if (nvs_open(WIFI_CFG_NS, NVS_READWRITE, &handle) == ESP_OK)
@@ -2181,10 +2240,11 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
             wifi_ip = 0;
             wifi_link = WIFI_LINK_CONNECTING;
 
-            // Give the reconnect a fresh window. A roam, a channel change or a router blip
-            // is a normal event on somebody's home network and deserves the same grace the
-            // first join gets, not an instant reboot.
-            wifi_sta_deadline_ms = bench_now_ms() + WIFI_STA_GIVE_UP_MS;
+            // The join deadline stays where wifi_start() set it. Every failed attempt ends in
+            // this event too (no AP by that name, a wrong password), so moving the deadline here
+            // would keep a network that never worked from ever counting as a failure, and the
+            // board would never come back as an access point. A network that has joined is never
+            // given up on (wifi_service()), so a roam or a router blip needs no fresh window.
         }
 
         esp_wifi_connect();
@@ -2674,6 +2734,9 @@ static void rp_image_invalidate(void)
     }
 
     rp_commit_pending = false;
+    // An /rpcommit was for this image: the next one published asks for its own.
+    esp_rp_commit_until_ms = 0;
+    rp_commit_asked = false;
 
     spi_requested_block = SPI_NO_BLOCK;
     rp_window_offset = SPI_NO_BLOCK;
@@ -2685,6 +2748,16 @@ static void rp_image_invalidate(void)
         close(rp_image_fd);
         rp_image_fd = -1;
     }
+}
+
+// Delete the pending RP image, its marker and its offer; why goes to rp_restore in /stats.
+static void rp_image_drop(const char *why)
+{
+    rp_image_invalidate();
+    unlink(RP_IMAGE_PATH);
+    ota_nvs_clear_rp_pending();
+    snprintf(rp_restore_note, sizeof(rp_restore_note), "%s: dropped", why);
+    ESP_LOGW(TAG, "pending RP image dropped: %s", why);
 }
 
 // Deliberately NOT rp_window. That buffer belongs to the SPI task, which guards every
@@ -2763,11 +2836,17 @@ static void app_validation_confirm(void)
         return;
     }
 
-    app_awaiting_validation = false;
-
+    // Cleared only once otadata says so: confirmed in RAM alone, the RP commit would go out while
+    // the bootloader still rolls the esp image back on its next reset. A failed write is retried on
+    // the next request, and the timeout rolls back cleanly.
     if (esp_ota_mark_app_valid_cancel_rollback() == ESP_OK)
     {
+        app_awaiting_validation = false;
         ESP_LOGI(TAG, "image confirmed, rollback cancelled");
+    }
+    else
+    {
+        ESP_LOGE(TAG, "could not confirm the image, rollback still armed");
     }
 }
 
@@ -2777,6 +2856,10 @@ static void app_validation_check_timeout(int64_t now)
     {
         return;
     }
+
+    // The RP image of the same package goes with it: the esp firmware rolled back to must not
+    // commit it.
+    rp_image_drop("esp image not confirmed in time");
 
     ESP_LOGE(TAG, "image not confirmed in time, rebooting to roll back");
     esp_restart();
@@ -3025,7 +3108,7 @@ static bool http_query_str(const char *path, const char *key, char *out, size_t 
 // last few hundred keystrokes survived. This mirrors hid_ring to a file on the ESP's SPIFFS so
 // the log persists across reboots and days of nobody looking. Two files rotate (keylog then
 // keylog.1) capped so the pair fits the ~1.1 MB partition and still leaves room for the RP OTA
-// staging file (rp.new, ~60 KB). A background task appends in batches every few seconds, so a
+// staging file (rp.new). A background task appends in batches every few seconds, so a
 // keystroke is one buffered write, not a flash write per key. keylog_mutex serialises the task
 // against the download and the clear.
 #define KEYLOG_PATH "/spiffs/keylog"
@@ -3042,10 +3125,14 @@ static bool http_query_str(const char *path, const char *key, char *out, size_t 
 // flash long before the ring could lap and drop. Normal typing still writes at the slow cadence.
 #define KEYLOG_TICK_MS 250
 #define KEYLOG_WATERMARK (RING_ENTRIES / 2)
-// Free flash the log must never touch, so the RP OTA can always stage rp.new (~60 KB) and SPIFFS
-// keeps GC headroom. Comfortably larger than one flush batch (RING_ENTRIES * RECORD_PAYLOAD_MAX,
-// ~31 KB) plus rp.new, so even a full batch landing right at the edge cannot starve the OTA.
-#define KEYLOG_SPIFFS_RESERVE (160u * 1024u)
+// Free flash the log never takes: the room an RP image is staged in (rp.new, about 83 KB) and
+// headroom for SPIFFS's garbage collection, which reclaims deleted pages only by moving the live
+// pages around them. At 160 KB a log held at the reserve by a download left the partition 86% full.
+// A host model of this partition (ESP-IDF's SPIFFS driven as this file drives it, 12 runs of 30 MB
+// of keystrokes and about 120 RP uploads each, 2026-11-05) failed 125 of 1445 uploads that way and
+// rotated the log for 75 refused batches; at 400 KB (65% full at most) with spiffs_collect(), 0 of
+// 1453 and 1.
+#define KEYLOG_SPIFFS_RESERVE (400u * 1024u)
 // While a download is in flight the file boundaries must not move under the client, so rotation is
 // deferred this long past the last chunk request. Refreshed on every chunk, so a live download holds
 // the freeze and an abandoned one thaws on its own.
@@ -3053,6 +3140,33 @@ static bool http_query_str(const char *path, const char *key, char *out, size_t 
 // One write() per batch of whole records, see keylog_flush. 2 KB is ~40 USB records.
 #define KEYLOG_BATCH 2048
 #define KEYLOG_BATCH_RECORDS 64
+// Collection calls a refused keylog batch may run before the log rotates: each erases up to
+// CONFIG_SPIFFS_GC_MAX_RUNS blocks, so this caps the stall at about 60 erases.
+#define KEYLOG_GC_CALLS 6
+
+// esp_spiffs_gc() until `need` bytes are free pages, at most `calls` calls with a yield after each
+// (the task watchdog). A write reclaims deleted pages only through the few blocks its own collection
+// may clean, part of them picked for wear levelling with nothing to reclaim, so near full it was
+// refused with room to spare: "write to SPIFFS failed" on RP uploads (2026-11-05), and a keylog
+// rotation, the older half of the log gone, on keylog batches.
+static bool spiffs_collect(size_t need, int calls)
+{
+    esp_log_level_t level = esp_log_level_get("SPIFFS");
+    esp_err_t err = ESP_ERR_NOT_FINISHED;
+
+    // esp_spiffs_gc() logs an error for every call that has not reached `need` yet.
+    esp_log_level_set("SPIFFS", ESP_LOG_NONE);
+
+    for (int i = 0; i < calls && err == ESP_ERR_NOT_FINISHED; i++)
+    {
+        err = esp_spiffs_gc(KEYLOG_PARTITION, need);
+        vTaskDelay(1);
+    }
+
+    esp_log_level_set("SPIFFS", level);
+
+    return err == ESP_OK;
+}
 
 static char keylog_batch[KEYLOG_BATCH];
 static volatile uint32_t keylog_flushed;
@@ -3160,6 +3274,15 @@ static void keylog_flush(void)
 
                     ssize_t wrote = used > 0 ? write(fd, keylog_batch, used) : 0;
                     int whole = n;
+
+                    if (wrote != (ssize_t)used)
+                    {
+                        // Refused: cut back what landed, collect, and write the batch once more,
+                        // before the rotation below gives up the older half of the log for it.
+                        ftruncate(fd, end);
+                        spiffs_collect(used + 8u * 1024u, KEYLOG_GC_CALLS);
+                        wrote = write(fd, keylog_batch, used);
+                    }
 
                     if (wrote != (ssize_t)used)
                     {
@@ -3509,7 +3632,7 @@ static bool rp_link_state_is_up(void)
 
 static const char *usb_bus_token(void)
 {
-    static const char *const tokens[] = {"unknown", "low", "full", "none", "invalid"};
+    static const char *const tokens[] = {"unknown", "low", "full", "none", "invalid", "wide"};
     uint8_t state = rp_usb_bus;
 
     if (!rp_link_state_is_up() || state >= sizeof(tokens) / sizeof(tokens[0]))
@@ -3985,9 +4108,16 @@ static void ota_reset_stream(void)
     ota_rp_running = 0xffffffffu;
     ota_esp_validated = false;
     ota_rp_validated = false;
+    ota_esp_sha = 0;
 }
 
-static void ota_nvs_set_rp_pending(uint32_t size, uint32_t crc)
+// The pending RP image has two flags. "rp_held" is the one this firmware reads, with "rp_esp", the
+// esp image the RP image came with in one package (ota_sha8 of its app_elf_sha256; 0 for an RP
+// image that came alone). "rp_pending" is the one an esp firmware without the binding (v7, prev9)
+// reads and commits under any esp image: it is set (legacy) only for a package with an esp image,
+// so that an older esp image in it still applies the RP half, and cleared while a new esp image is
+// on trial, so that an older one rolled back to does not.
+static void ota_nvs_set_rp_pending(uint32_t size, uint32_t crc, uint64_t esp_sha, bool legacy)
 {
     nvs_handle_t handle;
 
@@ -3998,7 +4128,9 @@ static void ota_nvs_set_rp_pending(uint32_t size, uint32_t crc)
 
     nvs_set_u32(handle, "rp_size", size);
     nvs_set_u32(handle, "rp_crc", crc);
-    nvs_set_u32(handle, "rp_pending", 1);
+    nvs_set_u64(handle, "rp_esp", esp_sha);
+    nvs_set_u32(handle, "rp_held", 1);
+    nvs_set_u32(handle, "rp_pending", legacy ? 1 : 0);
     nvs_commit(handle);
     nvs_close(handle);
 }
@@ -4012,15 +4144,43 @@ static void ota_nvs_clear_rp_pending(void)
         return;
     }
 
+    nvs_set_u32(handle, "rp_held", 0);
     nvs_set_u32(handle, "rp_pending", 0);
     nvs_commit(handle);
     nvs_close(handle);
 }
 
-static bool ota_nvs_get_rp_pending(uint32_t *size, uint32_t *crc)
+// While an esp image is on trial, as early as NVS is up: the flag an older esp firmware commits
+// the RP image by goes, since a crash or a power cut from here on rolls back to that firmware.
+// An unbound marker came with this image from such a firmware, so it is bound to this image too:
+// left unbound by a crash before the wipe in wifi_cfg_load(), the older firmware would keep it
+// (it never clears rp_held), and the next esp image would bind it to itself and commit it.
+static void ota_nvs_hide_legacy_rp_pending(void)
+{
+    uint32_t size = 0;
+    uint32_t crc = 0;
+    uint64_t esp_sha = 0;
+    bool legacy = false;
+
+    if (ota_nvs_get_rp_pending(&size, &crc, &esp_sha, &legacy) && legacy)
+    {
+        if (esp_sha == 0)
+        {
+            esp_sha = ota_sha8(esp_app_get_description()->app_elf_sha256);
+        }
+
+        ota_nvs_set_rp_pending(size, crc, esp_sha, false);
+    }
+}
+
+static bool ota_nvs_get_rp_pending(uint32_t *size, uint32_t *crc, uint64_t *esp_sha, bool *legacy)
 {
     nvs_handle_t handle;
     uint32_t pending = 0;
+    uint32_t held = 0;
+
+    *esp_sha = 0;
+    *legacy = false;
 
     if (nvs_open(OTA_NVS_NAMESPACE, NVS_READONLY, &handle) != ESP_OK)
     {
@@ -4032,17 +4192,30 @@ static bool ota_nvs_get_rp_pending(uint32_t *size, uint32_t *crc)
         pending = 0;
     }
 
-    if (pending != 0)
+    if (nvs_get_u32(handle, "rp_held", &held) != ESP_OK)
+    {
+        held = 0;
+    }
+
+    *legacy = pending != 0;
+
+    if (pending != 0 || held != 0)
     {
         if (nvs_get_u32(handle, "rp_size", size) != ESP_OK || nvs_get_u32(handle, "rp_crc", crc) != ESP_OK)
         {
-            pending = 0;
+            pending = held = 0;
+        }
+
+        // A marker from an esp firmware without the binding has none.
+        if (nvs_get_u64(handle, "rp_esp", esp_sha) != ESP_OK)
+        {
+            *esp_sha = 0;
         }
     }
 
     nvs_close(handle);
 
-    return pending != 0;
+    return pending != 0 || held != 0;
 }
 
 static void rp_image_restore_after_boot(void)
@@ -4050,14 +4223,64 @@ static void rp_image_restore_after_boot(void)
     struct stat info;
     uint32_t size = 0;
     uint32_t crc = 0;
+    uint64_t esp_sha = 0;
+    bool legacy = false;
 
     unlink(RP_IMAGE_TMP_PATH);
 
-    if (!ota_nvs_get_rp_pending(&size, &crc))
+    if (!ota_nvs_get_rp_pending(&size, &crc, &esp_sha, &legacy))
     {
+        // No marker: an /rpimage upload, which sets none and is offered only until the ESP restarts
+        // (every RP boot resets it). Nothing offers this file again, and left behind it took the
+        // room of the next upload: "write to SPIFFS failed" next to a 128 KiB one (2026-11-05).
         bool on_disk = (stat(RP_IMAGE_PATH, &info) == 0);
+        if (on_disk)
+        {
+            unlink(RP_IMAGE_PATH);
+        }
         snprintf(rp_restore_note, sizeof(rp_restore_note), "no pending marker in nvs (image on flash: %s)",
-                 on_disk ? "yes" : "no");
+                 on_disk ? "removed" : "no");
+        return;
+    }
+
+    // An RP image that came in a package with an esp image is committed only under that esp
+    // image, or a rolled back esp would leave the two chips on different releases.
+    uint64_t running_sha = ota_sha8(esp_app_get_description()->app_elf_sha256);
+    char why[64];
+
+    if (app_awaiting_validation)
+    {
+        // This esp image is on trial. A marker with no binding came with it from an esp firmware
+        // without the binding, so it is bound here. The legacy flag is cleared: such a firmware
+        // would commit the RP half under itself if the bootloader rolled back to it.
+        if (esp_sha == 0)
+        {
+            esp_sha = running_sha;
+        }
+
+        if (esp_sha != running_sha)
+        {
+            snprintf(why, sizeof(why), "came with esp image %016llx", (unsigned long long)esp_sha);
+            rp_image_drop(why);
+            return;
+        }
+
+        ota_nvs_set_rp_pending(size, crc, esp_sha, false);
+    }
+    else if (esp_sha != 0 ? esp_sha != running_sha : ota_new_build_boot)
+    {
+        // Bound to another esp image, which was not confirmed, so the bootloader came back here;
+        // or not bound on the first boot of this build after another one ran, where an older esp
+        // image of a package wiped the binding.
+        if (esp_sha != 0)
+        {
+            snprintf(why, sizeof(why), "came with esp image %016llx, not this one", (unsigned long long)esp_sha);
+        }
+        else
+        {
+            snprintf(why, sizeof(why), "unbound, first boot of this build after another one");
+        }
+        rp_image_drop(why);
         return;
     }
 
@@ -4110,6 +4333,69 @@ static void rp_image_restore_after_boot(void)
              (unsigned)crc);
 
     ESP_LOGW(TAG, "RP update pending: %u bytes crc %08x", (unsigned)size, (unsigned)crc);
+}
+
+// Room for an RP image, made before its first byte goes into rp.new: a collection for the whole
+// image (spiffs_collect()) and a margin for the keylog batches that may land meanwhile. A staged image
+// that leaves no room goes first, as its replacement drops it anyway. The host model of the partition
+// (see KEYLOG_SPIFFS_RESERVE), with the log rotating at its cap and the old 160 KB reserve, failed
+// 63 of 1202 uploads without this and the retry of rp_stage_write(), and 0 of 1209 with them.
+#define RP_STAGE_SLACK (8u * 1024u)
+#define RP_STAGE_GC_CALLS 30
+#define RP_STAGE_NO_ROOM_REASON "no room in SPIFFS for the rp image: download and clear the keylog, then upload again"
+#define RP_STAGE_NO_ROOM_TEXT "RP image upload failed: " RP_STAGE_NO_ROOM_REASON "\n"
+
+static bool rp_stage_make_room(size_t length)
+{
+    size_t need = length + length / 32 + RP_STAGE_SLACK;
+    struct stat info;
+
+    for (int pass = 0; pass < 2; pass++)
+    {
+        size_t total = 0;
+        size_t used = 0;
+
+        if (esp_spiffs_info(KEYLOG_PARTITION, &total, &used) == ESP_OK && total - used >= need &&
+            spiffs_collect(need, RP_STAGE_GC_CALLS))
+        {
+            return true;
+        }
+
+        if (pass == 0 && stat(RP_IMAGE_PATH, &info) == 0)
+        {
+            rp_image_drop("no room for the upload that replaces it");
+            continue;
+        }
+
+        ESP_LOGE(TAG, "no room for a %u byte RP image: %u of %u bytes free", (unsigned)length,
+                 (unsigned)(total - used), (unsigned)total);
+        return false;
+    }
+
+    return false;
+}
+
+// One piece of an RP image into rp.new at offset `at`, with `left` bytes of the image still to come
+// (this piece included). A refused write is cut back and tried again after a collection for the rest
+// of the image: a keylog writing meanwhile can use up the room collected at the start.
+static bool rp_stage_write(int fd, const uint8_t *data, size_t len, uint32_t at, uint32_t left)
+{
+    for (int attempt = 0; attempt < 3; attempt++)
+    {
+        if (attempt > 0)
+        {
+            ftruncate(fd, (off_t)at);
+            lseek(fd, (off_t)at, SEEK_SET);
+            spiffs_collect(left + RP_STAGE_SLACK, RP_STAGE_GC_CALLS);
+        }
+
+        if (write(fd, data, len) == (ssize_t)len)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 static void ota_fail(http_conn_t *conn, const char *reason)
@@ -4231,6 +4517,13 @@ static bool ota_parse_package_header(http_conn_t *conn)
         return false;
     }
 
+    // Here, before the esp half is written, so a full filesystem fails the package in a second.
+    if (ota_rp_len > 0 && !rp_stage_make_room(ota_rp_len))
+    {
+        ota_fail(conn, RP_STAGE_NO_ROOM_REASON);
+        return false;
+    }
+
     ota_is_package = true;
 
     ESP_LOGI(TAG, "package: esp %u bytes, rp %u bytes", (unsigned)ota_esp_len, (unsigned)ota_rp_len);
@@ -4240,6 +4533,13 @@ static bool ota_parse_package_header(http_conn_t *conn)
 
 static bool ota_open_rp_stage(http_conn_t *conn)
 {
+    // Again: the keylog may have written meanwhile. Quick when the room is still there.
+    if (!rp_stage_make_room(ota_rp_len))
+    {
+        ota_fail(conn, RP_STAGE_NO_ROOM_REASON);
+        return false;
+    }
+
     rp_upload_fd = open(RP_IMAGE_TMP_PATH, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (rp_upload_fd < 0)
     {
@@ -4287,6 +4587,7 @@ static bool ota_finish_esp_image(http_conn_t *conn)
     }
 
     ota_esp_validated = true;
+    ota_esp_sha = ota_sha8(incoming.app_elf_sha256);
 
     ESP_LOGW(TAG, "esp image validated, not committed yet");
 
@@ -4376,17 +4677,33 @@ static bool ota_commit_upload(http_conn_t *conn)
         return false;
     }
 
+    // The marker before the boot partition, bound and without the flag v7 and prev9 commit by: a
+    // reset in between boots this esp image again, which drops a marker bound to another one.
+    if (ota_rp_validated)
+    {
+        rp_commit_pending = true;
+        ota_nvs_set_rp_pending(ota_rp_len, ota_rp_crc, ota_esp_validated ? ota_esp_sha : 0, false);
+    }
+
     if (ota_esp_validated && esp_ota_set_boot_partition(ota_partition) != ESP_OK)
     {
+        // Its RP half was published above: without its esp half it must not be offered, so it
+        // goes while ota_reboot_pending still holds the offer back.
+        if (ota_rp_validated)
+        {
+            rp_image_drop("esp half not set to boot");
+        }
         ota_reboot_pending = false;
         ota_fail(conn, "could not set the boot partition");
         return false;
     }
 
-    if (ota_rp_validated)
+    // The flag an older esp firmware reads, once the new esp image is set to boot: a package that
+    // goes back to v7 or prev9 still applies its RP half, and a newer image clears the flag as soon
+    // as it boots on trial (ota_nvs_hide_legacy_rp_pending()).
+    if (ota_rp_validated && ota_esp_validated)
     {
-        rp_commit_pending = true;
-        ota_nvs_set_rp_pending(ota_rp_len, ota_rp_crc);
+        ota_nvs_set_rp_pending(ota_rp_len, ota_rp_crc, ota_esp_sha, true);
     }
 
     return true;
@@ -4540,7 +4857,7 @@ static void ota_consume(http_conn_t *conn, const uint8_t *data, size_t len)
         size_t want = ota_rp_len - ota_rp_got;
         size_t take = len < want ? len : want;
 
-        if (write(rp_upload_fd, data, take) != (int)take)
+        if (!rp_stage_write(rp_upload_fd, data, take, ota_rp_got, (uint32_t)want))
         {
             ota_fail(conn, "write to SPIFFS failed");
             return;
@@ -5645,6 +5962,15 @@ static bool rp_upload_begin(http_conn_t *conn, size_t length)
         return false;
     }
 
+    if (!rp_stage_make_room(length))
+    {
+        conn->state = HTTP_CONN_SEND;
+        conn->deadline_ms = http_now_ms() + HTTP_SEND_TIMEOUT_MS;
+        http_reply_text(conn, "507 Insufficient Storage", RP_STAGE_NO_ROOM_TEXT);
+
+        return false;
+    }
+
     rp_upload_fd = open(RP_IMAGE_TMP_PATH, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (rp_upload_fd < 0)
     {
@@ -5687,6 +6013,16 @@ static void rp_upload_finish(http_conn_t *conn)
         return;
     }
 
+    // The RP runs this build: published, it would look staged until the next poll removed it.
+    if (rp_report_seen && rp_reported_app_crc != 0 && rp_reported_app_crc == staged_crc)
+    {
+        unlink(RP_IMAGE_TMP_PATH);
+        conn->state = HTTP_CONN_SEND;
+        conn->deadline_ms = http_now_ms() + HTTP_SEND_TIMEOUT_MS;
+        http_reply_text(conn, "409 Conflict", "the RP already runs this image\n");
+        return;
+    }
+
     if (!ota_publish_staged_rp_image(staged_size, staged_crc))
     {
         rp_upload_fail(conn, "could not put the verified image in place");
@@ -5715,7 +6051,7 @@ static void rp_upload_consume(http_conn_t *conn, const uint8_t *data, size_t len
 
     if (len > 0)
     {
-        if (write(rp_upload_fd, data, len) != (int)len)
+        if (!rp_stage_write(rp_upload_fd, data, len, (uint32_t)conn->body_received, (uint32_t)remaining))
         {
             rp_upload_fail(conn, "write to SPIFFS failed");
             return;
@@ -5809,6 +6145,13 @@ static void http_dispatch(http_conn_t *conn, const char *body, size_t body_len)
     char path[HTTP_PATH_MAX] = {0};
 
     stats.http_requests++;
+
+    if (strncmp(conn->req, "POST ", 5) == 0)
+    {
+        rp_commit_hold_at = (uint32_t)bench_now_ms();
+        rp_commit_hold = true;
+    }
+
     app_validation_confirm();
 
     conn->state = HTTP_CONN_SEND;
@@ -5895,6 +6238,14 @@ static void http_dispatch(http_conn_t *conn, const char *body, size_t body_len)
             return;
         }
 
+        // This request could not confirm the running esp image (app_validation_confirm()): an
+        // upload on top of an image still on trial could leave no bootable image confirmed.
+        if (app_awaiting_validation)
+        {
+            http_reply_text(conn, "503 Service Unavailable", OTA_UNCONFIRMED_TEXT);
+            return;
+        }
+
         if (!http_content_length(conn->req, &length))
         {
             http_reply_text(conn, "411 Length Required", "Content-Length is required\n");
@@ -5941,6 +6292,8 @@ static void http_dispatch(http_conn_t *conn, const char *body, size_t body_len)
 
         conn->body_deadline_ms = http_now_ms() + HTTP_BODY_TOTAL_TIMEOUT_MS;
         conn->state = HTTP_CONN_BODY;
+        // From now: rp_upload_begin() may have spent seconds collecting room in SPIFFS.
+        conn->deadline_ms = http_now_ms() + HTTP_SEND_TIMEOUT_MS;
 
         if (http_expects_continue(conn->req))
         {
@@ -5950,6 +6303,11 @@ static void http_dispatch(http_conn_t *conn, const char *body, size_t body_len)
         }
 
         http_body_consume(conn, (const uint8_t *)body, body_len);
+
+        if (conn->state == HTTP_CONN_BODY)
+        {
+            conn->deadline_ms = http_now_ms() + HTTP_SEND_TIMEOUT_MS;
+        }
 
         return;
     }
@@ -6010,9 +6368,17 @@ static void http_dispatch(http_conn_t *conn, const char *body, size_t body_len)
     }
     else if (http_path_is(path, "/rpcommit"))
     {
-        if (!rp_image_ready)
+        if (app_awaiting_validation)
+        {
+            http_reply_text(conn, "503 Service Unavailable", OTA_UNCONFIRMED_TEXT);
+        }
+        else if (!rp_image_ready)
         {
             http_reply_text(conn, "409 Conflict", "no RP image staged, upload one to /rpimage first\n");
+        }
+        else if (rp_report_seen && rp_reported_app_crc != 0 && rp_reported_app_crc == rp_image_crc)
+        {
+            http_reply_text(conn, "409 Conflict", "the RP already runs this image\n");
         }
         else
         {
@@ -6124,6 +6490,13 @@ static void http_handle_body(http_conn_t *conn)
 
     conn->deadline_ms = http_now_ms() + HTTP_SEND_TIMEOUT_MS;
     http_body_consume(conn, (const uint8_t *)conn->req, (size_t)n);
+
+    // Again after it: a collection for an RP image (rp_stage_make_room(), rp_stage_write()) can hold
+    // the consume for seconds, and the idle deadline must not count them.
+    if (conn->state == HTTP_CONN_BODY)
+    {
+        conn->deadline_ms = http_now_ms() + HTTP_SEND_TIMEOUT_MS;
+    }
 }
 
 // Payload for the WiFi speed test, made up on the fly rather than stored: a plain linear
@@ -6443,11 +6816,20 @@ static void http_server_task(void *arg)
             rp_commit_completed = false;
             rp_commit_pending = false;
 
+            uint32_t done_crc = rp_image_crc;
+
             rp_image_invalidate();
             unlink(RP_IMAGE_PATH);
             ota_nvs_clear_rp_pending();
+            snprintf(rp_restore_note, sizeof(rp_restore_note), "the RP runs crc %08x: removed", (unsigned)done_crc);
 
             ESP_LOGW(TAG, "RP update confirmed by the RP itself, staged image removed");
+        }
+
+        if (rp_image_ready && rp_commit_asked && rp_commit_asked_crc == rp_image_crc &&
+            (uint32_t)((uint32_t)bench_now_ms() - rp_commit_asked_at) > RP_COMMIT_GIVE_UP_MS)
+        {
+            rp_image_drop("not applied by the RP within 5 minutes of its commit");
         }
 
         if (ota_reboot_pending)
@@ -6484,6 +6866,21 @@ void app_main(void)
 
     app_validation_init();
 
+    // NVS and the hide before any task: a crash in them on trial rolls back to the firmware that
+    // uploaded this one, and v7 or prev9 would commit the RP half by the flag the hide clears.
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    if (app_awaiting_validation)
+    {
+        ota_nvs_hide_legacy_rp_pending();
+    }
+
     xTaskCreate(spi_task, "spi_task", 4096, NULL, configMAX_PRIORITIES - 1, NULL);
     xTaskCreate(led_task, "led_task", 2048, NULL, tskIDLE_PRIORITY + 1, NULL);
 
@@ -6493,14 +6890,6 @@ void app_main(void)
     // before the HTTP task, which serves /keylog through the same mutex.
     keylog_mutex = xSemaphoreCreateMutex();
     xTaskCreate(keylog_task, "keylog", 4096, NULL, tskIDLE_PRIORITY + 1, NULL);
-
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
-    {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
 
     wifi_cfg_load();
 
