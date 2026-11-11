@@ -1,41 +1,38 @@
-# Permanent settings for the okhi project (ESP32-C2, 26 MHz crystal, 4 MB flash)
-# These values are applied whenever sdkconfig is regenerated, so they are not
-# lost again on ESP-IDF updates.
+# okhi's ESP32-C2 settings (26 MHz crystal, 4 MB flash). ESP-IDF applies them
+# whenever it regenerates sdkconfig, so an ESP-IDF update does not lose them.
 
-# Target
 CONFIG_IDF_TARGET="esp32c2"
 
-# Board crystal: 26 MHz (not the default 40 MHz)
+# The board has a 26 MHz crystal. ESP-IDF defaults to 40 MHz.
 CONFIG_XTAL_FREQ_26=y
 
-# 4 MB flash (the 'storage' partition lives at 0x2d0000 and runs to the end)
+# 4 MB flash: the 'storage' partition runs from 0x2d0000 to the end.
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
-# Custom partition table (includes 'storage' for SPIFFS)
+# Custom partition table, with the 'storage' partition for SPIFFS.
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
 
-# Minimum supported chip revision = v1.0, so a single binary runs on ALL
-# ESP32-C2 revisions (v1.0, v1.1, v1.2 and v2.0). This gives up the ~20 KB
-# SRAM / ~100 KB flash savings exclusive to v2.0, in exchange for full
-# compatibility with every ESP32-C2 in the field (advisory AR2025-001).
+# Minimum chip revision v1.0, so one binary runs on every ESP32-C2 revision
+# (v1.0, v1.1, v1.2 and v2.0). This gives up the ~20 KB of SRAM and ~100 KB of
+# flash that a v2.0-only build saves (Espressif advisory AR2025-001).
 CONFIG_ESP32C2_REV_MIN_1=y
 
-# The SPI slave ISR runs from IRAM so a transaction from the RP is served even
-# while the flash cache is disabled (SPIFFS reads, NVS writes). Its post_setup /
-# post_trans callbacks drive the SLAVEREADY handshake line with gpio_set_level,
-# so that function must live in IRAM too. Without this pair the handshake can
-# hang or crash exactly while the web page is being served.
+# The SPI slave ISR runs from IRAM, and so does gpio_set_level, which its
+# post_setup and post_trans callbacks call to drive ELOG_SLAVEREADY: the
+# handshake needs no flash fetch. The interrupt has no ESP_INTR_FLAG_IRAM, so
+# ESP-IDF masks it while a flash operation has the cache off (a SPIFFS read,
+# an NVS write) and runs it afterwards. The RP waits at most 2 ms for the line.
 CONFIG_SPI_SLAVE_ISR_IN_IRAM=y
 CONFIG_GPIO_CTRL_FUNC_IN_IRAM=y
 
-# 1 ms tick instead of 10 ms. Every vTaskDelay(1) and select() timeout in the
-# firmware is an order of magnitude tighter, which keeps the HTTP server and
-# lwIP timers responsive.
+# 1 ms tick instead of 10 ms. Every vTaskDelay(1) in the firmware waits at most
+# 1 ms, not 10, and select() timeouts get 1 ms steps, which keeps the HTTP
+# server and lwIP timers responsive.
 CONFIG_FREERTOS_HZ=1000
 
-# -O2 instead of -Og. The app partition has plenty of room and lwIP / the HTTP
-# server are compiled from source, so this is a direct win on page load time.
+# -O2 instead of -Og. The app partition has plenty of room, and lwIP and the
+# HTTP server are compiled from source, so -O2 makes the page load faster.
 CONFIG_COMPILER_OPTIMIZATION_PERF=y
 
 # 120 MHz, the maximum for the ESP32-C2.
@@ -44,15 +41,15 @@ CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_120=y
 # On the ESP32-C2 IRAM and DRAM are the same physical pool, so every byte of
 # code placed in IRAM is a byte taken away from the heap. These two options
 # move WiFi code into IRAM to raise sustained throughput, which this firmware
-# does not have: it serves one small gzipped page and then short text lines.
-# Turning them off gives roughly 30 KB of DIRAM back to the heap at no
-# practical cost. Measured min_free_heap was only 12 KB with them enabled.
+# does not need: it serves one small gzipped page and then short text lines.
+# Turning them off gives about 17 KB of DIRAM back to the heap, the size of that
+# WiFi code. Measured min_free_heap was only 12 KB with them enabled.
 CONFIG_ESP_WIFI_IRAM_OPT=n
 CONFIG_ESP_WIFI_RX_IRAM_OPT=n
 
 # OTA with automatic rollback. An app installed over the air boots in
-# "pending verify" state, and the bootloader reverts to the previous slot unless
-# the app calls esp_ota_mark_app_valid_cancel_rollback(). The firmware only does
-# that once it has served an HTTP request, which proves the whole chain works:
-# it boots, the radio comes up, stations associate and the server answers.
+# "pending verify" state, and the bootloader reverts to the previous slot at the
+# next reset unless the app has called esp_ota_mark_app_valid_cancel_rollback().
+# The firmware calls it on its first HTTP request (it booted, the radio came up,
+# a client reached the server) and restarts after 5 minutes without one.
 CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y

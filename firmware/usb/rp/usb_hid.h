@@ -37,10 +37,11 @@ WARNING: BULLSHIT CODE X-)
 // interface's HID report descriptor over EP0 when it enumerates it; core 1 follows those control
 // transfers on the wire, parses the descriptors into a map of where the modifier bits and the key
 // usages sit in each report, and from then on decodes every report of that device with it. Fields
-// on other usage pages (mouse axes and buttons, consumer and vendor controls) carry no key, so
-// mouse and media reports of a composite device are ignored instead of read as keys.
+// on other usage pages (mouse axes and buttons, consumer and vendor controls) carry no key, so the
+// mouse and media reports of a composite device are ignored. The one vendor report read for keys
+// is the DJ report of a Logitech receiver (hid_dj_keys()).
 //
-// What is forwarded is the device's whole key state, the union of all its keyboard reports, as
+// Core 1 forwards the device's whole key state, the union of all its keyboard reports, as
 //
 //     KB: 0x<addr> 0x<modifiers>[ 0x<usage>]...;
 //
@@ -48,8 +49,9 @@ WARNING: BULLSHIT CODE X-)
 // move between reports (okhi-kbd MULTI spreads its keys over report IDs 1 and 2 by usage order)
 // and because a second interface sends an empty report whenever the first one changes.
 //
-// A device whose configuration was not seen (the implant started after it enumerated) keeps the
-// raw path in print_packet(): 8-byte reports forwarded as the boot layout, longer ones flagged.
+// A device whose configuration was never seen (the implant started after it enumerated and had no
+// maps of it in flash) keeps the raw path in print_packet(): 8-byte reports go out raw for the
+// page to read as the boot layout, and longer ones are counted and flagged as wide (usb_bus.h).
 // Once its configuration is seen, only its HID interrupt endpoints can carry keys.
 
 #define HID_DEVICES 4
@@ -106,7 +108,7 @@ typedef struct
     uint8_t ids;    // its reports carry report IDs
     uint8_t parsed; // its report descriptor was parsed
     uint8_t boot;   // the PC selected the boot protocol (SET_PROTOCOL 0) on this boot interface
-    uint8_t tog;    // DATA PID of the last packet on its endpoint, 0 for none since its toggle reset
+    uint8_t tog;    // DATA PID of the last packet on its endpoint, 0 for none since a toggle reset
     uint8_t keep;   // the transfer in progress is being collected (it lost no packet)
     uint16_t sum;   // checksum of that last packet
     uint16_t got;   // bytes of the transfer in progress, lost packets counted, 0 between transfers
@@ -137,7 +139,7 @@ typedef struct
     uint8_t mod; // the union of every source
     uint8_t n;
     uint8_t keys[HID_KEYS];
-    uint8_t desc[18]; // its device descriptor, to know it again after a reset (hid_park())
+    uint8_t desc[18]; // its device descriptor, to know it again after a reset (hid_adopt())
     uint8_t desc_len;
     uint32_t stamp;
     hid_iface_t ifaces[HID_IFACES];
@@ -148,8 +150,9 @@ typedef struct
 
 static hid_device_t hid_devices[HID_DEVICES];
 static uint32_t hid_clock;
-// The maps changed since hid_store_save() last ran: a configuration or a report descriptor
-// parsed, a device that kept its maps at a new address, a configured device gone.
+// Set when the maps change (a configuration or a report descriptor parsed, a device that kept its
+// maps at a new address, a configured device gone); hid_store_tick() in okhi.c turns it into a
+// flash write.
 static bool hid_store_dirty;
 
 // Core 1 runs all of this on a 2 KB stack (__StackOneBottom to __StackOneTop), so the big
@@ -225,7 +228,7 @@ static hid_device_t *hid_find(uint8_t addr)
     return NULL;
 }
 
-// A free slot, or the one used least recently.
+// The device at addr, else a free slot, else the one used least recently, released first.
 static hid_device_t *hid_take(uint8_t addr)
 {
     hid_device_t *d = hid_find(addr);
@@ -311,10 +314,11 @@ static void hid_restart(hid_iface_t *f, uint8_t addr)
 
 // A configured device lost its address: a bus reset, or that address given to the device being
 // enumerated. A PC often brings the same device back without reading its report descriptors again
-// (Windows reselects the configuration after a port reset, ckb-next resets the port with the HID
-// driver detached, os_resetusb()), so its maps wait under an address no device has, bit 7 set, until a device
-// gives the same device descriptor (hid_adopt()) or its old address carries interrupt traffic on
-// one of its endpoints again (usb_hid_in()).
+// (Windows reselects the configuration after a port reset, ckb-next's os_resetusb() resets the
+// port with the HID driver detached), so its maps wait under an address no device has, bit 7 set.
+// They come back with a device that gives the same device descriptor (hid_adopt()), with a
+// configuration read at the old address (hid_ctrl_finish()), or with a packet on one of its
+// endpoints at the old address that its maps could have made (usb_hid_in(), hid_unpark_fits()).
 static void hid_park(hid_device_t *d)
 {
     if (d->n || d->mod)
@@ -336,8 +340,8 @@ static void hid_park(hid_device_t *d)
 
 // A device that is not configured yet gave its whole device descriptor: if a parked device had the
 // same 18 bytes, it is that device and takes its maps. A configuration read afterwards keeps them
-// for the interfaces whose number and endpoint did not move, and a report descriptor read replaces
-// them.
+// for the interfaces whose number, endpoint and report descriptor length did not change, and a
+// report descriptor read replaces them.
 static void hid_adopt(hid_device_t *d)
 {
     for (int i = 0; d->desc_len == 18 && !d->configured && i < HID_DEVICES; i++)
@@ -409,7 +413,7 @@ static void hid_drop_iface(hid_device_t *d, uint8_t idx)
     hid_drop_sources(d, idx);
 }
 
-// ---- configuration descriptor -----------------------------------------------------------
+// Configuration descriptor
 
 static void hid_parse_config(hid_device_t *d, const uint8_t *buf, int len)
 {
@@ -471,8 +475,8 @@ static void hid_parse_config(hid_device_t *d, const uint8_t *buf, int len)
         i += bl;
     }
 
-    // The HID interfaces, then the others that have an interrupt IN endpoint: their packets are
-    // then known to carry no key. An interface with neither matters to nothing here.
+    // The HID interfaces, then the others with an interrupt IN endpoint, so that their packets
+    // are known to carry no key (at most HID_IFACES). An interface with neither is left out.
     for (int pass = 0; pass < 2; pass++)
     {
         for (int k = 0; k < n_all && n < HID_IFACES; k++)
@@ -484,9 +488,9 @@ static void hid_parse_config(hid_device_t *d, const uint8_t *buf, int len)
         }
     }
 
-    // Keep what was parsed for an interface whose number, endpoint and report descriptor length did
-    // not change (the PC reads the configuration again), and drop the rest. Reports then point at the
-    // interface's new index.
+    // Keep what was parsed for an interface whose number, endpoint and report descriptor length
+    // did not change (the PC reads the configuration again), and drop the rest. Reports then point
+    // at the interface's new index.
     int8_t moved[HID_IFACES];
 
     for (int j = 0; j < d->n_ifaces; j++)
@@ -546,7 +550,7 @@ static void hid_parse_config(hid_device_t *d, const uint8_t *buf, int len)
     hid_store_dirty = true;
 }
 
-// ---- HID report descriptor --------------------------------------------------------------
+// HID report descriptor
 
 static uint32_t hid_item_value(const uint8_t *p, int size)
 {
@@ -617,8 +621,8 @@ static hid_report_t *hid_report_for(hid_device_t *d, uint8_t iface, uint8_t id, 
 }
 
 // A new field joins its report, and the fields of one report stay contiguous in the pool: a
-// report's first field goes at the end, a later one right after its others, moving down the fields
-// of the reports that follow (two input items of one ID split by an item of another ID).
+// report's first field goes at the end, a later one right after its others, and the fields of the
+// reports that follow move up one place (two input items of one ID split by one of another ID).
 static void hid_add_field(hid_device_t *d, hid_report_t *rep, const hid_field_t *f)
 {
     if (d->n_fields >= HID_FIELDS)
@@ -838,10 +842,10 @@ static void hid_parse_report(hid_device_t *d, uint8_t idx, const uint8_t *p, int
 
         if (tag == 8)
         {
-            // A usage of one or two bytes takes the usage page in effect at the main item (HID 1.11
-            // 6.2.2.8, what Windows does), so a page declared after its usages applies to them. Like
-            // Linux, walk back from the last usage and stop at one that has that page already, so a
-            // page changed between two usages still holds for the ones after it.
+            // A usage of one or two bytes takes the usage page in effect at the main item (HID
+            // 1.11 6.2.2.8, what Windows does), so a page declared after its usages applies to
+            // them. Like Linux, walk back from the last usage and stop at the first one that
+            // already has that page: the usages before it keep the page they were declared with.
             uint32_t page = (g.page & 0xffff) << 16;
 
             if (have_min)
@@ -889,9 +893,9 @@ static void hid_parse_report(hid_device_t *d, uint8_t idx, const uint8_t *p, int
             int32_t lmax = (g.lmin >= 0 && g.lmax < 0) ? (int32_t)g.lmax_raw : g.lmax;
             hid_report_t *rep = off ? hid_report_for(d, idx, (uint8_t)g.id, true) : NULL;
 
-            // A 1-bit array with logical values 0 and 1 can only ever select its second usage: Topre,
-            // Mistel, Redragon and SiGma keyboards mean a bitmap by it (Linux patches each one's
-            // descriptor to say so), so it is read as one.
+            // A 1-bit array of several slots with logical values 0 and 1 can only ever select its
+            // first two usages: Topre, Mistel, Redragon and SiGma keyboards mean a bitmap by it
+            // (Linux patches each one's descriptor to say so), so it is read as one.
             bool bitmap = g.size == 1 && (variable || (g.lmin == 0 && lmax == 1 && g.count > 1));
 
             if (rep && !constant && bits && off->bits + bits <= HID_REPORT_MAX * 8)
@@ -915,12 +919,12 @@ static void hid_parse_report(hid_device_t *d, uint8_t idx, const uint8_t *p, int
                 }
                 else if (!variable && g.size >= 1 && g.size <= 16 && g.count <= 255)
                 {
-                    // Array: logical value Logical Minimum + k selects the k-th usage, one field per
-                    // run. A value past the last usage selects nothing, as in Linux. A keyboard array
-                    // whose Logical Maximum stops short of its usages (Ortek keyboards, a Skycable
-                    // wireless presenter and an Aureal keyboard declare 1 for usages up to 0x65 or
-                    // 0x92; Linux rewrites each one's descriptor by VID:PID) is read up to its last
-                    // usage.
+                    // Array: logical value Logical Minimum + k selects the k-th usage, one field
+                    // per run. A value past the last usage selects nothing, as in Linux. A keyboard
+                    // array whose Logical Maximum stops short of its usages is read up to its last
+                    // usage: Ortek keyboards, a Skycable wireless presenter and an Aureal remote
+                    // control declare 1, which Linux rewrites by VID:PID (0x92 on the Ortek, 0x65
+                    // on the others).
                     int64_t at = g.lmin;
                     int64_t last = g.lmin - 1;
                     bool ranges = hid_n_segs > 0;
@@ -1003,7 +1007,7 @@ static void hid_parse_report(hid_device_t *d, uint8_t idx, const uint8_t *p, int
     hid_store_dirty = true;
 }
 
-// ---- control transfers on EP0 -----------------------------------------------------------
+// Control transfers on EP0
 
 static hid_ctrl_t *hid_ctrl_of(uint8_t addr)
 {
@@ -1029,7 +1033,7 @@ static void hid_ctrl_finish(hid_ctrl_t *c)
 
     int len = c->len;
     const uint8_t *b = c->buf;
-    bool cut = len >= HID_DESC_MAX; // longer than the buffer: what fit is parsed
+    bool cut = len >= HID_DESC_MAX; // the buffer is full: what fit is parsed
 
     if (c->type == 1 && len >= 8)
     {
@@ -1138,9 +1142,9 @@ static void usb_hid_setup(uint8_t addr, const uint8_t *s)
     }
     else if (type == 0x00 && req == 5)
     {
-        // SET_ADDRESS: whatever had the new address before leaves it (a configured device is parked:
-        // it may be this one coming back), and the device takes it with what is known of it (the
-        // EP0 size its descriptor gave at the default address).
+        // SET_ADDRESS: whatever had the new address leaves it (a configured device is parked: it
+        // may be this one coming back), and the device takes it with what is known of it (the EP0
+        // size its descriptor gave at the default address).
         uint8_t to = value & 0x7f;
         hid_device_t *d;
 
@@ -1181,7 +1185,7 @@ static void usb_hid_setup(uint8_t addr, const uint8_t *s)
     }
     else if ((type == 0x01 && req == 11) || (type == 0x02 && req == 1 && value == 0 && (index & 0x80)))
     {
-        // SET_INTERFACE, or CLEAR_FEATURE(ENDPOINT_HALT) on an IN endpoint: it starts over at DATA0.
+        // SET_INTERFACE, or CLEAR_FEATURE(ENDPOINT_HALT) on an IN endpoint: back to DATA0.
         hid_device_t *d = hid_find(addr);
         hid_iface_t *f = !d             ? NULL
                          : type == 0x01 ? hid_iface_by_number(d, (uint8_t)index)
@@ -1200,8 +1204,8 @@ static void usb_hid_setup(uint8_t addr, const uint8_t *s)
 
         if (f && f->subclass == 1)
         {
-            // The report length changes with the protocol, the toggle goes on. The keys the
-            // reports of the other protocol held are let go.
+            // The report length changes with the protocol but the toggle goes on. The keys held
+            // by the other protocol's reports are let go.
             f->boot = value == 0;
             f->got = 0;
             f->keep = 0;
@@ -1235,8 +1239,8 @@ static void hid_ctrl_data(uint8_t addr, uint8_t pid, const uint8_t *data, int n)
     memcpy(&c->buf[c->len], data, take);
     c->len += take;
 
-    // The data stage ends at wLength, at a packet shorter than EP0's, or at the length the
-    // descriptor itself declares.
+    // The data stage ends at wLength, at a packet shorter than EP0's, at the length the descriptor
+    // itself declares, or when the buffer is full.
     hid_device_t *d = hid_find(addr);
     int maxp0 = d && d->maxp0 ? d->maxp0 : 0;
     bool done = c->len >= c->want || n == 0 || (maxp0 && n < maxp0) || c->len >= HID_DESC_MAX;
@@ -1265,7 +1269,7 @@ static void hid_ctrl_data(uint8_t addr, uint8_t pid, const uint8_t *data, int n)
     }
 }
 
-// ---- reports ----------------------------------------------------------------------------
+// Reports
 
 static uint32_t hid_bits(const uint8_t *p, int n, uint32_t bit, uint32_t size)
 {
@@ -1313,7 +1317,7 @@ static void hid_add_key(hid_source_t *s, uint32_t usage, bool *phantom)
     }
 }
 
-// The keys of one report, by its fields. Returns false for a phantom state, to be ignored.
+// The keys of one report, by its fields. Returns false for a phantom state (hid_add_key()).
 static bool hid_decode(const hid_device_t *d, const hid_report_t *rep, const uint8_t *p, int n, hid_source_t *s)
 {
     bool phantom = false;
@@ -1377,12 +1381,12 @@ static bool hid_decode_boot(const uint8_t *p, int n, hid_source_t *s)
     return !phantom;
 }
 
-// A Logitech receiver that Linux's hid-logitech-dj switched to DJ mode sends the keys of each paired
-// keyboard in the DJ short report: ID 0x20, 14 bytes on a vendor page, holding the device index, the
-// report type (1 for a keyboard), then the modifiers and six keys, with no reserved byte between
+// A Logitech receiver that Linux's hid-logitech-dj switched to DJ mode sends the keys of each
+// paired keyboard in the DJ short report: ID 0x20 and 14 bytes on a vendor page: the device index,
+// the report type (1 for a keyboard), then the modifiers and six keys with no reserved byte between
 // them. Windows leaves the receiver on its boot keyboard interface. A Unifying receiver (046d:c52b)
-// with a K400 Plus on a Linux PC, 2026-11-09: 48 key states in these reports on EP 0x83, none on the
-// boot interface.
+// with a K400 Plus on a Linux PC, 2026-11-09: 48 key states in these reports on EP 0x83, none on
+// the boot interface.
 static bool hid_dj_keys(const hid_device_t *d, const hid_report_t *rep, const uint8_t *p, int n)
 {
     return d->desc_len >= 10 && (d->desc[8] | d->desc[9] << 8) == 0x046D && rep->id == 0x20 &&
@@ -1446,7 +1450,7 @@ static void hid_ship(const hid_device_t *d)
     usb_report_dispatch(frame);
 }
 
-// Ship the device's key state when it changed: keys still held keep their place, new ones follow.
+// Ship the device's key state if it changed: keys still held keep their place and new ones follow.
 static void hid_union(hid_device_t *d)
 {
     uint8_t keys[HID_KEYS], mod = 0;
@@ -1492,11 +1496,12 @@ static void hid_union(hid_device_t *d)
     hid_ship(d);
 }
 
-// Whether a report of an interface is the 8-byte boot layout. Under the boot protocol it is, unless
-// its length (and ID) make it one of the reports the descriptor declares: a HyperX Alloy FPS keeps
-// sending its 16-byte report 9 there, on an interface that says it is a boot mouse. Under the report
-// protocol, 8 bytes from a boot keyboard that are none of the declared reports are the boot layout
-// too: a Logitech Bolt receiver switched every interface on a SET_PROTOCOL sent to its mouse.
+// Whether a report of an interface is the 8-byte boot layout. Under the boot protocol an 8-byte one
+// is, and so is any other unless its length (and ID) make it one of the reports the descriptor
+// declares: a HyperX Alloy FPS keeps sending its 16-byte report 9 there, on an interface that says
+// it is a boot mouse. Under the report protocol, 8 bytes from a boot keyboard that are none of the
+// declared reports are the boot layout too: a Logitech Bolt receiver switched every interface on a
+// SET_PROTOCOL sent to its mouse.
 static bool hid_boot_layout(hid_device_t *d, hid_iface_t *f, const uint8_t *p, int n)
 {
     uint8_t idx = (uint8_t)(f - d->ifaces);
@@ -1526,7 +1531,7 @@ static void hid_report(hid_device_t *d, hid_iface_t *f, const uint8_t *p, int n)
 
     if (hid_boot_layout(d, f, p, n))
     {
-        // The boot protocol: the fixed keyboard layout, or a boot mouse, which carries no key.
+        // The boot layout: a boot keyboard's 8 bytes. It carries no key on any other interface.
         if (f->protocol != 1)
         {
             return;
@@ -1610,8 +1615,8 @@ static void hid_interrupt(hid_device_t *d, hid_iface_t *f, uint8_t addr, uint8_t
     uint16_t rlen = f->boot ? 8 : f->rlen;
 
     // The DATA0/DATA1 toggle alternates on every packet the PC acknowledges. The same toggle with
-    // the same bytes is a resend (the device missed the ACK); with other bytes, the packet between
-    // the two went unseen.
+    // the same 16-bit hash of the bytes (hid_sum()) is a resend (the device missed the ACK); with
+    // another hash, the packet between the two went unseen.
     if (pid == f->tog && sum == f->sum)
     {
         return;
@@ -1636,7 +1641,7 @@ static void hid_interrupt(hid_device_t *d, hid_iface_t *f, uint8_t addr, uint8_t
     }
     else if (lost && rlen > f->maxp && !f->ids)
     {
-        // Every transfer here is the one long report: the unseen packet began one, this continues it.
+        // Each transfer here is the one long report, begun by the unseen packet: this continues it.
         f->got = f->maxp;
         f->keep = 0;
     }
@@ -1693,9 +1698,10 @@ static void hid_interrupt(hid_device_t *d, hid_iface_t *f, uint8_t addr, uint8_t
     hid_report(d, f, data, n);
 }
 
-// A packet the parked maps could have made: a declared report with its ID byte, the first packet
-// of a longer one, or the boot layout of a boot keyboard. Another device that took the address while
-// the RP did not see its enumeration (a restart, maps from flash) sends something else first.
+// A packet the parked maps could have made: a declared report, the first packet of a longer one,
+// the boot layout of a boot keyboard, or anything on an interface that is not HID or has no parsed
+// report descriptor. Another device that took the address while the RP did not see its enumeration
+// (a restart, maps from flash) sends something else first.
 static bool hid_unpark_fits(hid_device_t *d, hid_iface_t *f, const uint8_t *p, int n)
 {
     if (!f->hid || !f->parsed)
@@ -1728,7 +1734,7 @@ static bool usb_hid_in(uint8_t addr, uint8_t ep, uint8_t pid, const uint8_t *dat
     {
         // Interrupt traffic at the address of a parked device, on one of its endpoints: the PC put
         // it back there without reading a descriptor (SET_ADDRESS and SET_CONFIGURATION alone
-        // after a port reset), or the reset was not one.
+        // after a port reset), the RP restarted under it, or what looked like a reset was not one.
         hid_device_t *p = hid_find(addr | 0x80);
         hid_iface_t *pf = p ? hid_iface_by_ep(p, ep) : NULL;
 
@@ -1805,19 +1811,21 @@ static void usb_hid_bus_reset(void)
     }
 }
 
-// ---- the maps kept across a restart -----------------------------------------------------
+// The maps kept across a restart
 //
 // An OTA commit or a watchdog reset restarts the RP under devices that stay configured: the PC
 // reads no descriptor again, so without their maps a wider format is lost until the device is
 // plugged in again, and a composite receiver's mouse reports go down the raw path, where a move
 // can pass for keys. okhi.c writes what hid_store_save() builds to a ring of flash sectors, each
 // write to the next sector with the next sequence number, and hands the valid record with the
-// highest one to hid_store_load() at boot, which parks each device at its old address: its
-// interrupt traffic there (usb_hid_in()) or its device descriptor at an enumeration (hid_adopt())
-// brings it back, as after a bus reset. Only the maps are kept, never a key state.
+// highest one to hid_store_load() at boot, which parks each device at its old address. Its
+// interrupt traffic there (usb_hid_in()), a configuration read there (hid_ctrl_finish()) or its
+// device descriptor at an enumeration (hid_adopt()) brings it back, as after a bus reset. Only
+// the maps are kept, never a key state.
 //
-// Bump HID_STORE_VERSION whenever a stored field changes meaning; a change of size changes the
-// layout word on its own. A record of another layout is not loaded.
+// Bump HID_STORE_VERSION whenever a stored field changes meaning or hid_store_dev_t changes: the
+// layout word follows on its own only the sizes of hid_iface_t, hid_report_t and hid_field_t. A
+// record of another layout is not loaded.
 
 #define HID_STORE_MAGIC 0x3150414du // "MAP1"
 #define HID_STORE_VERSION 2u
@@ -1863,7 +1871,6 @@ static uint32_t hid_store_crc_add(uint32_t crc, const uint8_t *p, int n)
     return crc;
 }
 
-// The CRC-32 of a record: its header with the crc field as 0, then its body.
 static uint32_t hid_store_crc(const hid_store_head_t *head, const uint8_t *body)
 {
     hid_store_head_t h = *head;

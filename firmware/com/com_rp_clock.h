@@ -40,17 +40,19 @@ WARNING: BULLSHIT CODE X-)
 #include <stdio.h>
 #include <string.h>
 
-// Crystal calibration, the web's two clock menus. The implant leaves capture and turns its two
-// sniff pins into a clock tool, the console firmwares stuff/clock and stuff/pico_clock_calc:
+// Crystal calibration, the page's Clock output and Frequency meter. The implant leaves capture and
+// turns its two sniff pins into a clock tool, the console firmwares stuff/clock and
+// stuff/pico_clock_calc:
 //
 //   CLOCK_MODE_OUT    GPIO21 carries the crystal (XOSC through GPOUT0, divisor 1): on a board with
 //                     the 12 MHz TCXO, a clean reference. GPIO20 stays high impedance.
 //   CLOCK_MODE_METER  GPIO21 counts rising edges (PWM slice 2, channel B) over a gate timed by the
 //                     crystal: on a TCXO board, it calibrates another board's crystal fed to GPIO21.
 //                     Only when asked (CLOCK_OPT_REF), GPIO20 drives 12 MHz from the same crystal
-//                     (clk_sys / 10), so bridging GPIO20 to GPIO21 must read the target exactly: the
-//                     meter checking itself. Otherwise GPIO20 stays high impedance, never driving
-//                     against whatever is wired to it.
+//                     (clk_sys / 10), so GPIO20 bridged to GPIO21 must read exactly 12 MHz, with
+//                     0.00 ppm against the default 12 MHz target: the meter checking itself.
+//                     Otherwise GPIO20 stays high impedance, never driving against whatever is
+//                     wired to it.
 //
 // A mode is entered and left by rebooting, so capture never runs alongside it and every mode starts
 // from a clean chip. It lives in RAM the boot leaves alone: a reboot keeps it, a power cut always
@@ -230,8 +232,9 @@ static void __isr clock_wrap_isr(void)
 // The edge count at the instant the microsecond timer ticks, and that tick. A gate between two
 // snapshots is a whole number of crystal microseconds with no rounding, and both ends take the
 // same path, so the few cycles from tick to counter read cancel out: what is left is one edge of
-// quantization (0.017 ppm on 12 MHz over 5 s). Timing the gate with time_us_64() reads, as the
-// console tool did, rounded each end to the microsecond: +-0.2 ppm of noise at 5 s, 1 ppm at 1 s.
+// quantization (0.017 ppm on 12 MHz over 5 s). Timing the gate with a time read at each end, as
+// stuff/pico_clock_calc does, rounds each end to the microsecond: +-0.2 ppm of noise at 5 s, 1 ppm
+// at 1 s.
 static uint32_t __not_in_flash_func(clock_snapshot)(uint64_t *edges)
 {
     uint32_t irq = save_and_disable_interrupts();
@@ -257,8 +260,8 @@ static uint32_t __not_in_flash_func(clock_snapshot)(uint64_t *edges)
 }
 
 // The snapshot on tick `when` exactly, so a gate lasts exactly the gate time the user asked for.
-// Called a few milliseconds early; if the loop was held up past `when`, the gate is just longer and
-// the frequency still divides by its true length.
+// Called CLOCK_GATE_LEAD_US (5 ms) early; if the loop was held up past `when`, the gate is just
+// longer and the frequency still divides by its true length.
 static uint32_t __not_in_flash_func(clock_snapshot_at)(uint32_t when, uint64_t *edges)
 {
     while ((int32_t)(timer_hw->timerawl - (when - 1)) < 0)
@@ -388,8 +391,8 @@ static void clock_mode_run(void)
 
         uint64_t now = time_us_64();
 
-        // The web is the only way out of a mode. Without the ESP for a minute nothing can stop it,
-        // so go back to capture rather than leave the implant stranded.
+        // Only the web page or a power cut ends a mode. Without the ESP for a minute the page
+        // cannot, so go back to capture rather than leave the implant stranded.
         if (esp_link_up)
         {
             link_seen = now;

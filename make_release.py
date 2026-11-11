@@ -2,10 +2,9 @@
 """
 okhi release builder - by Dreg
 
-Builds every firmware target and packages a release. Replaces make_release.ps1,
-which only packaged and only ran on Windows. Pure standard library, no pip
-installs. Written for Windows, Linux and macOS; run on Windows 11 and Ubuntu
-26.04, never on macOS.
+Builds every firmware target and packages a release. Pure standard library, no
+pip installs. Written for Windows, Linux and macOS, and run on Windows 11 and
+Ubuntu 26.04, never on macOS.
 
     python make_release.py                 build everything, then package
     python make_release.py --no-build      package what is already built
@@ -54,7 +53,7 @@ errors = []
 warnings = []
 
 
-# ---------------------------------------------------------------- reporting
+# Reporting
 
 def ok(msg):
     print("[OK] %s" % msg)
@@ -74,7 +73,7 @@ def step(msg):
     print("\n=== %s ===" % msg)
 
 
-# ---------------------------------------------------------------- crc32
+# CRC-32
 # The device checks the package with the standard CRC-32 (the zlib one). The
 # known answer test below runs before anything is written, because a mismatch
 # here only shows up once the package is already on the implant.
@@ -90,10 +89,10 @@ def assert_crc32():
     ok("crc32 self test")
 
 
-# ---------------------------------------------------------------- toolchains
+# Toolchains
 
 def find_idf():
-    """Locate an ESP-IDF install. Returns a dict or None."""
+    """The ESP-IDF install as a dict (path, python, tools, profile), or None."""
     env_path = os.environ.get("OKHI_IDF_PATH") or os.environ.get("IDF_PATH")
     env_python = os.environ.get("OKHI_IDF_PYTHON")
     env_tools = os.environ.get("OKHI_IDF_TOOLS_PATH") or os.environ.get("IDF_TOOLS_PATH")
@@ -101,11 +100,10 @@ def find_idf():
 
     idf = {"path": env_path, "python": env_python, "tools": env_tools, "profile": env_profile}
 
-    # Windows EIM installs describe themselves in a json file, which is the most
-    # reliable source when several IDF versions are present. Consulted even when
-    # IDF_PATH is already set, because the interesting parts are the virtualenv
-    # python and the activation profile, and an inherited IDF_PATH on its own says
-    # nothing about either.
+    # Windows EIM installs describe themselves in a json file, the most reliable
+    # source when several IDF versions are present. It is read even when IDF_PATH
+    # is set: an inherited IDF_PATH says nothing about the virtualenv python or the
+    # activation profile.
     if IS_WINDOWS:
         for candidate in (Path("C:/Espressif/tools/eim_idf.json"),
                           Path.home() / ".espressif" / "eim_idf.json"):
@@ -148,9 +146,9 @@ def find_pico_tool(name, env_var):
     roots = [Path.home() / ".pico-sdk" / name]
     for root in roots:
         if root.is_dir():
-            # Newest version directory wins. Only an executable file: without the .exe the pattern
-            # also matches folders named cmake, such as share/cmake-4.3/Help/manual/cmake in the
-            # extension's cmake on Linux.
+            # The version directory last in name order wins (v4.9 would beat v4.10). Only an
+            # executable file: without the .exe the pattern also matches folders named cmake,
+            # such as share/cmake-4.3/Help/manual/cmake in the extension's cmake on Linux.
             hits = sorted((h for h in glob.glob(str(root / "*" / "**" / exe), recursive=True)
                            if os.path.isfile(h) and os.access(h, os.X_OK)), reverse=True)
             if hits:
@@ -174,7 +172,7 @@ def describe_toolchains(idf, cmake, ninja):
     print("     ninja      %s" % (ninja or "NOT FOUND"))
 
 
-# ---------------------------------------------------------------- cleaning
+# Cleaning
 
 def rm(path, what):
     """Delete a file or a directory tree, reporting only if it was there."""
@@ -195,13 +193,12 @@ def rm(path, what):
 
 def clean(targets, deep):
     """
-    Normal clean drops every build/ tree, which is enough for almost everything.
+    A normal clean drops the build/ tree of each target, which is enough for almost everything.
 
-    Deep clean also drops the ESP sdkconfig, dependencies.lock and
-    managed_components/. That matters because idf.py fullclean empties build/ but
-    KEEPS sdkconfig, and a stale sdkconfig is exactly what has caused breakage
-    here before: it is regenerated from sdkconfig.defaults, which is the real
-    source of truth and stays put. sdkconfig.defaults, sdkconfig.ci* and
+    A deep clean also drops the ESP sdkconfig, sdkconfig.old, dependencies.lock and
+    managed_components/. idf.py fullclean empties build/ but keeps sdkconfig, and a stale
+    sdkconfig has broken builds here. Once it is gone, idf.py regenerates it from
+    sdkconfig.defaults, the source of truth. sdkconfig.defaults, sdkconfig.ci* and
     partitions.csv are never touched.
 
     A deep clean means both ESP targets compile from scratch, several minutes each.
@@ -221,7 +218,7 @@ def clean(targets, deep):
     ok("clean done, %d target(s)" % len(targets))
 
 
-# ---------------------------------------------------------------- building
+# Building
 
 def run(cmd, cwd=None, env=None, shell=False):
     """Run a command, streaming nothing, returning (rc, output)."""
@@ -235,13 +232,10 @@ def run(cmd, cwd=None, env=None, shell=False):
 
 def build_esp(variant, idf, no_ccache):
     """
-    Build one ESP target.
-
     On Windows idf.py has to run under PowerShell with the EIM activation
     profile dot-sourced: it refuses to run under MSys/Git Bash, and the profile
-    is what puts the toolchain, ninja and the IDF python on PATH. On Unix the
-    equivalent is sourcing export.sh in a shell. Either way the actual build
-    command is the same idf.py invocation.
+    puts the toolchain, ninja and the IDF python on PATH. On Unix a shell sources
+    export.sh instead. Either way the build command is the same idf.py invocation.
     """
     project = REPO / "firmware" / variant / "esp"
     if not (project / "CMakeLists.txt").is_file():
@@ -285,8 +279,8 @@ def build_esp(variant, idf, no_ccache):
         rc, out = run(["bash", "-lc", sh], env=env)
 
     warnings_seen = out.count("warning:")
-    # idf.py prints this after every successful build, a no-op one included; an exit
-    # code of 0 alone has already been seen with nothing built
+    # idf.py prints this after every successful build, a no-op one too. Exit code 0
+    # alone is not enough: idf.py has returned 0 with nothing built.
     built = "Project build complete" in out and (project / "build" / "okhi.bin").is_file()
     if rc != 0 or not built:
         for line in out.splitlines():
@@ -304,8 +298,8 @@ def build_esp(variant, idf, no_ccache):
     return True
 
 
-# Every Pico project defaults to this in its CMakeLists.txt (-O2), but a build/ the
-# extension was switched to Debug keeps Debug in its cache: a release reconfigures it.
+# Every Pico project's CMakeLists.txt defaults to this build type (-O2), but a build/ that
+# the extension switched to Debug keeps Debug in its cache, so a release reconfigures it.
 RP_BUILD_TYPE = "RelWithDebInfo"
 
 
@@ -358,7 +352,7 @@ def build_rp(target, cmake, ninja):
 
     # The Pico VS Code extension asks cmake for its file API through this query
     # file. A command line configure never creates it, and wiping build/ loses
-    # it, which quietly breaks IntelliSense and the extension's target list.
+    # it, which silently breaks IntelliSense and the extension's target list.
     qdir = build / ".cmake" / "api" / "v1" / "query" / "client-vscode"
     qdir.mkdir(parents=True, exist_ok=True)
     (qdir / "query.json").write_text(
@@ -370,11 +364,11 @@ def build_rp(target, cmake, ninja):
 
 def run_webgen(variant):
     """
-    Regenerate the embedded web page for one ESP variant, before that ESP is
-    built. The page is linked into the application, so it only reaches the device
-    when the ESP is rebuilt: webgen has to run first or the release ships the old
-    page while nothing warns. webgen.js also lints the page and exits non-zero on a
-    parse error, so a failure here must stop the build rather than embed a stale gz.
+    Regenerate the embedded web page of one ESP variant before that ESP is built.
+    The page is linked into the application, so it reaches the device only with an
+    ESP rebuild: without webgen first, the release ships the old page and nothing
+    warns. webgen.js also lints the page and exits non-zero on a parse error, and
+    that failure must stop the build, or a stale gz gets embedded.
     """
     folder = REPO / ("webusb" if variant == "usb" else "webps2")
     script = folder / "webgen.js"
@@ -414,7 +408,7 @@ def build_all(targets, idf, cmake, ninja, no_ccache):
     return good
 
 
-# ---------------------------------------------------------------- packaging
+# Packaging
 
 def sha256(path):
     h = hashlib.sha256()
@@ -444,8 +438,8 @@ def copy_verified(src, dst, label=None):
 def check_embedded_page(variant, esp_bytes, ignore_stale):
     """
     The page is linked into the ESP application, so only a rebuild moves it. If
-    the gz in main/ is not inside okhi.bin the release carries a page nobody will
-    ever see and the implant keeps serving the previous one.
+    the gz in main/ is not inside okhi.bin, nobody ever sees that page: the implant
+    keeps serving the one linked into the previous build.
     """
     page_path = REPO / "firmware" / variant / "esp" / "main" / "index.html.gz"
     if not page_path.is_file():
@@ -493,8 +487,8 @@ def make_package(esp_image, rp_image, variant, output, ignore_stale):
         f.write(esp)
         f.write(rp)
 
-    # Read it back and take it apart the way the device will, so a package that
-    # cannot be parsed never leaves this machine.
+    # Read it back and check its size, the magic, the length and CRC fields and both
+    # payload CRCs before the package leaves this machine.
     check = Path(output).read_bytes()
     total = 32 + len(esp) + len(rp)
     if len(check) != total:
@@ -515,8 +509,9 @@ def make_package(esp_image, rp_image, variant, output, ignore_stale):
 
 
 def fnv1a64(s):
-    """FNV-1a 64-bit over the UTF-8 bytes. Byte for byte identical to the releaseFingerprint()
-    in webusb/webps2 index.html, so the fingerprint the page shows and the one written here match."""
+    """FNV-1a 64-bit over the UTF-8 bytes. For ASCII text it gives the same value as the
+    releaseFingerprint() in webusb/ and webps2/ index.html, which hashes the low byte of each
+    character, so the fingerprint the page shows and the one written here match."""
     h = 0xCBF29CE484222325
     for b in s.encode("utf-8"):
         h = ((h ^ b) * 0x100000001B3) & 0xFFFFFFFFFFFFFFFF
@@ -526,8 +521,9 @@ def fnv1a64(s):
 def variant_identities(variant):
     """
     The three per-compilation identities the web page shows at the top, read from the same built
-    artifacts a release ships: esp_image (app sha), rp_identity (the RP_IDENTITY literal) and the
-    WEBGEN_STAMP baked into the embedded page. Returns a dict; any field that cannot be read is None.
+    artifacts a release ships: esp_image (the first 8 bytes of app_elf_sha256), rp_identity (the
+    RP_IDENTITY literal) and the WEBGEN_STAMP baked into the embedded page, plus their fingerprint.
+    Returns a dict; any field that cannot be read is None.
     """
     esp_bin = REPO / ("firmware/%s/esp/build/okhi.bin" % variant)
     rp_bin = REPO / ("firmware/%s/rp/build/okhi.bin" % variant)
@@ -662,8 +658,6 @@ def package_all(out_dir, ignore_stale):
     write_manifest(out_dir)
 
 
-# ---------------------------------------------------------------- main
-
 def main():
     ap = argparse.ArgumentParser(description="Build every okhi target and package a release.")
     ap.add_argument("--no-build", action="store_true", help="package what is already built")
@@ -706,9 +700,8 @@ def main():
         clean(args.targets, args.deep_clean)
         if args.clean_only:
             return 0
-        # A deep clean removes the object ccache would match against anyway, and a
-        # wifi_secret.h that appeared or vanished is invisible to it, so never let a
-        # from-scratch build be served stale objects.
+        # ccache does not see a wifi_secret.h that appeared or vanished, so a build after
+        # a clean runs without it and gets no stale objects.
         args.no_ccache = True
 
     if not args.no_build:

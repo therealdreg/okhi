@@ -9,7 +9,7 @@
  * firmware/com/com_esp.h, and both ends must agree on SPI_FRAME_VERSION.
  *
  * The board pin map, the SPI wrappers and the flash helpers come from
- * com_rp_hw.h, which this header pulls in. Include this AFTER the variant
+ * com_rp_hw.h, which this header pulls in. Include this after the variant
  * okhi.c has provided:
  *
  *     RP_VARIANT                     OKHI_VARIANT_USB or OKHI_VARIANT_PS2
@@ -17,16 +17,17 @@
  *
  * The variant must also call, in this order:
  *
- *     ota_boot_check()      very early in main(), BEFORE the watchdog is
+ *     ota_boot_check()      very early in main(), before the watchdog is
  *                           enabled and before anything else touches flash
  *     report_flash_size()   optional, after stdio is up
  *     report_ota_state()    optional, after stdio is up
  *     poll_esp_if_due()     regularly, from whichever core owns the SPI bus
  *
  * poll_esp_if_due() is where the whole update happens: it polls, and when the
- * ESP offers an image it fetches, stages, verifies and applies it. It blocks
- * for as long as that takes, so capture stops while it runs. Call it from the
- * same core that owns the SPI bus and never from two places at once.
+ * ESP offers an image it fetches, stages, verifies and applies it. The self
+ * test and the link benchmarks run from it too. It blocks for as long as that
+ * takes, so no capture record reaches the ESP meanwhile. Never call it from
+ * two places at once.
  */
 
 #include <stdbool.h>
@@ -53,39 +54,33 @@
 #define SPI_READY_TIMEOUT_US 2000
 
 /*
- * How long to wait for the ESP to acknowledge a record by dropping SLAVEREADY (wait_esp_consumed).
- * KNOW WHAT THIS NUMBER REALLY IS. The fall of SLAVEREADY does not identify
- * WHICH transaction ended, only that one did. When a record is missed, the ESP's post_trans_cb for
- * the PREVIOUS transaction still runs, the line still falls, and this check happily reads that as
- * an acknowledgement of the frame that was never taken. So the timeout is not really "how patient
- * to be", it is "how late a fall stops looking like ours", and it trades losing records against
- * duplicating them:
+ * How long wait_esp_consumed() waits for the ESP to drop SLAVEREADY after a frame. The fall says
+ * that a transaction ended, not which one: when a record is missed, the ESP's post_trans_cb for
+ * the previous transaction still runs and the line still falls. Taken as the acknowledgement of a
+ * record, this timeout traded lost records against duplicated ones:
  *
  *   timeout   adapter          records   lost   retried   duplicated
  *   10 ms     2 Aliexpress         446      0         5            0
  *   10 ms     1 from hell          745      0        ~5            1
  *   200 ms    1 from hell         1853      9         0            0
  *
- * Being MORE patient was strictly worse: at 200 ms the late fall always arrives, so the retry
- * never fires and the loss goes back to being silent.
+ * More patience was worse: at 200 ms the late fall always arrived, so the retry never fired and
+ * the loss was silent.
  *
- * THAT TRADE IS GONE. Capture records now carry a sequence and the ESP drops a repeat (com.h), so
- * a retry cannot duplicate a keystroke however wrong this timeout is. The calculus inverts: a
- * false "not acknowledged" costs one wasted frame instead of a corrupted log, so the right setting
- * is AGGRESSIVE rather than patient. 2 ms is still a thousand times the normal acknowledgement
- * latency, which is microseconds. This is now a performance knob, not a correctness one, and that
- * is the whole point of having done the protocol change.
+ * Capture records carry a sequence, the ESP drops a repeat, and a record counts as delivered only
+ * when the sequence the ESP publishes passes it (com.h). So this wait only paces the frames, and a
+ * timeout that is too short costs resent frames. 2 ms is still a thousand times the
+ * normal latency of the fall, which is microseconds.
  */
 #define SPI_CONSUMED_TIMEOUT_US 2000
 
 #define OTA_TRANSFER_MAX_ATTEMPTS 6
 
 /*
- * Applying an image takes seconds, far longer than any sane watchdog period,
- * so the long loops feed it. Defaults to doing NOTHING, because that is the
- * safe default: a variant that never calls watchdog_enable() leaves the SDK's
- * internal load_value at 0, and watchdog_update() would then arm a zero length
- * timeout. A variant that DOES enable a watchdog must define this itself:
+ * Applying an image takes seconds, so the long loops feed the watchdog through
+ * this. It does nothing by default: a variant that never calls watchdog_enable()
+ * leaves the SDK's load_value at 0, and watchdog_update() would then load a zero
+ * timeout. A variant that enables a watchdog must define it:
  *
  *     #define OTA_WATCHDOG_UPDATE() watchdog_update()
  */
@@ -94,7 +89,7 @@
 #endif
 
 /*
- * Called right before every intentional reboot here and in com_rp_clock.h (an OTA commit, a web
+ * Called right before the intentional reboots here and in com_rp_clock.h (an OTA commit, a web
  * reset, BOOTSEL, a clock mode), so that a variant can write out what it keeps in flash and has not
  * written yet (the USB variant's HID maps). Nothing by default.
  */
@@ -116,13 +111,13 @@
 #define OTA_META_MAGIC 0x494B4B4Fu
 #define OTA_MAX_BOOT_ATTEMPTS 3
 
-// FIX BY DREG: a fresh commit was confirmed healthy on the first successful poll (~50 ms), so a
-// new image that came up, answered SPI on core 1, then crashed or wedged its capture on core 0
-// had already disarmed the golden rollback. Require this much continuous uptime before disarming,
-// so an early crash reboots with the commit still pending and boot_attempts climbs to the rollback.
-// Time only, never a capture-progress signal: a quiet board that no one types on must still confirm.
-// Overridable so a test image can be built that never declares itself healthy, which is the
-// safe way to exercise the golden rollback: the board stays up and reachable the whole time.
+// A fresh commit is confirmed healthy only after this much continuous uptime. Confirmed at the
+// first successful poll, a new image that answered SPI on core 1 and then crashed or wedged its
+// capture on core 0 would already have disarmed the golden rollback. With the wait, an early crash
+// reboots with the commit still pending and boot_attempts climbs to the rollback. Time only, never
+// a capture-progress signal: a quiet board that no one types on must still confirm. Overridable,
+// so a test image can be built that never declares itself healthy, the safe way to exercise the
+// golden rollback: the board stays up and reachable the whole time.
 #ifndef OTA_HEALTHY_MIN_MS
 #define OTA_HEALTHY_MIN_MS 10000
 #endif
@@ -183,9 +178,7 @@ static uint32_t esp_wifi_reported = 0xffffffffu;
 static int esp_wifi_mode_reported = -1;
 static uint32_t esp_uart_min_baud;
 static uint32_t esp_uart_max_baud;
-// FIX BY DREG: the capture record sequence the ESP reports having accepted, refreshed by every
-// poll. esp_record_seq_seen stays false against an ESP too old to publish it, so a mixed pair
-// degrades to the previous behaviour instead of reconciling against a byte that is always zero.
+// The capture record sequence the ESP last accepted, refreshed by every poll (poll_esp()).
 static uint8_t esp_record_seq;
 static bool esp_record_seq_seen;
 static int esp_selftest_last_run = -1;
@@ -305,10 +298,9 @@ static void report_flash_size(void)
 }
 
 /*
- * Derived from the linker symbol rather than from the variant's own
- * get_start_free_flash_space_addr(), because this value decides how much of
- * the app gets copied into the golden slot. Note the ampersand: the symbol
- * marks an address, and reading it as a value yields a byte of the image.
+ * How much of the app is copied into the golden slot: the linker's
+ * __flash_binary_end rounded up to a flash page. The ampersand matters: the
+ * symbol marks an address, and reading it as a value yields a byte of the image.
  */
 static uint32_t ota_app_size(void)
 {
@@ -383,22 +375,22 @@ static void ota_copy_region(uint32_t dst_offset, uint32_t src_offset, uint32_t s
     }
 }
 
-// Survives a watchdog reboot because it is never initialised, the same trick wait_20 uses
-// to notice an ESP reset across the reset that follows it.
+// Never initialised, so it survives a watchdog reboot, the way wait_20 (com_rp_hw.h) carries
+// an ESP reset across the RP reboot that follows it.
 __attribute__((section(".uninitialized_data"))) uint32_t rp_bootsel_request;
 
 #define RP_BOOTSEL_MAGIC 0xB0075E1Eu
 
-// The web's BOOTSEL request arrives on core 1, inside the SPI poll, while core 0 is still
-// running the capture with its PIO programs and DMA channels live. Calling reset_usb_boot
-// from there does jump to the bootrom, the SPI link goes quiet exactly as it should, but
-// the host never gets a usable device: the bootrom comes up on one core while the other is
-// still driving the hardware underneath it. The physical BOOTSEL button works because it
-// runs from main() on core 0, before core 1 is launched and with the PIO already torn down.
+// In capture mode the web's BOOTSEL request arrives on core 1, inside the SPI poll, while core 0
+// runs the capture and feeds the watchdog (a clock mode polls on core 0, com_rp_clock.h).
+// reset_usb_boot() from there never gives the host a device: the bootrom only arms a watchdog
+// reset into the bootloader, 5 ms out (it asks for 10 ms and RP2040-E1 halves it), and waits
+// for it on core 1. Every feed from core 0 puts the watchdog back at 4 s, so that reset never
+// comes, and the board is left neither keylogger nor bootloader until a power cycle.
 //
-// So take that same road. Core 1 only records the request and reboots; the check below runs
-// at the top of main(), on core 0, with core 1 not yet started and every peripheral back at
-// its reset state, and enters the bootloader from there.
+// So core 1 only records the request and reboots. This check runs at the top of main(), on
+// core 0, before core 1 is launched and before anything feeds the watchdog, and enters the
+// bootloader from there.
 static void ota_bootsel_check(void)
 {
     if (rp_bootsel_request != RP_BOOTSEL_MAGIC)
@@ -406,8 +398,8 @@ static void ota_bootsel_check(void)
         return;
     }
 
-    // Cleared before the jump, so a board that is power cycled out of the bootloader comes
-    // back as a keylogger instead of dropping into it again.
+    // Cleared before the jump: after a .uf2 copy the bootloader reboots without clearing the
+    // RAM, so an okhi .uf2 would otherwise find the marker and boot straight back into BOOTSEL.
     rp_bootsel_request = 0;
 
     reset_usb_boot(0, 0);
@@ -527,8 +519,6 @@ static void ota_mark_healthy(void)
 {
     ota_meta_t meta;
 
-    // FIX BY DREG: hold the commit unconfirmed until the board has run this long, so an early
-    // core 0 crash rolls back to golden instead of being sealed in at the first poll.
     if (time_us_64() < (uint64_t)OTA_HEALTHY_MIN_MS * 1000u)
     {
         return;
@@ -561,7 +551,7 @@ static void ota_commit_staged_image(void)
     }
 
     // Only the image the ESP offers in this same frame. The ESP drops a package's RP half when its
-    // esp half is not confirmed, and the copy staged here stays: a commit asked for later, after
+    // ESP half is not confirmed, and the copy staged here stays: a commit asked for later, after
     // an /rpimage of the running build for example, must not apply it.
     if (!esp_rp_image_ready || meta.staging_size != esp_rp_image_size || meta.staging_crc != esp_rp_image_crc)
     {
@@ -674,20 +664,18 @@ static bool wait_esp_ready(uint32_t timeout_us)
 }
 
 /*
- * Did the ESP actually consume the frame we just clocked at it?
+ * Waits for SLAVEREADY to fall after a frame: the ESP's spi_post_trans_cb closing a transaction.
  *
- * wait_esp_ready() above tests a LEVEL, and that level can be stale. The ESP raises SLAVEREADY
+ * wait_esp_ready() above tests a level, and that level can be stale. The ESP raises SLAVEREADY
  * from spi_post_setup_cb when it arms a transaction and drops it from spi_post_trans_cb when one
- * completes, and both are interrupt callbacks with their own latency. So when the drain loop
- * finishes one record and comes straight back round for the next, it can sample SLAVEREADY still
- * HIGH from the PREVIOUS transaction, decide the slave is ready, and clock a record into an ESP
- * that has nothing armed. Nothing detects that: spi_write_blocking on the RP2040 succeeds whether
- * or not anyone is listening, and with no transaction there is no callback on the ESP either, so
- * no counter moves on either side. That is the silent loss.
+ * completes, and both are interrupt callbacks with their own latency. A record loop that comes
+ * straight back round for the next record can sample SLAVEREADY still high from the previous
+ * transaction and clock a record into an ESP that has nothing armed. Nothing detects that:
+ * spi_write_blocking on the RP2040 succeeds whether or not anyone is listening, and with no
+ * transaction there is no callback on the ESP either, so no counter moves on either side.
  *
- * SLAVEREADY going LOW after our transfer is the ESP's post_trans_cb running, which is the only
- * evidence from outside that our frame was really taken. Waiting for that FALL turns the write
- * into an acknowledged one without any protocol change.
+ * Waiting for the fall paces the frames. It is no acknowledgement, because the fall does not say
+ * which transaction ended: the sequence the ESP publishes confirms the records (com.h).
  */
 static bool wait_esp_consumed(uint32_t timeout_us)
 {
@@ -709,7 +697,7 @@ static bool wait_esp_consumed(uint32_t timeout_us)
 // Latched view of SLAVEREADY, for the self test. The ESP raises it when it arms a
 // transaction and drops it when one completes, so sampling the line just after a
 // transfer always catches the low half. The handshake below sees both levels for free:
-// low while we are still waiting to be served, high the moment the ESP is armed.
+// low while the RP still waits to be served, high the moment the ESP is armed.
 #define ELOG_SEEN_LOW 0x01
 #define ELOG_SEEN_HIGH 0x02
 
@@ -895,12 +883,12 @@ static void poll_esp(void)
     esp_wifi_ip = spi_get_u32(head + SPI_WIFI_IP_OFF);
     esp_uart_min_baud = spi_get_u32(head + SPI_UART_MIN_BAUD_OFF);
     esp_uart_max_baud = spi_get_u32(head + SPI_UART_MAX_BAUD_OFF);
-    // FIX BY DREG: the sequence the ESP last accepted, so the capture drain can reconcile instead
-    // of trusting the SLAVEREADY handshake. See com.h and usb_report_flush / ps2_record_flush.
+    // The sequence the ESP last accepted: usb_report_flush() and ps2_record_flush() confirm
+    // records against it (com.h).
     esp_record_seq = head[SPI_STATUS_RECORD_SEQ_OFF];
     // Zero means either an ESP too old to publish this, or one that has not accepted a record yet.
-    // Both are "nothing to reconcile against", so one test covers them and a mixed pair degrades
-    // quietly instead of reconciling against a byte that is always zero.
+    // Both leave nothing to confirm against, so one test covers them, and the RP never reconciles
+    // against a byte that is always zero.
     esp_record_seq_seen = (esp_record_seq != 0);
     clock_status_parse(head);
     esp_link_up = true;
@@ -924,10 +912,10 @@ static void ota_flash_sector(uint32_t offset, uint8_t *data, uint32_t used)
 
 /*
  * Flash for a variant's own state across a restart: the last RP_STATE_SECTORS sectors of the
- * detected flash, past the OTA map, so they need the same 8 MB part. Returns the offset of the
- * first, 0 when there is no room. A reflash or an OTA writes only the app slot and the OTA map,
- * so they survive both. The USB variant keeps its HID maps there (usb_hid.h), each write in the
- * next sector, so no sector wears faster than a sixteenth of the writes.
+ * detected flash, past the OTA map, so like the map they need at least an 8 MB part. Returns the
+ * offset of the first, 0 when there is no room. A reflash or an OTA writes only the app slot and
+ * the OTA map, so they survive both. The USB variant keeps its HID maps there (usb_hid.h), each
+ * write in the next sector, so no sector wears faster than a sixteenth of the writes.
  */
 #define RP_STATE_SECTORS 16u
 
@@ -1016,8 +1004,8 @@ static bool ota_fetch_block(uint32_t block, uint8_t *dst, uint16_t *out_len)
             continue;
         }
 
-        // FIX BY DREG: reject a corrupt block on its own crc and let the loop retry just this one,
-        // instead of only catching it in the whole image crc and discarding the entire transfer.
+        // A corrupt block fails its own CRC and only that block is fetched again; the image CRC
+        // alone would throw away the whole transfer.
         if (crc32_buffer(head + SPI_PAYLOAD_FROM_MAGIC, len) != spi_get_u32(head + SPI_BLOCK_CRC_OFF))
         {
             continue;
@@ -1056,11 +1044,10 @@ static void ota_receive_rp_image_if_offered(void)
         return;
     }
 
-    // A different image starts with a clean slate. The strike counter is only cleared on
-    // success, so without this a new upload inherited the previous one's failures: the first
-    // time it stumbled it was already at the limit and got refused outright, and since the
-    // refusal is silent the user just saw an image that never applied no matter how many
-    // times they sent it.
+    // A different image starts with a clean slate. The strike counter is cleared only on
+    // success, so without this a new upload would inherit the previous one's failures, start
+    // at the limit and be refused at its first stumble. The refusal is silent: the user would
+    // see an image that never applies however often it is sent.
     if (expected_crc != ota_failed_crc)
     {
         ota_failed_attempts = 0;
@@ -1074,9 +1061,9 @@ static void ota_receive_rp_image_if_offered(void)
     printf("rp image offered: %u bytes crc %08x, capture SUSPENDED\r\n", (unsigned)size, (unsigned)expected_crc);
 
     // The fetch writes over staging from its first sector, so meta stops naming what was staged
-    // there. Left as it was, a failed fetch followed by an offer of the image staged before it
-    // skipped the fetch above, and every commit then refused that image on its CRC. A committed
-    // image on trial keeps its state (its rollback reads golden, not staging).
+    // there. Otherwise a failed fetch followed by an offer of the image staged before it skips
+    // the fetch above, and every commit then refuses that image on its CRC. A committed image on
+    // trial keeps its state (its rollback reads golden, not staging).
     if (ota_meta_valid(&meta) && meta.staging_size != 0 && meta.state != OTA_STATE_APPLYING)
     {
         if (meta.state == OTA_STATE_STAGED)
@@ -1490,13 +1477,13 @@ static void bench_run_step(uint8_t step, const bench_rate_t *rate, uint32_t dura
 
     out->actual_hz = spi_set_baudrate(SPI_ID, rate->hz);
 
-    // Warm the full-duplex pipeline at THIS clock before measuring. The first
-    // frames after a clock change carry the worst MISO shift (section 7b), so
-    // without this the FIRST step of a sweep is scored on that transient and
-    // fails even when its clock is perfectly stable. NO_STEP frames are used so
-    // the ESP ignores them (step >= SPI_BENCH_MAX_STEPS) and the transient never
-    // lands in any step's counters. It settles in a few frames when the clock is
-    // fine and simply burns the cap when it is not, which is harmless.
+    // Warm the full-duplex pipeline at this clock before measuring. The first
+    // frames after a clock change carry the worst MISO shift, so without this
+    // the first step of a sweep is scored on that transient and fails even when
+    // its clock is stable. NO_STEP frames are used so the ESP ignores them
+    // (step >= SPI_BENCH_MAX_STEPS) and the transient never lands in any step's
+    // counters. It settles in a few frames when the clock is fine and burns the
+    // cap when it is not, which is harmless.
     bench_build_pattern_frame(SPI_BENCH_NO_STEP);
 
     int warm_ok = 0;
@@ -1756,10 +1743,10 @@ static const uint8_t *uart_read_stats(void)
     return head;
 }
 
-// The self test borrows this handshake outside of a benchmark, where the bench run id
-// is meaningless: the ESP only publishes it while a run is armed, so after any
-// benchmark our copy reads back as zero and no longer matches. Inside a self test the
-// self test run id is the one both sides agree on, so send that instead.
+// The self test borrows this handshake outside a benchmark, where the bench run id means
+// nothing: the ESP publishes it only while a run is armed, so after any benchmark the
+// RP's copy reads back as zero and no longer matches. Inside a self test both sides agree
+// on the self test run id, so the RP sends that instead.
 static bool uart_setup_selftest;
 
 static bool uart_setup_peer(uint32_t baud, uint32_t seed, bool peer_sends)
@@ -1798,7 +1785,7 @@ static bool uart_setup_peer(uint32_t baud, uint32_t seed, bool peer_sends)
         {
             // Tearing down, and the peer is answering as usual again: that already
             // proves it has left UART stats mode, which is all the teardown asks for.
-            // Waiting for a stats frame that will never come just burns every attempt.
+            // Waiting for a stats frame that will never come burns every attempt.
             if (baud == 0 && head[5] == SPI_FRAME_TYPE_STATUS)
             {
                 return true;
@@ -1898,7 +1885,7 @@ static void uart_run_step(uint32_t baud, uint32_t duration_ms, bench_step_stat_t
     if (!setup_ok)
     {
         // The peer may have taken the setup even though the acknowledgement never got
-        // back to us, which would leave it sitting at the step baud rate with the
+        // back to the RP, which would leave it sitting at the step baud rate with the
         // status channel unreadable. Tear down before giving up, never after.
         uart_setup_peer(0, seed, false);
         uart_set_baudrate(ESP_UART_ID, RP_UART_BAUD);
@@ -1970,12 +1957,12 @@ static void uart_run_step(uint32_t baud, uint32_t duration_ms, bench_step_stat_t
         }
     }
 
-    // The MISO is one SPI transfer behind, and the ESP's counters only settle
-    // once it has processed this step's traffic, so the first UART_STATS we read
-    // still carries the counters from the start of the step (all zero). Poll a
-    // few times and keep the freshest sample; the ESP's counters only grow within
-    // a step, so the largest rx_ok is the most recent. Reading the first frame and
-    // stopping was reporting peer_ok=0 even when the ESP had validated every frame.
+    // The ESP fills each of its eight queued TX buffers when that buffer's last transaction
+    // completes, so the first UART_STATS frames read here are up to eight transfers old and
+    // still carry the counters from the start of the step (all zero). Poll UART_BENCH_STATS_POLLS
+    // times and keep the freshest sample: the counters only grow within a step, so the largest
+    // rx_ok is the most recent. The first frame alone reads peer_ok=0 even when the ESP
+    // validated every frame.
     bool got_stats = false;
 
     for (int attempt = 0; attempt < UART_BENCH_STATS_POLLS; ++attempt)
@@ -2019,11 +2006,11 @@ static bool uart_rp_clean(const bench_step_stat_t *stat)
         return false;
     }
 
-    // A UART step is asynchronous, so a frame or two at each edge of the window is
-    // an artifact of when each side starts and stops, not link corruption. Corruption
-    // is caught strictly above (miso_bad/peer_bad must be zero); here we allow a small
-    // absolute edge slack on top of the per-mille loss budget so a clean link passes
-    // even though the frame counts don't line up to the last frame.
+    // A UART step is asynchronous, so a frame or two at each edge of the window is an artifact
+    // of when each side starts and stops, not link corruption. Corruption fails the step above
+    // (miso_bad and peer_bad must be zero). The loss budget of each direction is 1 per mille of
+    // the frames sent, never under UART_BENCH_EDGE_SLACK, so a clean link passes although the
+    // frame counts do not line up to the last frame.
     uint32_t mosi_lost = stat->frames > stat->peer_ok ? stat->frames - stat->peer_ok : 0;
     uint32_t miso_lost = stat->peer_tx > stat->miso_ok ? stat->peer_tx - stat->miso_ok : 0;
 
@@ -2264,9 +2251,9 @@ static const st_pin_t st_switch_pins[] = {
     {DM_SNIFF_GPIO, "sniff D-/CLK"},
 };
 
-// The ESP keeps a pull-up on chip select and on MASTERDATAREADY, so an internal
-// pull-down on this side cannot win and those two pins legitimately read high in both
-// directions. Only the pull-up half is meaningful there.
+// The ESP keeps a pull-up on chip select and on MASTERDATAREADY, so the RP's internal
+// pull-down cannot win and those two pins read high in both directions. Only the pull-up
+// half means anything there.
 #define ST_EXT_PULLUP_MASK ((1u << SPI_CS_PIN) | (1u << EBOOT_MASTERDATAREADY_GPIO))
 
 #define ST_LINK_SPI_FRAMES 256
@@ -2290,10 +2277,10 @@ static void st_pin_release(uint8_t gpio)
 }
 
 // Every pin the sweep touches is photographed before the run and put back exactly as it
-// was afterwards: function first and last, so a pin handed to PIO or to the UART goes
-// back to its peripheral rather than being left on SIO. Releasing them to a floating
-// input instead, which is what the sweep does between tests, only happens to be right
-// for the pins that are idle anyway; this makes it right for all of them.
+// was afterwards, its function read first and restored last, so a pin handed to PIO or to
+// the UART goes back to its peripheral instead of staying on SIO. Between tests the sweep
+// leaves a pin a floating input (st_pin_release()), which is right only for the pins that
+// idle that way.
 typedef struct
 {
     gpio_function_t func;
@@ -2357,11 +2344,11 @@ static int st_send(uint8_t id, uint8_t status, uint32_t a, uint32_t b, const cha
         spi_put_u32(spi_poll_tx + SPI_SELFTEST_A_OFF, a);
         spi_put_u32(spi_poll_tx + SPI_SELFTEST_B_OFF, b);
 
-        // Copy through a cursor, never by clearing `text` itself: the ESP queues eight
-        // transactions, so our acknowledgement only comes back several transfers later
-        // and every row is sent more than once. Consuming the caller's pointer on the
-        // first pass left every retry carrying an empty string, and that empty one is
-        // what the ESP ended up storing, so no RP row ever showed its description.
+        // Copy through a cursor and leave `text` alone: the ESP queues eight transactions,
+        // so the acknowledgement comes back several transfers later and every row is sent
+        // more than once. A pointer consumed on the first pass leaves every retry with an
+        // empty string, and since the ESP keeps the last copy of a row, the row ends up with
+        // no description.
         const char *cursor = text;
 
         for (uint32_t i = 0; i < SPI_SELFTEST_TEXT_MAX; ++i)
@@ -2637,8 +2624,8 @@ static void st_run_gpio(void)
 
         // Driving the mux enable low turns the USB switch on, which ties the sniff pair
         // to the host side and looks exactly like a solder bridge. Leave it pulled high
-        // so the switch stays off for the whole scan; its own drive is covered above and
-        // by the dedicated mux test.
+        // so the switch stays off for the whole scan; the drive test above covers its own
+        // drive, and the switch probe (st_run_sw_probe()) the switch itself.
         if (g == USOE_PIN)
         {
             continue;
@@ -2721,9 +2708,9 @@ static void st_run_chip_pu(void)
 
 // Neither handshake line can be probed by holding a level and then asking the far side,
 // because the only way to ask is an SPI transfer and every transfer drives both lines
-// itself: the question always arrives after the answer has been overwritten. Both sides
-// therefore latch the levels they see while handshaking, and these two tests just run
-// traffic and read the latch.
+// itself: the question always arrives after the answer has been overwritten. So both sides
+// latch the levels they see while handshaking, and these two tests run traffic and read
+// the latch.
 static void st_run_eboot(void)
 {
     char text[ST_TEXT_MAX + 8];
@@ -2765,9 +2752,10 @@ static void st_run_elog(void)
 }
 
 // Both links are checked the way the benchmark checks them, by moving real frames and
-// verifying what comes back, rather than by inspecting a status word. A burst that
-// arrives intact exercises the whole path at once: clock, both data lines, chip select
-// and the two handshake wires for SPI, and the two UART wires for the other.
+// verifying what comes back. A burst that arrives intact exercises the whole path at
+// once: clock, both data lines and chip select for SPI, the two UART wires for the other.
+// The handshake lines need the latched rows above: the ESP never waits on
+// MASTERDATAREADY, so a burst gets through with that line open.
 static void st_run_link_spi(void)
 {
     char text[ST_TEXT_MAX + 8];
@@ -2807,9 +2795,9 @@ static void st_run_link_spi(void)
         ok++;
     }
 
-    // The reply always lands a fixed distance into the window, because the slave is
-    // one transfer behind; what matters is that the magic is found well inside the
-    // search window, not that it sits at the nominal lead.
+    // The ESP puts a 16 byte lead (SPI_FRAME_LEAD) before its magic, and the reply can
+    // arrive shifted; what matters is that the magic is found inside the search window,
+    // not that it sits at the nominal lead.
     snprintf(text, sizeof(text), "%u frames, %u bad, offset %u", (unsigned)ok, (unsigned)bad,
              (unsigned)worst_offset);
     st_send(ST_X_SPI_LINK,
@@ -2829,8 +2817,8 @@ static void st_run_link_uart(void)
 
     // One retry when the step never got off the ground. Arming it needs a setup frame
     // to be acknowledged, and the reply is several transfers behind, so a run started
-    // right after a reboot can miss the window entirely and measure nothing. A link
-    // that is genuinely broken still reports nothing the second time.
+    // right after a reboot can miss the window entirely and measure nothing. A broken
+    // link still reports nothing the second time.
     if (stat.frames == 0 || stat.peer_tx == 0)
     {
         uart_run_step(ST_LINK_UART_BAUD, ST_LINK_UART_MS, &stat);
@@ -2846,15 +2834,14 @@ static void st_run_link_uart(void)
 }
 
 // Everything in the probe below is a settling time, not a measurement, so it costs a tenth
-// of a second in total against a ten second timeout. Nothing is gained by keeping it tight
-// and a marginal board is exactly what this is meant to catch.
+// of a second in total against the ESP's ten second timeout. Keeping it tight gains nothing,
+// and a marginal board is what the probe is meant to catch.
 #define ST_SW_SETTLE_MS 25
 #define ST_SW_SAMPLES 16
 
-// A single gpio_get reports whatever the line was doing at that one instant. Sampling it
-// over a millisecond and taking the majority answers the question that is actually being
-// asked, which is where the line settles, not where it was caught. A line that cannot make
-// up its mind comes back high, so it reads as not grounded and the probe reports a problem
+// A single gpio_get() reports what the line was doing at that one instant. The majority of
+// ST_SW_SAMPLES readings over 1.6 ms says where the line settles. A line that cannot make up
+// its mind comes back high, so it reads as not grounded and the probe reports a problem
 // rather than hiding one.
 static bool st_read_settled(uint8_t pin)
 {
@@ -2874,11 +2861,11 @@ static bool st_read_settled(uint8_t pin)
 }
 
 // Interactive proof that the USB switch really switches, for the boards that carry one.
-// The web walks the user through it one wire at a time: hold the sniff line up with the
-// internal pull up, have a dupont wire ground the matching pin on the sniff header, and
+// The page walks the user through it one wire at a time: hold the sniff line up with the
+// internal pull-up, have a dupont wire ground the matching pin on the sniff header, and
 // watch what the line does as the switch is closed and opened. Doing the two lines
-// separately is what makes it catch a solder bridge between them, since the neighbour
-// has to stay up while this one is grounded.
+// separately is what catches a solder bridge between them, since the neighbour has to
+// stay up while this one is grounded.
 static void st_run_sw_probe(uint8_t which)
 {
     char text[ST_TEXT_MAX + 8];
@@ -2903,8 +2890,8 @@ static void st_run_sw_probe(uint8_t which)
     gpio_set_dir(other, GPIO_IN);
     gpio_pull_up(other);
 
-    // The internal pull up is weak, so give both lines time to actually reach the rail
-    // through whatever the dupont wire and the header add before the switch is touched.
+    // The internal pull-up is weak, so give both lines time to reach the rail through
+    // whatever the dupont wire and the header add before the switch is touched.
     sleep_ms(ST_SW_SETTLE_MS);
 
     // gpio_init leaves the pin an input, so driving OE only after set_dir would let the
@@ -3029,10 +3016,10 @@ static void ota_run_selftest(void)
     bool saved_sel = gpio_get_out_level(USSEL_PIN);
     bool saved_oe = gpio_get_out_level(USOE_PIN);
 
-    // The two sniff pins are D+ and D- on the usb board and DATA and CLOCK on
-    // the ps2 one, where the bus is held up by the internal pull ups. Both the
-    // gpio sweep and the switch check drive them and end with the pulls off,
-    // so the state they were found in is recorded here and put back below.
+    // The two sniff pins are D+ and D- on the USB board and DATA and CLOCK on the PS/2
+    // one, where the internal pull-ups hold the bus up. With the switch option both the
+    // GPIO sweep and the switch check drive them and end with the pulls off, so their
+    // pulls are recorded here and put back below.
     const uint8_t saved_sniff[2] = {DP_SNIFF_GPIO, DM_SNIFF_GPIO};
     bool saved_sniff_up[2];
     bool saved_sniff_down[2];
@@ -3097,8 +3084,7 @@ static void ota_run_selftest(void)
     st_run_switch(saved_sel, saved_oe);
 
     // Hand every pin the sweep borrowed back exactly as it was found, then reassert the
-    // link pins below, whose correct running state is known regardless of what the run
-    // started from. Nothing is left floating or half configured.
+    // link pins below, whose running state is known whatever the run started from.
     for (uint32_t i = 0; i < st_pin_count; ++i)
     {
         st_pin_restore(&st_pin_saved[i], st_pins[i].gpio);
@@ -3109,9 +3095,9 @@ static void ota_run_selftest(void)
         gpio_set_pulls(saved_sniff[i], saved_sniff_up[i], saved_sniff_down[i]);
     }
 
-    // Prove the hand back actually happened rather than trusting it: every borrowed pin
-    // is compared against its photograph, so a future test that forgets to clean up is
-    // caught here instead of showing up later as a board that misbehaves after a run.
+    // Every borrowed pin is compared against its photograph, so a test that forgets to
+    // clean up fails ST_RP_PIN_STATE here instead of showing up later as a board that
+    // misbehaves after a run.
     uint32_t pin_bad = 0;
 
     for (uint32_t i = 0; i < st_pin_count; ++i)
@@ -3207,13 +3193,12 @@ static void ota_run_bench(void)
 
     bool overclocked = false;
 
-    // The overclock, not the SPI clock, is what draws the current that can brown
-    // the board out, so only raise it when the run actually needs to go past
-    // clk_peri / 2. On a resume that is the resume clock; on a fresh run it is
-    // the top of the range. This is what makes the resilient descent converge:
-    // once it drops below clk_peri / 2 it re-arms WITHOUT the overclock, the
-    // draw falls back to normal, and a clock that only reset from a thermal
-    // brownout now survives. clk_peri / 2 is always reachable without help.
+    // The overclock, not the SPI clock, is what can reset the board, so raise it only
+    // when the run needs to go past clk_peri / 2: the resume clock on a resume, the top
+    // of the range on a fresh run. That is what makes the descent after a reset
+    // converge: once it drops below clk_peri / 2 it re-arms without the overclock, and
+    // a clock that reset the board only under the overclock survives. clk_peri / 2 is
+    // always reachable without help.
     uint32_t oc_target_khz = esp_bench_resume_khz != 0 ? (uint32_t)esp_bench_resume_khz : esp_bench_max_khz;
     bool need_oc = esp_bench_overclock != 0 && (uint64_t)oc_target_khz * 1000ull * 2ull > bench_native_peri_hz;
 
@@ -3221,13 +3206,12 @@ static void ota_run_bench(void)
     {
         bench_uart_drain();
 
-        // Doubling clk_sys to 240 MHz is roughly 2x the RP2040's rated 133 MHz.
-        // It runs, but at the stock 1.10 V core it is marginal and reboots at
-        // random, which showed up as the reset counter climbing mid sweep. The
-        // community-standard fix is to raise the core voltage for the run; 240
-        // MHz is comfortable at 1.30 V (the SDK maximum) and flash stays safe
-        // because at clkdiv 2 the QSPI only misbehaves past ~250 MHz. Give the
-        // regulator a moment to settle before asking for the higher clock.
+        // Doubling clk_sys (240 MHz on USB, 250 MHz on PS/2) runs the RP2040 at about
+        // twice its rated 133 MHz. At the stock 1.10 V core it rebooted at random, seen
+        // as the reset counter climbing mid sweep, so the core goes to 1.30 V (the SDK
+        // maximum) for the run. Flash stays safe because at clkdiv 2 the QSPI only
+        // misbehaves past about 250 MHz. Give the regulator a moment to settle before
+        // asking for the higher clock.
         vreg_set_voltage(VREG_VOLTAGE_1_30);
         sleep_ms(3);
 
@@ -3316,10 +3300,10 @@ static void ota_run_bench(void)
         bool unwound = false;
 
         // Resuming after a reset that a marginal soak triggered: skip the whole
-        // sweep and refine, and drop straight into confirming just below the
-        // clock that browned the board out. The step-down loop then walks down
-        // from here until one clock survives a full soak, so the search
-        // converges across as many resets as it takes.
+        // sweep and refine, and go straight to confirming just below the clock
+        // that reset the board. The step-down loop then walks down from here
+        // until one clock survives a full soak, so the search converges across
+        // as many resets as it takes.
         if (!uart_kind && esp_bench_resume_khz != 0 &&
             bench_resolve_rate((uint32_t)esp_bench_resume_khz * 1000u, &rate) && rate.hz >= min_hz)
         {
@@ -3531,7 +3515,6 @@ static void ota_run_bench(void)
         set_sys_clock_khz(bench_native_sys_hz / 1000u, false);
         bench_uart_reclock();
 
-        // Back to the stock clock, so drop the core voltage back to its default.
         vreg_set_voltage(VREG_VOLTAGE_1_10);
     }
 
@@ -3609,11 +3592,11 @@ static void poll_esp_if_due(void)
 
     if (esp_link_up && esp_rp_bootsel_requested)
     {
-        // Deliberately NOT reset_usb_boot() from here. This runs on core 1 with core 0
-        // still driving the capture, and the bootrom brought up that way never becomes a
-        // usable device: the link goes quiet, the host sees nothing, and the board is
-        // stranded until it is power cycled. Record it and reboot, so ota_bootsel_check()
-        // enters the bootloader from main() on core 0 like the physical button does.
+        // Not reset_usb_boot() from here. In capture mode this runs on core 1 while core 0
+        // captures and feeds the watchdog, which keeps putting off the reset the bootrom
+        // arms: the link goes quiet, the host sees nothing, and the board is stranded until
+        // it is power cycled. Record the request and reboot, so ota_bootsel_check() enters
+        // the bootloader from main() on core 0, before anything feeds the watchdog.
         printf("web requested BOOTSEL, rebooting into the bootloader from core 0\r\n");
         fflush(stdout);
 
@@ -3653,9 +3636,8 @@ static void poll_esp_if_due(void)
     }
 
     // Edge, not level. st_blink_led() blocks this poll for three seconds, so acting on the
-    // level meant that a flag the ESP failed to take back turned into a permanent blink
-    // that starved the capture. Every other request here is already edge triggered against
-    // a _last variable; this one was the exception.
+    // level would turn a flag the ESP failed to take back into a permanent blink that
+    // starves the capture.
     static uint8_t rp_blink_last;
 
     if (esp_link_up && esp_selftest_blink != 0 && rp_blink_last == 0)
@@ -3704,20 +3686,19 @@ static void poll_esp_if_due(void)
  * loop: spin on a PIO FIFO, and do periodic work when it is empty. Only the FIFO
  * reads differ.
  *
- * The variant must call watchdog_enable() before entering its capture loop, and
- * define OTA_WATCHDOG_UPDATE, or the watchdog is never fed and the device
- * reboots in a loop. It must also call watchdog_disable() as the very first
- * statement of main(): ota_boot_check() runs long before watchdog_enable() and
- * feeds the watchdog while the SDK's internal load_value is still 0, which is
- * harmless only while the watchdog is disabled.
+ * A variant that calls watchdog_enable() before its capture loop must define
+ * OTA_WATCHDOG_UPDATE, or nothing feeds the watchdog and the device reboots in a
+ * loop. It must also call watchdog_disable() as the very first statement of
+ * main(): ota_boot_check() runs long before watchdog_enable() and feeds the
+ * watchdog while the SDK's load_value is still 0, which is harmless only while
+ * the watchdog is disabled.
  *
- * The hardware watchdog only catches a genuinely wedged loop. It is fed from both
- * the traffic and the idle path, so a bus that simply goes quiet keeps feeding it
- * and never reboots. Silence is normal on PS/2, where the keyboard transmits only
- * on a keypress, so an idle bus is never treated as a stall.
+ * The watchdog catches only a wedged loop. It is fed from both the traffic and
+ * the idle path, so a bus that goes quiet keeps feeding it and never reboots.
+ * Silence is normal on PS/2, where the keyboard transmits only on a keypress.
  *
- * Feeding is throttled to one write every CAPTURE_IDLE_CHECK_SPINS turns of an
- * idle loop, so the hot path stays a FIFO test and a counter increment.
+ * The idle path feeds it once every CAPTURE_IDLE_CHECK_SPINS turns, so the hot
+ * path stays a FIFO test and a counter increment.
  */
 
 #define CAPTURE_IDLE_CHECK_SPINS 4096u

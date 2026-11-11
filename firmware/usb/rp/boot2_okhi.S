@@ -1,17 +1,15 @@
-// ----------------------------------------------------------------------------
 // okhi: the SDK's boot2_w25q080.S (pico-sdk 2.3.1) with the ring oscillator 4 times faster
 // (divider 4 instead of its reset value of 16), set at the start of _stage2_boot before the
 // flash interface. To keep the code within its 252 bytes, the two writes of SPI_CTRLR0 go
 // through r3 (XIP_SSI_BASE) and an offset instead of a literal address, which frees a
 // 4-byte literal. The bootrom and this code run on the ring oscillator, and so does crt0
-// while it copies this copy_to_ram image (78 KB) out of flash. Measured on the USB dev
-// board with a Windows 11 PC: the first packet is captured 109 ms after a reset (302 ms
-// with the SDK's boot stage 2), and the capture still reads a keyboard's descriptors when
-// the reset comes up to 200 ms after the keyboard attaches (under 20 ms with the SDK's boot
-// stage 2). clocks_init() moves clk_sys to the PLL afterwards as before. The ring
-// oscillator keeps the new divider, which nothing else uses: the self-test only reports
-// its frequency.
-// ----------------------------------------------------------------------------
+// while it copies this copy_to_ram image (about 80 KB) out of flash. Measured on the USB
+// dev board with a Windows 11 PC: the first packet is captured 109 ms after a watchdog
+// reset (302 ms with the SDK's boot stage 2), and the capture still reads a keyboard's
+// descriptors when the RP restarts up to 200 ms after the keyboard attaches (under 20 ms
+// with the SDK's boot stage 2). runtime_init() moves clk_sys to the PLL afterwards as
+// before. The ring oscillator keeps the new divider, which nothing else uses: the
+// self-test only reports its frequency.
 
 // ----------------------------------------------------------------------------
 // Second stage boot code

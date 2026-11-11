@@ -1,13 +1,8 @@
-# Generated Cmake Pico project file
-
 cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# Initialise pico_sdk from installed location
-# (note this can come from environment, CMake cache etc)
 
 # == DO NOT EDIT THE FOLLOWING LINES for the Raspberry Pi Pico VS Code Extension to work ==
 if(WIN32)
@@ -28,7 +23,8 @@ set(PICO_BOARD okhi CACHE STRING "Board type")
 
 # Builds default to RelWithDebInfo, and the code is -O2 whatever the build type
 # (target_compile_options below), like the okhi images. The SDK default, Release,
-# is -O3: bigger and no faster here.
+# is -O3. The bridge takes one interrupt per UART byte (FIFOs off) while esptool
+# flashes the ESP32 at 921600 baud, so it is never built with -O0.
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
 endif()
@@ -42,12 +38,9 @@ project(uart_bridge C CXX ASM)
 # logging into the USB task. LOG is the knob its family.cmake honours first.
 set(LOG 0)
 
-# Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
 add_compile_options(-Wall)
-
-# Add executable. Default name is the project name, version 0.1
 
 if (TARGET tinyusb_device)
     add_executable(uart_bridge
@@ -62,7 +55,6 @@ if (TARGET tinyusb_device)
             ${CMAKE_CURRENT_LIST_DIR}
             )
 
-    # pull in common dependencies
     target_link_libraries(uart_bridge
     pico_stdlib
     pico_multicore
@@ -71,15 +63,11 @@ if (TARGET tinyusb_device)
 
 pico_set_binary_type(uart_bridge copy_to_ram)
 
-# the bridge drives the ESP32 flashing at 921600 baud with the UART FIFOs off
-# (one interrupt per byte), so it is never built with -O0
 pico_enable_stdio_uart(uart_bridge 0)
 pico_enable_stdio_usb(uart_bridge 0)
 
-# create map/bin/hex file etc.
 pico_add_extra_outputs(uart_bridge)
 
-# add url via pico_set_program_url
 pico_set_program_url(uart_bridge "https://github.com/therealdreg/okhi")
 
 string(APPEND CMAKE_EXE_LINKER_FLAGS "-Wl,--print-memory-usage")

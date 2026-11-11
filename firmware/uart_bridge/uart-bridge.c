@@ -57,10 +57,9 @@ typedef struct {
 	mutex_t usb_mtx;
 } uart_data_t;
 
-// Dreg: Keeping only uart0 prototype; uart1 prototype and handler were removed to use a single COM port (UART0).
 void uart0_irq_fn(void);
 
-// Dreg: UART_ID configured for a single UART instance (uart0) — uart1 removed to force all traffic to UART0.
+// One entry per CDC interface: CFG_TUD_CDC is 1, bridged to UART0 (ESP_UART_ID).
 const uart_id_t UART_ID[CFG_TUD_CDC] = {
 	{
 			.inst = ESP_UART_ID,
@@ -198,51 +197,16 @@ void core1_entry(void)
 
 		tud_task();
 
-		// DREG MOD
 		/*
-		 
-		for (itf = 0; itf < CFG_TUD_CDC; itf++) {
-			if (tud_cdc_n_connected(itf)) {
-				con = 1;
-				usb_cdc_process(itf);
-			}
-		}
-		gpio_put(RP_LED_GPIO, con);
-
-		Check my esptool issue: https://github.com/espressif/esptool/issues/1119
-
-		esp tool v4.7.0 works fine, 
-		BUT From esptool commit https://github.com/espressif/esptool/commit/956557be9335e5ab6e008414068edeb99ee15430
-		The original code dont works
-		 
-	    ```
-		esptool added:
-
-		self._port = serial.serial_for_url(
-				port, exclusive=True, do_not_open=True
-			)
-			if sys.platform == "win32":
-				# When opening a port on Windows,
-				# the RTS/DTR (active low) lines
-				# need to be set to False (pulled high)
-				# to avoid unwanted chip reset
-				self._port.rts = False
-				self._port.dtr = False
-			self._port.open()
-         ```
-			
-		So no longer filter with tud_cdc_n_connected() → I always process the CDC 
-		 (so if esptool opens the port with DTR=0, we’ll still be reading) + tud_cdc_line_state_cb():
-		 
-		Conclusion: on Windows, esptool opens the port with DTR=0, and if you use tud_cdc_n_connected as a filter for the CDC you’ll run into problems. In addition, you need to handle DTR and RTS with CHIP PU and EBOOT so everything works correctly.
-	
+		 * Serve the CDC whether or not DTR is set. tud_cdc_n_connected() tests DTR, and
+		 * esptool on Windows opens the port with DTR and RTS false (to avoid an unwanted
+		 * chip reset) since commit 956557be9335e5ab6e008414068edeb99ee15430. The upstream
+		 * loop served connected interfaces only, so it ignored that port; esptool v4.7.0
+		 * still worked. https://github.com/espressif/esptool/issues/1119
 		 */
-
-
 		for (itf = 0; itf < CFG_TUD_CDC; itf++) {
             usb_cdc_process(itf);
         }
-		// END
 
 
 		gpio_put(RP_LED_GPIO, tud_mounted());
@@ -303,32 +267,26 @@ void init_uart_data(uint8_t itf)
 	const uart_id_t *ui = &UART_ID[itf];
 	uart_data_t *ud = &UART_DATA[itf];
 
-	/* Pinmux */
 	gpio_set_function(ui->tx_pin, GPIO_FUNC_UART);
 	gpio_set_function(ui->rx_pin, GPIO_FUNC_UART);
 
-	/* USB CDC LC */
 	ud->usb_lc.bit_rate = DEF_BIT_RATE;
 	ud->usb_lc.data_bits = DEF_DATA_BITS;
 	ud->usb_lc.parity = DEF_PARITY;
 	ud->usb_lc.stop_bits = DEF_STOP_BITS;
 
-	/* UART LC */
 	ud->uart_lc.bit_rate = DEF_BIT_RATE;
 	ud->uart_lc.data_bits = DEF_DATA_BITS;
 	ud->uart_lc.parity = DEF_PARITY;
 	ud->uart_lc.stop_bits = DEF_STOP_BITS;
 
-	/* Buffer */
 	ud->uart_pos = 0;
 	ud->usb_pos = 0;
 
-	/* Mutex */
 	mutex_init(&ud->lc_mtx);
 	mutex_init(&ud->uart_mtx);
 	mutex_init(&ud->usb_mtx);
 
-	/* UART start */
 	uart_init(ui->inst, ud->usb_lc.bit_rate);
 	uart_set_hw_flow(ui->inst, false, false);
 	uart_set_format(ui->inst, databits_usb2uart(ud->usb_lc.data_bits),
@@ -336,7 +294,7 @@ void init_uart_data(uint8_t itf)
 			parity_usb2uart(ud->usb_lc.parity));
 	uart_set_fifo_enabled(ui->inst, false);
 
-	/* UART RX Interrupt */
+	/* UART RX interrupt only, one per byte with the FIFO off */
 	irq_set_exclusive_handler(ui->irq, ui->irq_fn);
 	irq_set_enabled(ui->irq, true);
 	uart_set_irq_enables(ui->inst, true, false);
@@ -344,7 +302,6 @@ void init_uart_data(uint8_t itf)
 
 
 
-// mod by Dreg for okhi 
 #include "hardware/regs/io_qspi.h"
 #include "hardware/structs/ioqspi.h"
 #include "hardware/structs/sio.h"
@@ -387,10 +344,6 @@ static void boot_press(void)
 
     if (x > 90)
     {
-        /*
-        printf("Bootsel pressed!\r\n");
-        blink_led(5);
-        */
         reset_usb_boot(0, 0);
     }
 }
@@ -400,7 +353,6 @@ static void boot_press(void)
 int main(void)
 {
 	boot_press();
-			// end
 	int itf;
 
 	usbd_serial_init();
@@ -414,8 +366,6 @@ int main(void)
 	multicore_launch_core1(core1_entry);
 
 	
-	// mod by Dreg for OKHI - Open Keylogger Hardware Implant
-
 	gpio_init(ESP_RESET_GPIO);
     gpio_set_dir(ESP_RESET_GPIO, GPIO_OUT);
 
@@ -436,15 +386,6 @@ int main(void)
 
     gpio_put(ESP_RESET_GPIO, 1);
 
-	/*
-    gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_IN);
-    gpio_disable_pulls(EBOOT_MASTERDATAREADY_GPIO);
-	sleep_ms(100);
-	*/
-
-	// end
-
-
 	while (1) {
 		for (itf = 0; itf < CFG_TUD_CDC; itf++) {
 			update_uart_cfg(itf);
@@ -454,8 +395,6 @@ int main(void)
 
 	return 0;
 }
-
-// mod by Dreg for OKHI - Open Keylogger Hardware Implant
 
 void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 {
@@ -472,5 +411,3 @@ void tud_cdc_line_coding_cb(uint8_t itf, cdc_line_coding_t const* coding)
     mutex_exit(&ud->lc_mtx);
     update_uart_cfg(itf);
 }
-
-// end

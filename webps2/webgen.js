@@ -2,7 +2,7 @@
 
 // by Dreg
 
-// npm install html-minifier
+// html-minifier is checked in under node_modules (package.json).
 const fs = require('fs');
 const vm = require('vm');
 const zlib = require('zlib');
@@ -12,11 +12,10 @@ const { minify } = require('html-minifier');
 
 const INPUT = 'index.html';
 
-// The page is EMBEDDED in the firmware, so a stale one is invisible: the implant
-// reports a healthy ESP and a healthy RP while serving whatever HTML happened to
-// be generated last. Editing index.html and forgetting to run this script is the
-// whole failure mode. Stamping the moment of generation and a hash of the source
-// into the page turns that from a hunt into a glance.
+// The page is embedded in the firmware, so a stale one does not show: after an
+// edit to index.html without a run of this script, the implant reports a healthy
+// ESP and RP while it serves the HTML generated last. The stamp puts the time of
+// generation and a hash of the source on the page's WEB line.
 const STAMP_TOKEN = '@@WEBGEN@@';
 
 // Only so this script can say whether the built firmware predates the page it is
@@ -27,10 +26,10 @@ const OUT_MIN = 'webuff.txt';
 const OUT_GZ  = 'webuff_gz.txt';
 const OUT_ORI = 'webuff_orig.txt';
 
-// The page is EMBEDDED in the ESP application, it no longer lives in SPIFFS.
-// main/CMakeLists.txt picks this file up with EMBED_FILES, which is why it has
-// to land in the component directory and keep exactly this name: the linker
-// derives _binary_index_html_gz_start from it.
+// main/CMakeLists.txt embeds this file in the ESP application with EMBED_FILES,
+// so it has to land in the component directory and keep exactly this name: the
+// linker derives _binary_index_html_gz_start (com_esp.h) from it. Nothing in the
+// firmware reads the src/ copies, so the lines that write them are commented out.
 const EXTRA_PATH_GZ_EMBED = path.join('..', 'firmware', 'ps2', 'esp', 'main', 'index.html.gz');
 const EXTRA_MIN = path.join('..', 'firmware', 'ps2', 'esp', 'src', 'webuff.txt');
 const EXTRA_GZ  = path.join('..', 'firmware', 'ps2', 'esp', 'src', 'webuff_gz.txt');
@@ -50,13 +49,10 @@ function toCByteArray(buffer, varName, withProgmem = true) {
   return out;
 }
 
-// A single missing comma once shipped a page whose whole 72 KB script died at
-// parse time. Nothing looked wrong: the HTML is static, so the page rendered,
-// every panel stayed empty and every button was dead, and the only way to find
-// it was to flash the firmware and open devtools. The parser is free and it is
-// the same V8 the browser uses, so run it here and refuse to emit a page that
-// cannot execute. This check is the reason a broken page can no longer reach
-// the firmware.
+// One missing comma kills the whole page script at parse time, while the static
+// HTML still renders: every panel stays empty and every button is dead. Node
+// parses with V8, as Chrome does, so parse each inline script here and refuse to
+// emit a page that cannot run.
 function collectInlineScripts(html) {
   const scripts = [];
   const re = /<script(\s[^>]*)?>([\s\S]*?)<\/script>/gi;
@@ -74,8 +70,7 @@ function collectInlineScripts(html) {
 
     scripts.push({
       code: body,
-      // Line the script body starts on, so a parse error can be reported
-      // against index.html rather than against an extracted fragment.
+      // Zero-based line of index.html where the script body starts.
       startLine: before.split('\n').length - 1,
     });
   }
@@ -163,15 +158,15 @@ if (missingIds.length > 0) {
 
 const origBuf = Buffer.from(data, 'utf8');
 
-// Hashed BEFORE substitution, so the same source always produces the same hash
-// no matter when it was generated. That is what makes it comparable: sha256
-// the working copy and check it against the WEB line the implant is showing.
+// Hashed before the stamp goes in, so the same source always gives the same hash
+// whenever it is generated: the sha256 of a working copy, cut to 12 hex digits,
+// can be checked against the WEB line the implant shows.
 const srcHash = crypto.createHash('sha256').update(origBuf).digest('hex').slice(0, 12);
 
-// Read the page the firmware is currently built around BEFORE overwriting it.
-// Comparing its stamp against the source hash is what makes the staleness
-// check able to say yes as well as no: a timestamp alone can only ever report
-// that the file just written is newer than the binary, which it always is.
+// Read the page the firmware is built around before overwriting it. Its stamp,
+// compared with the source hash, lets the staleness check say yes as well as no:
+// a timestamp alone only shows that the file just written is newer than the
+// binary, which it always is.
 let prevSha = null;
 let prevGzTime = 0;
 
@@ -185,7 +180,7 @@ try {
     prevSha = shaMatch[1];
   }
 } catch (e) {
-  // No previous page, or one generated before stamping existed.
+  // No previous page, or one that does not gunzip: prevSha stays null.
 }
 
 const now = new Date();
@@ -200,8 +195,8 @@ if (!data.includes(STAMP_TOKEN)) {
 const shipped = data.split(STAMP_TOKEN).join(stamp);
 const shippedBuf = Buffer.from(shipped, 'utf8');
 
-// The token substitution is the last thing that touches the script, so parse the
-// result too rather than trusting that it could not have broken anything.
+// The stamp substitution is the last change to the script, so parse the stamped
+// page too.
 const shippedFailures = lintScripts(shipped);
 
 if (shippedFailures.length > 0) {
@@ -236,9 +231,8 @@ const gzBuf = zlib.gzipSync(shippedBuf, { level: zlib.constants.Z_BEST_COMPRESSI
 
 console.log('Gzipped (original) size:', gzBuf.length, 'bytes');
 
-// Decompress what is about to be embedded and parse THAT. It is the exact byte
-// range the linker puts in the binary and the exact bytes the browser will run,
-// so this is the check that actually covers what ships.
+// Decompress what is about to be embedded and parse that: it is what the linker
+// puts in the binary and what the browser runs.
 const roundTrip = zlib.gunzipSync(gzBuf).toString('utf8');
 
 if (roundTrip !== shipped) {
@@ -253,9 +247,8 @@ if (lintScripts(roundTrip).length > 0) {
 
 console.log('embedded copy round trips and parses clean');
 
-// Everything is verified, so write. Nothing above this line touches a file,
-// which is what keeps a failed lint from leaving half a page behind for the
-// next build to pick up.
+// Everything is verified, so write. Nothing above writes a file, so a failed
+// check leaves nothing half written for the next build to pick up.
 const cMin = toCByteArray(minBuf, 'web_min');
 fs.writeFileSync(OUT_MIN, cMin);
 console.log(`${OUT_MIN} written`);
@@ -289,8 +282,8 @@ console.log('arrow functions. Switch to minBuf only if you load the page afterwa
 console.log('confirm the JS still runs.');
 console.log('\nNow rebuild the ESP: the page is linked into the binary, not flashed to SPIFFS.');
 
-// The one check that actually catches the mistake this stamp exists for:
-// does the firmware sitting in build/ carry THIS page, or an older one?
+// Does the firmware in build/ carry this page or an older one? That is the
+// mistake the stamp exists to catch.
 try {
   const binTime = fs.statSync(FIRMWARE_BIN).mtimeMs;
 

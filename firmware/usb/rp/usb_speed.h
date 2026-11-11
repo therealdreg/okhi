@@ -145,7 +145,7 @@ static void usb_speed_stop(void)
     pio_sm_set_enabled(pio0, usb_speed_sm0, false);
 }
 
-// Both state machines stopped.
+// Call with both state machines stopped.
 static void usb_speed_set(bool fs)
 {
     uint j_line = fs ? 0 : 1; // IN pin 0 is D+, 1 is D-
@@ -160,9 +160,9 @@ static void usb_speed_set(bool fs)
     capture_speed_epoch++;
 }
 
-// Both state machines stopped. PIO0 parks on its entry WAIT with START held low, then PIO1 starts
-// from its first instruction and raises START on the first clean SE0, so capture always begins
-// between two packets. The same sequence at boot and after every speed change.
+// Call with both state machines stopped. PIO0 parks on its entry WAIT with START held low, then
+// PIO1 starts from its first instruction and raises START on the first clean SE0, so capture
+// always begins between two packets. The same sequence at boot and after every speed change.
 static void usb_speed_start(void)
 {
     pio_sm_clear_fifos(pio0, usb_speed_sm0);
@@ -182,7 +182,7 @@ static void usb_speed_start(void)
 // The first 16 line samples of a full speed packet are its SYNC and PID: D+ is low in K and high in
 // J, a 0 bit toggles the line and a 1 keeps it, and no stuffed bit fits in them, so they are the
 // same for every packet with that PID. A packet of fewer than 31 samples comes in one right-aligned
-// word. Only a packet captured exactly so matches; anything else is OTHER and stored as before.
+// word. Only a packet captured exactly so matches; anything else is USB_FS_OTHER and stored.
 #define USB_FS_LINE_OUT 0x5450   // KJKJKJKK, then PID 0xe1
 #define USB_FS_LINE_IN 0x544e    // 0x69
 #define USB_FS_LINE_SOF 0x546c   // 0xa5
@@ -263,17 +263,18 @@ static inline int usb_fs_kind(uint32_t w0, uint32_t samples)
     return line == USB_FS_LINE_SOF ? USB_FS_SOF : USB_FS_OTHER;
 }
 
-// What core 0 stores at full speed. A hub with one transaction translator for all its ports
-// repeats everything the host sends to every full speed port, so this port also carries the
-// tokens, the OUT and SETUP data and the handshakes the host sends to other devices, while their
-// replies leave by their own ports. Keys travel as an IN answered by DATA, and the descriptors that
-// say how to read them come in the same shape on EP0 after a SETUP and its 8-byte request. Core 0
-// keeps those two pairs, the SOFs (the frame count), a DATA with no token before it in the buffer
-// and anything it cannot classify, and drops the idle polls (IN + NAK), an IN that only the host's
-// ACK follows (another device's data), the tokens nothing answers here, the data the host sends
-// after OUT and the lone handshakes. On the bench on 2026-11-04 okhi-kbd's own USB serial adapter,
-// on the same hub, was polled 36000 times a second: stored, that filled a buffer in 0.1 s, against
-// 1.5 s that core 1 may hold one while the ESP does not answer (USB_PATIENCE_US).
+// What core 0 stores at full speed. A hub running at full speed, or a high speed hub with one
+// transaction translator for all its ports, repeats everything the host sends to every full speed
+// port, so this port also carries the tokens, the OUT and SETUP data and the handshakes the host
+// sends to other devices, while their replies leave by their own ports. Keys travel as an IN
+// answered by DATA, and the descriptors that say how to read them come in the same shape on EP0
+// after a SETUP and its 8-byte request. Core 0 keeps those two pairs, the SOFs (the frame count), a
+// DATA with no token before it in the buffer and anything it cannot classify (a lone STALL among
+// them), and drops the idle polls (IN + NAK), an IN that only the host's ACK follows (another
+// device's data), the tokens nothing answers here, the data the host sends after OUT and a lone
+// ACK or NAK. On the bench on 2026-11-04 okhi-kbd's own USB serial adapter, on the same hub, was
+// polled 36000 times a second: stored, that filled a buffer in 0.1 s, against 1.5 s that core 1
+// may hold one while the ESP does not answer (USB_PATIENCE_US).
 typedef struct
 {
     int tok;      // header of the last packet stored when it is an IN, OUT or SETUP token, else -1
@@ -282,7 +283,7 @@ typedef struct
 
 // Core 0, for every full speed packet that closed with room in the buffer. Returns true when it is
 // not stored, and *packet and *index are then where the next one goes. A token followed by another
-// token is dropped, and the second one moved down over it.
+// token or a SOF is dropped, and the second one moved down over it.
 static bool usb_fs_skip(usb_fs_filter_t *f, volatile dbuff_t *d, int *packet, int *index, uint32_t samples)
 {
     volatile uint32_t *buf = d->g_buffer;

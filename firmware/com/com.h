@@ -32,7 +32,7 @@ WARNING: BULLSHIT CODE X-)
 #ifndef __COM_COM__
 #define __COM_COM__
 
-// For the sequence helpers below. This header used to be macros only, so nothing pulled it in.
+// uint8_t, for the sequence helpers below.
 #include <stdint.h>
 
 #define OKHI_VARIANT_PS2 "ps2"
@@ -59,9 +59,10 @@ WARNING: BULLSHIT CODE X-)
 #define SPI_FRAME_MAGIC_BYTES 'O', 'K', 'H', 'I'
 #define SPI_CTRL_MAGIC_BYTES 'O', 'K', 'H', 'C'
 
-// What the USB variant's RP sees attached to its capture port, carried in a byte of every control
-// frame that older firmware and the PS/2 variant leave at 0. WIDE is a full speed keyboard that has
-// sent reports longer than 8 bytes since its last bus reset; an ESP that predates it reads unknown.
+// What the USB variant's RP sees attached to its capture port, in byte 7 of its control frames
+// (a benchmark frame has its step there; older firmware and the PS/2 variant leave it at 0). WIDE
+// is a full speed keyboard whose descriptors the RP did not see and that has sent a report longer
+// than 8 bytes since its last bus reset; an ESP that predates WIDE reads it as unknown.
 #define SPI_CTRL_USB_BUS_OFF 7
 #define USB_BUS_UNKNOWN 0
 #define USB_BUS_LOW 1
@@ -72,9 +73,9 @@ WARNING: BULLSHIT CODE X-)
 
 // Crystal calibration modes, in which the RP stops capturing and uses the two sniff pins instead:
 // GPIO21 carries its crystal clock out, or measures one coming in. The ESP asks for a mode in its
-// status frame, behind a fresh random token so a stale request is never acted on twice; the RP
-// reports its mode and streams its console lines in the POLL frames, and the ESP acknowledges
-// each line by its sequence so none is lost or shown twice.
+// status frame behind a fresh random token, so the RP never acts on a request twice. The RP
+// reports its mode and its console lines in its POLL frames, each line with a sequence: the RP
+// sends a line until the ESP acknowledges that sequence, and the ESP stores no line twice.
 #define CLOCK_MODE_OFF 0
 #define CLOCK_MODE_OUT 1
 #define CLOCK_MODE_METER 2
@@ -96,39 +97,33 @@ WARNING: BULLSHIT CODE X-)
 #define SPI_PAYLOAD_OFFSET (SPI_FRAME_LEAD + SPI_PAYLOAD_FROM_MAGIC)
 #define SPI_NO_BLOCK 0xFFFFFFFFu
 
-// FIX BY DREG: per block payload crc, carried in the unused header gap [63..95] measured from the
-// magic, so the receiver can reject and retry a single corrupt block instead of the whole image.
+// CRC-32 of a DATA frame's block payload, in bytes 64 to 67 from the magic, so the RP fetches
+// again only the block that arrived corrupt, instead of failing the whole image.
 #define SPI_BLOCK_CRC_OFF 64
 
 /*
- * SPI_MAGIC_SEARCH_MAX CANNOT BE RAISED. ota_fetch_block() copies
- * SPI_PAYLOAD_FROM_MAGIC + up to SPI_BLOCK_PAYLOAD bytes measured from the
- * magic, so the worst case is 32 + 96 + 128 = 256, exactly SPI_FRAME_SIZE.
- * A larger window lets a block read run past the end of the receive buffer.
- */
-/*
- * FIX BY DREG: sequenced capture records, so a retry cannot duplicate a keystroke.
+ * Sequenced capture records, so a resend cannot duplicate a keystroke.
  *
- * The RP is master for capture records and clocks them at an ESP that may not have a transaction
- * armed; nothing detects that, because spi_write_blocking succeeds whether or not anyone is
- * listening and with no transaction there is no callback on the ESP either. Retrying is the only
- * cure, but a blind retry duplicates whatever DID land, and the SLAVEREADY handshake cannot tell
- * the two apart: its falling edge says a transaction ended, not WHICH one. Measured on hardware,
- * tuning that timeout only trades losses against duplicates.
+ * The RP is the master for capture records and clocks them at an ESP that may have no transaction
+ * armed. Nothing detects that: spi_write_blocking() succeeds whether or not anyone is listening,
+ * and with no transaction the ESP runs no callback either. Sending again is the only cure, but a
+ * blind resend duplicates whatever did land, and the SLAVEREADY handshake cannot tell the two
+ * apart: its falling edge says that a transaction ended, not which one. Measured on hardware,
+ * tuning the handshake's timeout only trades losses for duplicates.
  *
- * So the record carries its own sequence and the ESP drops a repeat. A retry becomes idempotent,
- * which means the RP no longer has to be right about whether a frame landed: it can retry freely.
+ * So each record carries its own sequence and the ESP drops a repeat: the RP can send a record
+ * again without knowing whether the first copy landed.
  *
- * Wire format of a capture record, replacing the bare NUL terminated text:
+ * Wire format of a capture record:
  *
  *     [0] SPI_RECORD_MARKER
- *     [1] sequence, 1..255, NEVER 0
- *     [2..] the record text, NUL terminated, exactly as before
+ *     [1] sequence, 1..255, never 0
+ *     [2..] the record text, ending in CRLF
  *
- * The marker is 0x01 because a legacy record always began with printable 'D' or 'H', so a
- * receiver can tell the two formats apart and neither side is wedged if only one is updated.
- * The sequence skips 0 because spi_payload_length() measures to the first NUL, and a 0 there
- * would truncate the frame to nothing.
+ * The marker is 0x01 because a record's text starts with a printable character. The ESP drops a
+ * frame that does not start with the marker and end with CRLF (spi_garbled): two frames run
+ * together, or one shifted. The sequence skips 0 because spi_payload_length() measures to the
+ * first NUL, and a 0 there would cut the frame down to its marker.
  */
 #define SPI_RECORD_MARKER 0x01
 #define SPI_RECORD_SEQ_MIN 1
@@ -136,35 +131,35 @@ WARNING: BULLSHIT CODE X-)
 #define SPI_RECORD_HEADER 2
 
 /*
- * The sequence the ESP last ACCEPTED, echoed back in every STATUS frame so the RP can reconcile.
+ * The sequence of the last record the ESP accepted, echoed in every STATUS frame so the RP can
+ * reconcile.
  *
- * The sequence alone stops a retry duplicating a keystroke, but it does not stop one going
- * missing, because the RP still has to guess whether a frame landed and the SLAVEREADY handshake
- * lies in both directions: its falling edge can arrive from the PREVIOUS transaction when ours was
- * never taken, so the RP advances and the record is gone. Measured, that left 0.28% still lost.
+ * The sequence alone stops a resend from duplicating a keystroke, but not from losing one: the RP
+ * still has to guess whether a frame landed, and the SLAVEREADY handshake misleads both ways. Its
+ * falling edge can come from the previous transaction when the RP's frame was never taken, so the
+ * RP moves on and the record is lost. Measured with the sequence alone: 0.28% still lost.
  *
- * With this the RP stops guessing. It compares what it has sent against what the ESP says it has,
- * rewinds its ring cursor over the difference and re-sends, which is free now that repeats are
- * dropped. Byte 63 of the frame header is the one byte of the documented unused gap that the block
- * CRC at SPI_BLOCK_CRC_OFF does not occupy.
+ * With this byte the RP stops guessing. It compares what it has sent with what the ESP says it
+ * holds, rewinds its ring cursor over the difference and sends again; the resend costs nothing,
+ * since the ESP drops repeats. Byte 63 is the byte just before the block CRC at SPI_BLOCK_CRC_OFF.
  */
 #define SPI_STATUS_RECORD_SEQ_OFF 63
 
 /*
- * Sequence arithmetic, shared so both ends can never disagree about what "newer" means. The
- * sequence ring is 1..255, 255 values, 0 reserved for "none yet" and forbidden on the wire.
+ * Sequence arithmetic, shared so both ends agree on what "newer" means. The sequence ring is
+ * 1..255, 255 values; 0 means "none yet", and no record carries it.
  *
- * SPI_SEQ_FORWARD_MAX splits the ring in half: a delta of 1..127 is a record we have not seen,
- * 128..254 is one we have already passed, i.e. the RP rewinding and re-sending. That is what lets
- * the ESP recognise a whole re-sent RUN as duplicates instead of only the single record it holds.
+ * SPI_SEQ_FORWARD_MAX splits the ring in half: a delta of 1..127 is a record the ESP has not seen,
+ * 0 the one it holds and 128..254 one it has passed, the RP rewinding and sending again. So the ESP
+ * recognises a whole run sent again as duplicates, not only the single record it holds.
  *
- * SPI_SEQ_RESYNC_AFTER is the escape hatch, and it is the reason this can be made strict at all.
- * The ESP refuses to skip forward, holding its position so the RP can rewind and fill the hole;
- * without a limit, two ends that lost each other would leave the ESP dropping everything for ever,
- * which is far worse than the loss being fixed. After this many consecutive refusals it gives up
- * and resynchronises, counting what it skipped. The RP reconciles on every poll, roughly every
- * 50 ms or about 6 records of typing, so in normal operation this never fires; it only bounds the
- * damage when the other end is old firmware, or wedged.
+ * SPI_SEQ_RESYNC_AFTER is the way out that lets the ESP be strict. The ESP refuses to skip
+ * forward and holds its position so the RP can rewind and fill the hole; with no limit, two ends
+ * that lost each other would leave the ESP dropping everything for ever, far worse than the loss
+ * it prevents. After this many refusals in a row it gives up and resynchronises, counting what it
+ * skipped (spi_gaps). The RP reconciles at every poll, at most 4 records apart (USB_SEND_WINDOW,
+ * PS2_SEND_WINDOW) and every 50 ms when idle (SPI_POLL_INTERVAL_US), so in normal operation this
+ * never fires; it bounds the damage when the RP is old firmware, or wedged.
  */
 #define SPI_SEQ_FORWARD_MAX 127
 #define SPI_SEQ_RESYNC_AFTER 64
@@ -187,6 +182,12 @@ static inline uint8_t spi_seq_delta(uint8_t a, uint8_t b)
     return (uint8_t)d;
 }
 
+/*
+ * Do not raise SPI_MAGIC_SEARCH_MAX. The RP looks for the magic up to 32 bytes into the frame,
+ * and ota_fetch_block() reads up to SPI_PAYLOAD_FROM_MAGIC + SPI_BLOCK_PAYLOAD bytes past it: the
+ * worst case is 32 + 96 + 128 = 256, exactly SPI_FRAME_SIZE. A larger window lets a block read run
+ * past the end of the receive buffer.
+ */
 #define SPI_MAGIC_SEARCH_MAX 32
 
 #define SPI_IDENTITY_OFFSET 16
@@ -271,10 +272,10 @@ static inline uint8_t spi_seq_delta(uint8_t a, uint8_t b)
 #define SPI_SELFTEST_STATUS_BLINK_OFF 45
 #define SPI_SELFTEST_STATUS_EBOOT_OFF 46
 
-// Byte 46 carries the live MASTERDATAREADY level in bit 0 plus a latch of both levels
-// the ESP has seen since the run was armed. The latch is what the self test reads: the
-// live bit alone is always low, because the RP releases the line before clocking the
-// very frame that reports it.
+// Byte 46 carries the live MASTERDATAREADY level in bit 0 and a latch of both levels the
+// ESP has seen since the self test was armed. The self test reads the latch: the live bit
+// alone is always low, because the RP releases the line before it clocks the frame that
+// reports it.
 #define EBOOT_SEEN_HIGH 0x02
 #define EBOOT_SEEN_LOW 0x04
 
@@ -283,13 +284,13 @@ static inline uint8_t spi_seq_delta(uint8_t a, uint8_t b)
 #define SPI_UART_MIN_BAUD_OFF 52
 #define SPI_UART_MAX_BAUD_OFF 56
 
-// Which sniff line the web is asking the RP to probe with a ground wire: 1 for the
-// D+/DATA side, 2 for the D-/CLK side, 0 for nothing pending. The ESP clears it as soon
-// as the result row comes back, so the RP acts on the zero to non-zero edge only.
+// Which sniff line the page asks the RP to probe with a ground wire: 1 for the D+/DATA
+// side, 2 for the D-/CLK side, 0 for nothing pending. The ESP clears it when the result
+// row comes back or the probe times out, so the RP acts only when the byte leaves 0.
 #define SPI_SELFTEST_STATUS_PROBE_OFF 62
 
-// When the ESP re-arms a benchmark after a reset it lost mid-run, this carries
-// the kHz to resume the descending confirmation from, so the RP skips the sweep
+// When the ESP re-arms a benchmark that a reset cut short: the kHz to resume the
+// descending confirmation from (16 bits, low byte first), so the RP skips the sweep
 // and drops straight below the clock that caused the reset. 0 means a fresh run.
 #define SPI_BENCH_STATUS_RESUME_OFF 60
 

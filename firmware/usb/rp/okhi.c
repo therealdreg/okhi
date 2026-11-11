@@ -30,78 +30,48 @@ WARNING: BULLSHIT CODE X-)
 */
 
 /*
-  Dreg's note: I have tried to document everything as best as possible and make the code and project
-  as accessible as possible for beginners. There may be errors (I am a lazy bastard)
-  if you find any, please make a PR
-*/
-
-// I'm still a novice with the Pico SDK & RP2040, so please bear with me if there are unnecessary things ;-)
-
-/*
- *
- *  This firmware turns an RP2040 into a passive USB Low-Speed (1.5 Mbit/s) and
- *  Full-Speed (12 Mbit/s) bus sniffer. It captures the raw USB line, decodes the
- *  protocol in software, and forwards decoded "IN" transactions to a companion
- *  ESP over SPI/UART. The speed follows what is attached (usb_speed.h).
+ *  This firmware turns an RP2040 into a passive sniffer of a low speed (1.5 Mbit/s)
+ *  or full speed (12 Mbit/s) USB keyboard. It captures the raw line, decodes the
+ *  protocol in software and sends the keyboard's reports to the ESP over SPI. The
+ *  speed follows what is attached (usb_speed.h).
  *
  *  It is a Raspberry Pi Pico SDK port of Alex Taradov's "usb-sniffer-lite":
  *      https://github.com/ataradov/usb-sniffer-lite   (BSD-3-Clause)
  *
- *  ---------------------------------------------------------------------------
- *  END-TO-END CAPTURE PIPELINE
- *  ---------------------------------------------------------------------------
+ *  The capture path:
+ *  - At each start PIO1 waits for a clean SE0 on D+ and D- and raises START, so
+ *    PIO0 starts sampling between two packets. PIO0 pushes the raw D+ samples of
+ *    each packet into its RX FIFO as DATA words, then one SIZE word (okhi.pio has
+ *    the format).
+ *  - Core 0 (main()) drains that FIFO into one of two buffers, dbuff1 and dbuff2.
+ *    It hands a buffer to core 1 through the inter-core FIFO when it is full or
+ *    100 ms after a packet long enough to be a report, and goes on in the other
+ *    buffer if core 1 has released it.
+ *  - Core 1 (core1_main()) decodes the buffer in process_buffer() and
+ *    process_packet(): NRZI (a transition is a 0, none is a 1), bit stuffing (a 0
+ *    after six 1s), the SYNC byte, the PID and its complement, CRC5 or CRC16.
+ *    display_buffer() then sends the reports to the ESP.
+ *  The PIO does only the bit timing; the CPU decodes afterwards, from a buffer.
  *
- *   USB D+/D- ->  PIO1 (SE0 start sync) --START--> PIO0 (bit sampler)
- *                                                     |
- *                                            RX FIFO  |  raw NRZI line samples
- *                                                     v
- *   [CORE 0, main()]  drains PIO0's FIFO into a double buffer (dbuff1/dbuff2).
- *                     Each captured packet is stored as a stream of DATA words
- *                     plus one trailing SIZE word (see okhi.pio for the format).
- *                     When a buffer fills, its pointer is handed to core 1 and
- *                     capture continues immediately in the other buffer.
- *                                                     |
- *                              multicore FIFO handoff |
- *                                                     v
- *   [CORE 1, core1_main()]  process_buffer() -> process_packet():
- *                     - NRZI decode (transition = 0, no transition = 1)
- *                     - remove bit stuffing (a 0 forced after six 1s)
- *                     - validate SYNC byte, PID (nibble + complement), CRC5/CRC16
- *                     display_buffer() then formats packets and forwards the
- *                     interesting ones (IN transactions) to the ESP.
- *
- *  The split is deliberate: the PIO does only hard-real-time bit recovery, the
- *  CPU does the heavy protocol decoding, and the two CPU cores pipeline capture
- *  against decoding so no bus traffic is missed.
- *
- *  ---------------------------------------------------------------------------
- *  USB LOW-SPEED PROTOCOL, IN ONE SCREEN
- *  ---------------------------------------------------------------------------
- *  Line states (Low Speed):  J/idle = D- high, D+ low ;  K = D+ high, D- low ;
- *                            SE0 = both low (EOP / bus reset) ; SE1 = both high
- *                            (illegal). NOTE: at Full Speed J/K polarity flips.
- *  Encoding:                 NRZI - a 0 bit is a line transition, a 1 bit is no
- *                            transition. A 0 is stuffed into the stream after any
- *                            six consecutive 1s to guarantee edges for clock
- *                            recovery; the receiver removes it again.
- *  Packet layout on the wire:
- *      SYNC (KJKJKJKK, decodes to 0x80) | PID | [payload] | [CRC] | EOP
- *      - PID byte = 4-bit PID in the low nibble + its one's-complement in the
- *        high nibble (a self-checking field).
- *      - Token/SOF packets carry an 11-bit field guarded by a 5-bit CRC (CRC5).
- *      - DATA packets carry 0..8 payload bytes guarded by a 16-bit CRC (CRC16).
- *      - Handshake packets (ACK/NAK/STALL/NYET) are PID-only, no CRC.
- *  A Low-Speed bus has no SOF packet; instead the host sends a keep-alive EOP
- *  ~every 1 ms, which this code treats as the Low-Speed frame delimiter. A
- *  Full-Speed bus carries a SOF token every 1 ms.
- *
- *  See okhi.pio for the bit-level capture programs and the FIFO word format.
- * =============================================================================
+ *  USB in short: at low speed J (idle) is D- high and D+ low, K is D+ high and D-
+ *  low, and full speed swaps J and K. SE0 (both low) ends a packet and, sustained,
+ *  is a bus reset or a detach; SE1 (both high) is never driven on purpose. NRZI
+ *  sends a 0 bit as a transition and a 1 bit as none, and the sender stuffs a 0
+ *  after six 1s so the line keeps its edges. A packet is SYNC (KJKJKJKK, 0x80),
+ *  PID, payload, CRC and EOP:
+ *  - the PID byte holds the 4-bit PID in its low nibble and its complement in the
+ *    high nibble;
+ *  - a token or SOF carries an 11-bit field and a CRC5;
+ *  - a DATA packet carries up to 8 payload bytes at low speed, up to 64 at full
+ *    speed (1023 isochronous), and a CRC16;
+ *  - a handshake (ACK, NAK, STALL, NYET) is the PID alone.
+ *  A low speed bus has no SOF: the host sends a keep-alive EOP every 1 ms, which
+ *  this code takes as the low speed frame mark. A full speed bus has a SOF every
+ *  1 ms.
  */
 
-// This project assumes that copy_to_ram is enabled, so ALL code runs from RAM.
-// Running from RAM (rather than execute-in-place from flash) removes flash-wait
-// jitter, which matters for the tightly cycle-counted capture loop.
+// A copy_to_ram image (CMakeLists.txt): all code runs from RAM, so no flash access
+// stalls core 0 while it drains the PIO's FIFO, even while core 1 writes the flash.
 
 #include "hardware/adc.h"
 #include "hardware/clocks.h"
@@ -136,16 +106,13 @@ uint32_t __scratch_y("my_group_nameY") fooY = 23;
 #define __core1_func(x) __scratch_y(__STRING(x)) x
 #define __core2_func(x) __scratch_x(__STRING(x)) x
 
-// uncomment to enable dev build
-// #define DEV_BUILD 1 // NOT USED YET
-
 #define SPI_CS_SETUP_US 25
 #define delay_cs_pre() busy_wait_us_32(SPI_CS_SETUP_US);
 
 #define RP_VARIANT OKHI_VARIANT_USB
 #define OTA_WATCHDOG_UPDATE() watchdog_update()
-// Before an intentional reboot (an OTA commit, a web reset, BOOTSEL, a clock mode) a write of
-// the HID maps still waiting out its quiet time goes out now (hid_store_flush()).
+// Before an intentional reboot (an OTA commit, a web reset, BOOTSEL, a clock mode)
+// hid_store_flush() writes the HID maps at once if a write of them is waiting.
 static void hid_store_flush(void);
 #define RP_STATE_FLUSH() hid_store_flush()
 
@@ -157,16 +124,13 @@ static void hid_store_flush(void);
 
 #include "../../com/com_rp_clock.h"
 
-// ---- USB capture GPIO mapping ----------------------------------------------
-// The PIO reads D+, D- and START through a single IN pin base, so these three
-// GPIOs MUST be consecutive and in this exact order: the PIO refers to them as
-// relative "PIN 0" (D+), "PIN 1" (D-) and "PIN 2" (START). The absolute GPIO
-// numbers below can be anything as long as that consecutive DP, DM, START order
-// is preserved (see the pin-mapping notes in okhi.pio).
-#define DP_INDEX 20      // D+ data line  -> PIO "PIN 0" (also the low-speed JMP pin)
-#define DM_INDEX 21      // D- data line  -> PIO "PIN 1" (also the full-speed JMP pin)
-#define START_INDEX 22   // PIO1 -> PIO0 START handshake -> PIO "PIN 2"
-#define TRIGGER_INDEX 18 // Optional external capture trigger (unused in this build)
+// USB capture pins. The PIO reads D+, D- and START from one IN pin base as its
+// pins 0, 1 and 2, so the three GPIOs must be consecutive and in this order. Any
+// three consecutive GPIOs work (okhi.pio, pin mapping).
+#define DP_INDEX 20      // D+, PIO pin 0, the JMP pin at low speed
+#define DM_INDEX 21      // D-, PIO pin 1, the JMP pin at full speed
+#define START_INDEX 22   // START from PIO1 to PIO0, PIO pin 2
+#define TRIGGER_INDEX 18 // external capture trigger, unused in this build
 
 #include "usb_bus.h"
 
@@ -174,63 +138,57 @@ static void hid_store_flush(void);
 
 #define BUFFER_SIZE ((232 * 1024) / (int)sizeof(uint32_t))
 
-// ---- Per-packet header flags -----------------------------------------------
-// After a packet has been decoded, process_packet() overwrites its header word
-// (g_buffer[packet]) with a combined value:  [status/error flags] | [byte size].
-// The high bits below are the flags; the low 16 bits (CAPTURE_SIZE_MASK) hold
-// the decoded packet length in bytes. This lets the display stage tell at a
-// glance whether a packet was clean, malformed, a bus reset, etc.
-#define CAPTURE_ERROR_STUFF (1 << 31) // Bit-stuffing violation: a 7th consecutive 1
-#define CAPTURE_ERROR_CRC (1 << 30)   // CRC5/CRC16 check failed
-#define CAPTURE_ERROR_PID (1 << 29)   // PID nibble != complement of check nibble
-#define CAPTURE_ERROR_SYNC (1 << 28)  // First decoded byte was not a valid SYNC
-#define CAPTURE_ERROR_NBIT (1 << 27)  // Packet did not end on a whole-byte boundary
-#define CAPTURE_ERROR_SIZE (1 << 26)  // Packet too short / wrong length for its PID
-#define CAPTURE_RESET (1 << 25)       // Bus reset (sustained SE0, bit count 0)
-#define CAPTURE_LS_SOF (1 << 24)      // Low-Speed keep-alive, used as the LS frame mark
-#define CAPTURE_MAY_FOLD (1 << 23)    // Frame is "empty" (only IN/NAK) -> foldable in display
+// Per-packet header flags. Core 1 rewrites the header word of each decoded packet as
+// these flags ORed with its length in bytes (CAPTURE_SIZE_MASK), so the display
+// stage can tell a clean packet from a malformed one or a marker.
+#define CAPTURE_ERROR_STUFF (1 << 31) // seven 1s in a row: a sender's abort or a line error
+#define CAPTURE_ERROR_CRC (1 << 30)   // CRC5 or CRC16 check failed
+#define CAPTURE_ERROR_PID (1 << 29)   // PID nibbles not complementary, or PID 0
+#define CAPTURE_ERROR_SYNC (1 << 28)  // first decoded byte was not the SYNC
+#define CAPTURE_ERROR_NBIT (1 << 27)  // packet did not end on a whole byte
+#define CAPTURE_ERROR_SIZE (1 << 26)  // packet too short, or the wrong length for its PID
+#define CAPTURE_RESET (1 << 25)       // bus reset or detach (sustained SE0, bit count 0)
+#define CAPTURE_LS_SOF (1 << 24)      // low speed keep-alive, the low speed frame mark
+#define CAPTURE_MAY_FOLD (1 << 23)    // on the SOF of an empty frame (only IN and NAK): foldable
 
-// Any of these bits set means the packet had a detectable error.
 #define CAPTURE_ERROR_MASK                                                                                             \
     (CAPTURE_ERROR_STUFF | CAPTURE_ERROR_CRC | CAPTURE_ERROR_PID | CAPTURE_ERROR_SYNC | CAPTURE_ERROR_NBIT |           \
      CAPTURE_ERROR_SIZE)
 
-#define CAPTURE_SIZE_MASK 0xffff // Low 16 bits of the header word = decoded byte count
+#define CAPTURE_SIZE_MASK 0xffff // low 16 bits of the header word: the decoded length in bytes
 
-#define ERROR_DATA_SIZE_LIMIT 16 // Max payload bytes to dump when printing an errored packet
-#define MAX_PACKET_DELTA 10000   // us; a larger gap between packets is treated as buffer corruption
+#define ERROR_DATA_SIZE_LIMIT 16 // payload bytes to print for a packet with an error; unused here
+#define MAX_PACKET_DELTA 10000   // us; a larger gap between packets is taken for buffer corruption
 
-// ---- USB Packet IDs (PIDs) --------------------------------------------------
-// The byte after SYNC is the PID byte: the low nibble is the 4-bit PID, and the
-// high nibble is its bitwise complement (a built-in check). The values below are
-// the 4-bit PID codes. The two lowest bits classify the packet group
-// (token/data/handshake/special), which is why they are grouped here.
+// USB packet IDs. The byte after SYNC is the PID byte: the 4-bit PID below in its low
+// nibble, its complement in the high nibble. The two lowest bits give the group (token,
+// data, handshake, special), which is how the codes are grouped here.
 enum
 {
-    Pid_Reserved = 0, // 0x0 - illegal / never used
+    Pid_Reserved = 0, // 0x0: reserved in USB 2.0, EXT in the LPM ECN; flagged as a PID error
 
-    // Token packets: address a device+endpoint, or (SOF) carry a frame number.
-    Pid_Out = 1,    // 0x1 - host->device data transfer follows
-    Pid_In = 9,     // 0x9 - device->host data transfer follows
-    Pid_Sof = 5,    // 0x5 - Start-Of-Frame (Full Speed only; LS uses keep-alives)
-    Pid_Setup = 13, // 0xD - begins a control transfer
+    // Token packets: address a device and endpoint, or (SOF) carry a frame number.
+    Pid_Out = 1,    // 0x1: data from the host follows
+    Pid_In = 9,     // 0x9: data from the device follows
+    Pid_Sof = 5,    // 0x5: Start-Of-Frame, full and high speed (low speed has keep-alives)
+    Pid_Setup = 13, // 0xD: begins a control transfer
 
-    // Data packets: carry the payload, guarded by CRC16.
-    Pid_Data0 = 3,  // 0x3 - even data toggle
-    Pid_Data1 = 11, // 0xB - odd data toggle
-    Pid_Data2 = 7,  // 0x7 - high-speed isochronous only
-    Pid_MData = 15, // 0xF - high-speed isochronous only
+    // Data packets: the payload and its CRC16.
+    Pid_Data0 = 3,  // 0x3: even data toggle
+    Pid_Data1 = 11, // 0xB: odd data toggle
+    Pid_Data2 = 7,  // 0x7: high speed isochronous only
+    Pid_MData = 15, // 0xF: high speed only, isochronous and split transactions
 
-    // Handshake packets: PID-only, no payload and no CRC.
-    Pid_Ack = 2,    // 0x2 - received OK
-    Pid_Nak = 10,   // 0xA - not ready / no data (device asks host to retry)
-    Pid_Stall = 14, // 0xE - endpoint halted / request unsupported
-    Pid_Nyet = 6,   // 0x6 - not yet (USB 2.0 high-speed flow control)
+    // Handshake packets: the PID alone, no payload and no CRC.
+    Pid_Ack = 2,    // 0x2: received OK
+    Pid_Nak = 10,   // 0xA: no data or not ready, the host retries
+    Pid_Stall = 14, // 0xE: endpoint halted or request not supported
+    Pid_Nyet = 6,   // 0x6: not yet (high speed flow control)
 
     // Special packets.
-    Pid_PreErr = 12, // 0xC - PRE (low-speed preamble) / ERR (split error); same code
-    Pid_Split = 8,   // 0x8 - high-speed split transaction (5-byte token)
-    Pid_Ping = 4,    // 0x4 - high-speed PING
+    Pid_PreErr = 12, // 0xC: PRE (low speed preamble) and ERR (split error) share the code
+    Pid_Split = 8,   // 0x8: high speed split transaction (5 bytes here, SYNC included)
+    Pid_Ping = 4,    // 0x4: high speed PING
 };
 
 enum
@@ -285,30 +243,28 @@ enum
     DisplayFoldCount,
 };
 
-// Metadata describing one capture buffer's contents.
 typedef struct
 {
-    bool fs;      // true = Full Speed capture, false = Low Speed: the speed core 0
-                  // captured at while it filled this buffer (one speed per buffer).
-    bool trigger; // reserved for the external trigger feature (unused here)
-    int limit;    // stop after this many packets (see capture_limit_value())
-    int count;    // number of packets currently stored in this buffer
+    bool fs;      // the speed core 0 captured this buffer at, true for full speed
+                  // (one speed per buffer)
+    bool trigger; // for the external trigger, unused in this build
+    int limit;    // core 0 hands the buffer over at this many packets (capture_limit_value())
+    int count;    // packets in this buffer
     int errors;   // packets flagged with any CAPTURE_ERROR_* bit
-    int resets;   // bus resets seen
-    int frames;   // frames seen (one per SOF / LS keep-alive)
-    int folded;   // "empty" frames collapsed by the folding logic
-    int polls;    // Full Speed IN + NAK pairs core 0 did not store
-    int other;    // other Full Speed packets core 0 did not store (usb_fs_skip())
+    int resets;   // reset markers decoded: bus resets and detaches
+    int frames;   // frames seen (one per SOF or low speed keep-alive)
+    int folded;   // empty frames flagged CAPTURE_MAY_FOLD
+    int polls;    // full speed IN + NAK pairs core 0 did not store
+    int other;    // other full speed packets core 0 did not store (usb_fs_skip())
     int wide;     // interrupt IN reports over 8 bytes, not forwarded
-    int markers;  // bus reset markers core 0 stored
+    int markers;  // reset markers core 0 stored
     bool after_overrun; // core 0 started it after an overrun dropped packets
 } buffer_info_t;
 
-// One capture buffer. g_buffer serves double duty: core 0 fills it with RAW
-// captured words (DATA words + trailing SIZE words) during capture; core 1 then
-// decodes and COMPACTS it in place (decoded output is always shorter than the
-// raw input, so process_buffer() can read ahead and write behind in the same
-// array). Two of these (dbuff1/dbuff2) are used as a ping-pong double buffer.
+// One capture buffer. Core 0 stores each packet as two header words (its bit count and
+// a time slot) and its DATA words. Core 1 then decodes it in place, writing the bytes
+// behind the read cursor (decoded bytes never take more room than the raw samples).
+// dbuff1 and dbuff2 below are the two halves of a double buffer.
 typedef struct
 {
     uint32_t g_buffer[16000];
@@ -322,40 +278,40 @@ typedef struct
 // with worst-case bit stuffing, is 21 words of 31 samples plus its 2 header words.
 #define CAPTURE_RESERVE_WORDS 64
 
-// A packet of at least this many line bits can be an 8-byte report (SYNC + PID + 64 + CRC16 is 96);
-// tokens, handshakes and keep-alives are 33 bits or less. Core 0 hands such a buffer over this long
-// after it arrived instead of waiting for the buffer to fill, which took 0.5 to 4.4 s.
+// A packet of at least CAPTURE_REPORT_BITS samples can be an 8-byte report (SYNC, PID, 64 bits
+// and CRC16 are 96); tokens, handshakes and keep-alives are 36 or less. Core 0 hands a buffer
+// with such a packet over CAPTURE_HANDOFF_US after it. Without that a key waits until the buffer
+// fills: up to a buffer's whole life on a quiet bus, 3.3 to 4.7 s at low speed on the bench
+// (2026-11-04 to 06) and about 4 s at full speed.
 #define CAPTURE_REPORT_BITS 90
 #define CAPTURE_HANDOFF_US 100000
 
 static volatile unsigned int total_packets_sended = 0;
 
-// The ping-pong double buffer. While core 0 captures into curr_dbuff, core 1
-// decodes/displays last_dbuff; then the two roles swap.
 static volatile dbuff_t dbuff1;
 static volatile dbuff_t dbuff2;
 
-// Which buffers core 1 has finished with ([0] dbuff1, [1] dbuff2). Core 0 hands a full buffer over
+// Which buffers core 1 has finished with ([0] dbuff1, [1] dbuff2). Core 0 hands a buffer over
 // without waiting and swaps only into one core 1 has released, so it never stops draining the PIO
-// RX FIFO (8 words, ~3 ms of traffic). It used to block on an acknowledgement until core 1 came back
-// round its loop; the FIFO overflowed and the next buffer started desynchronised (C8, which with
-// paced SPI cost a whole buffer of reports on 2026-10-11).
+// RX FIFO (8 words: about 3 ms of an idle bus, 21 us of a busy full speed line). Waiting for core 1
+// overflows that FIFO and starts the next buffer out of step: with paced SPI that cost a whole
+// buffer of reports on 2026-10-11.
 static volatile bool dbuff_released[2] = {true, true};
 static volatile unsigned int capture_overruns; // packets dropped: core 1 a whole buffer behind
-static volatile unsigned int capture_desyncs;  // records dropped: their word count did not fit their length
+static volatile unsigned int capture_desyncs;  // records whose word count did not fit their length
 
 static volatile dbuff_t *last_dbuff = NULL; // buffer being decoded/displayed (core 1)
 static volatile dbuff_t *curr_dbuff = NULL; // buffer being captured into (core 0)
 
-// User-facing capture/display options (defaults). Note: the capture speed follows
-// the attached device (capture_fs, usb_speed.h) regardless of g_capture_speed,
-// and capture_limit_value() currently forces the limit to 5000 packets.
+// Capture and display options, fixed at these values (no code changes them). The speed
+// follows capture_fs (usb_speed.h), not g_capture_speed; capture_limit_value() returns
+// 5000 whatever g_capture_limit says; nothing reads g_capture_trigger or g_display_data.
 static volatile int g_capture_speed = CaptureSpeed_Full;
 static volatile int g_capture_trigger = CaptureTrigger_Disabled;
 static volatile int g_capture_limit = CaptureLimit_Unlimited;
 static volatile int g_display_time = DisplayTime_SOF;     // what timestamps are relative to
 static volatile int g_display_data = DisplayData_Full;    // how much payload to print
-static volatile int g_display_fold = DisplayFold_Enabled; // collapse idle frames or not
+static volatile int g_display_fold = DisplayFold_Enabled; // fold empty frames or not
 
 // Decode cursors used by process_buffer()/process_packet(). Because decoding
 // compacts the buffer in place, the read cursor stays ahead of the write cursor.
@@ -365,14 +321,14 @@ static volatile int g_sof_index = 0;     // header index of the current frame's 
 static volatile bool g_may_fold = false; // is the current frame still "empty" (foldable)?
 
 // Display-time bookkeeping (timing reference and fold run state).
-static volatile uint32_t g_ref_time;  // time origin the printed deltas are measured from
+static volatile uint32_t g_ref_time;  // time origin of the packet times (not printed in this build)
 static volatile uint32_t g_prev_time; // previous packet's time (for delta / corruption check)
 static volatile bool g_check_delta;   // whether to sanity-check the inter-packet delta
 static volatile bool g_folding;       // currently inside a folded run of empty frames
-static volatile int g_fold_count;     // how many frames have been folded so far
+static volatile int g_fold_count;     // frames in the current folded run
 static volatile int g_display_ptr;    // cursor used while walking packets for display
 
-// Byte-wise lookup table for the USB data CRC-16 (polynomial x^16+x^15+x^2+1,
+// Byte-wise lookup table for the USB data CRC16 (polynomial x^16+x^15+x^2+1,
 // reflected form 0xA001). Used by crc16_usb() to check DATA0/DATA1/DATA2/MDATA
 // packets. A correct packet leaves the residual 0xB001.
 static const uint16_t crc16_usb_tab[256] = {
@@ -397,9 +353,9 @@ static const uint16_t crc16_usb_tab[256] = {
     0x4100, 0x81c1, 0x8081, 0x4040,
 };
 
-// Byte-wise lookup table for the USB token CRC-5 (polynomial x^5+x^2+1). Used by
-// crc5_usb() to check IN/OUT/SETUP/SOF/PING/SPLIT tokens. A correct token leaves
-// the residual 0x09.
+// Byte-wise lookup table for the USB token CRC5 (polynomial x^5+x^2+1). Used by
+// crc5_usb() to check IN/OUT/SETUP/SOF/PING/SPLIT tokens. An intact IN, OUT, SETUP,
+// SOF or PING leaves the residual 0x09 (crc5_usb() says why).
 static const uint8_t crc5_usb_tab[256] = {
     0x00, 0x0e, 0x1c, 0x12, 0x11, 0x1f, 0x0d, 0x03, 0x0b, 0x05, 0x17, 0x19, 0x1a, 0x14, 0x06, 0x08, 0x16, 0x18, 0x0a,
     0x04, 0x07, 0x09, 0x1b, 0x15, 0x1d, 0x13, 0x01, 0x0f, 0x0c, 0x02, 0x10, 0x1e, 0x05, 0x0b, 0x19, 0x17, 0x14, 0x1a,
@@ -457,66 +413,53 @@ static int my_spi_to_esp_write_blocking(const uint8_t *src, size_t len)
 {
     gpio_put(EBOOT_MASTERDATAREADY_GPIO, true);
 
-    // FIX BY DREG
-    // Bounded, like my_spi_to_esp_xfer_blocking already is. The bare spin here fed no
-    // watchdog, so an ESP that was rebooting, wedged or simply not driving the line took
-    // the RP down with it: four seconds later the watchdog rebooted the capture engine
-    // instead of this call just failing and the caller carrying on.
+    // Bounded like my_spi_to_esp_xfer_blocking(): when the ESP is rebooting, wedged or not
+    // driving the line, the write fails after SPI_READY_TIMEOUT_US and the caller carries on.
     if (!wait_esp_ready(SPI_READY_TIMEOUT_US))
     {
         gpio_put(EBOOT_MASTERDATAREADY_GPIO, false);
         return -1;
     }
-    // END FIX
 
     gpio_put(EBOOT_MASTERDATAREADY_GPIO, false);
     return my_spi_write_blocking(src, len);
 }
 
-// FIX BY DREG
-// Report ring for the ESP boot / reset window. The RP holds ELOG_SLAVEREADY with a
-// pull-up, so while the ESP is booting or in reset that line floats high and
-// my_spi_to_esp_write_blocking() above would clock a report at a slave that is not
-// listening, losing it. The PS/2 build already buffers its log in a ring; the USB path
-// decoded straight into the SPI write and had nowhere to hold a report during an outage.
-// Reports are queued here and drained in order only while esp_link_up is set, which
-// happens solely on a valid poll response the pull-up cannot fake. Producer and consumer
-// are both core 1 (process_packet and core1_main), so no locking is needed.
+// Ring of reports for the ESP. The RP holds ELOG_SLAVEREADY with a pull-up, so while the ESP
+// boots or sits in reset that line floats high and a write lands at a slave that is not
+// listening. A report leaves the ring only once the ESP's published sequence confirms it
+// (below). Both ends run on core 1 (print_packet() and usb_hid.h queue, usb_report_flush()
+// drains), so no locking is needed.
 #define USB_REPORT_RING_ENTRIES 64
 static char usb_report_ring[USB_REPORT_RING_ENTRIES][SPI_FRAME_SIZE];
 static unsigned int usb_report_head;
 static unsigned int usb_report_tail;
 static unsigned int usb_report_dropped;
 
-// FIX BY DREG: sequenced delivery confirmed by the ESP's published sequence (go-back-N).
-//
-// Every report carries a sequence (com.h). The ESP accepts strictly in order, drops a repeat, and
-// stamps the last one it accepted into every status frame. That published sequence is the only
-// acknowledgement that cannot lie: SLAVEREADY can be stale, so a write can
-// "succeed" into an ESP with nothing armed. So a report leaves the ring only once the ESP's
-// sequence has passed it. Reports go out once each, at most USB_SEND_WINDOW past the last
-// confirmed one, with a poll between windows; when the ESP stops advancing, everything after its
-// sequence goes out again. The window keeps the ESP's 8-deep SPI queue from being outrun and its
-// refusal budget (SPI_SEQ_RESYNC_AFTER) from ever running out.
-//
-// What this replaced, measured on 2026-10-10 with a browser polling the implant: two blind sends
-// per report, a GPIO acknowledgement, and a rewind of at most 16 that only ran with the ring idle.
-// A 300-report burst never left the ring idle, so after one lost frame the ESP refused 64 frames
-// waiting for a rewind that never came, then resynchronised: one lost frame became 32 lost reports.
+// Delivery is go-back-N on the ESP's published sequence. Every report carries a sequence
+// (com.h). The ESP accepts strictly in order, drops a repeat, and stamps the last one it accepted
+// into every status frame. That published sequence is the only acknowledgement that cannot lie:
+// SLAVEREADY can be stale, so a write can "succeed" into an ESP with nothing armed. So a report
+// leaves the ring only once the ESP's sequence has passed it. Reports go out once each, at most
+// USB_SEND_WINDOW past the last confirmed one, with a poll between windows; when the ESP's
+// sequence has not moved for USB_STALL_US, everything after it goes out again. The window keeps
+// the ESP's 8-deep SPI queue from being outrun and its refusal budget (SPI_SEQ_RESYNC_AFTER) from
+// running out. A rewind that waits for an idle ring never runs during a burst: on 2026-10-10, with
+// a browser polling the implant, one lost frame in a 300-report burst made the ESP refuse 64
+// frames and resynchronise, and 32 reports were lost.
 //
 // The ESP stops answering for tens to hundreds of ms while it writes flash (SPIFFS erases stall
-// everything not in IRAM), and its 8-deep queue runs dry. A missed poll is therefore waited out,
-// not taken as a dead link: the decode simply pauses, the reports are still in the capture buffer.
-// Only USB_PATIENCE_US without a single confirmation marks the ESP gone; from then on reports wait
-// in the ring until the poll loop sees it again. Patience runs from the last CONFIRMATION, not the
-// last answered poll, so nothing here can hold core 1 (and through the handoff, core 0's watchdog)
-// for longer than that. Polls that fail are spaced USB_POLL_IDLE_US apart: EBOOT is the ESP's boot
-// strap and a rebooting ESP should not be hammered.
+// everything not in IRAM), and its 8-deep queue runs dry. So a missed poll is waited out: the
+// decode pauses and the reports stay in the capture buffer. Only USB_PATIENCE_US without a
+// confirmation marks the ESP gone; from then on reports wait in the ring until the poll loop sees
+// it again. Patience runs from the last confirmation, not the last answered poll, so core 1 waits
+// here at most USB_PATIENCE_US without one. After a failed poll the next one waits
+// USB_POLL_IDLE_US: EBOOT is the ESP's boot strap and a rebooting ESP should not be hammered.
 //
 // The ESP may hold any report clocked since the last confirmation, also ones before a resend
 // rewound the send cursor, so confirmations are bounded by usb_report_high, never by the cursor:
-// bounding them by the cursor rejected a real confirmation, and the report went out again under a
-// new number the ESP accepted twice.
+// bounded by the cursor, a real confirmation is rejected and the report goes out again under a
+// new number, which the ESP accepts twice.
 //
 // Once after boot, and after the ESP was given up on, the next sequence is aligned to the ESP's,
 // with nothing in flight, so an RP that rebooted under a running ESP does not send numbers the ESP
@@ -601,15 +544,17 @@ static void usb_report_flush(void)
             usb_spi_frame[1] = usb_seq_add(usb_tail_seq, usb_report_sent - usb_report_tail);
             memcpy(usb_spi_frame + SPI_RECORD_HEADER, usb_report_ring[usb_report_sent % USB_REPORT_RING_ENTRIES],
                    SPI_FRAME_SIZE - SPI_RECORD_HEADER);
-            // The report is a short NUL terminated line in a 256 byte frame, so the two bytes pushed
-            // off the end are padding. Belt and braces: guarantee the terminator survives.
+            // The report is a short NUL terminated line in a 256 byte frame, so the two bytes the
+            // header pushes off the end are padding. The last byte is zeroed all the same, so the
+            // line always ends.
             usb_spi_frame[SPI_FRAME_SIZE - 1] = 0;
 
             if (my_spi_to_esp_write_blocking(usb_spi_frame, SPI_FRAME_SIZE) >= 0)
             {
-                // Not an acknowledgement (the sequence is), the pacing: wait for the ESP to close this
-                // transaction before the next frame. Back to back, a frame could land in the window of
-                // the previous one; the ESP stored a poll's tail glued to a report (2026-10-10).
+                // Pacing, not an acknowledgement (the sequence is one): wait for the ESP to close
+                // this transaction before the next frame. Back to back, a frame can land in the
+                // window of the previous one: on 2026-10-10 the ESP stored a poll's tail glued to a
+                // report.
                 wait_esp_consumed(SPI_CONSUMED_TIMEOUT_US);
                 usb_report_sent++;
 
@@ -662,11 +607,9 @@ static void usb_report_dispatch(const char *frame)
 
     usb_report_flush();
 }
-// END FIX
 
-// How many packets to capture before handing the buffer to core 1. This build
-// hard-codes 5000 (the early return); the g_capture_limit switch below is the
-// original configurable path, kept for reference but currently unreachable.
+// How many packets core 0 captures before it hands the buffer to core 1: 5000, the early
+// return. The g_capture_limit switch after it never runs; it is kept for reference.
 static int capture_limit_value(void)
 {
     return 5000;
@@ -705,7 +648,7 @@ static int capture_limit_value(void)
     }
 }
 
-// Clear a buffer's metadata and re-arm its packet limit, ready to capture into.
+// Clear a buffer's counters and set its packet limit and its speed, ready to capture into.
 static void reinit_dbuff(volatile dbuff_t *dbuff)
 {
     memset((void *)&(dbuff->g_buffer_info), 0, sizeof(dbuff->g_buffer_info));
@@ -713,7 +656,7 @@ static void reinit_dbuff(volatile dbuff_t *dbuff)
     dbuff->g_buffer_info.fs = capture_fs;
 }
 
-// Core 0: hand the full buffer to core 1 and carry on in the other one, if core 1 has released it.
+// Core 0: hand the current buffer to core 1 and go on in the other one, if core 1 has released it.
 static bool capture_swap(void)
 {
     int other = (curr_dbuff == &dbuff1) ? 1 : 0;
@@ -750,17 +693,17 @@ static void print_g_fold_count(int count)
 
 // print_packet() pairs a DATA with the IN or SETUP just before it, across buffers too (a buffer can
 // be handed over between the two). Both are cleared where no DATA can belong to the token seen
-// before: a bus reset, a packet with an error, and a buffer that starts after an overrun, whose
-// first DATA may answer a token core 0 dropped. Without that, a DATA could be read with another
-// endpoint's layout.
+// before: a bus reset or detach, a packet with an error, and a buffer that starts after an
+// overrun, whose first DATA may answer a token core 0 dropped. Without that, a DATA could be read
+// with another endpoint's layout.
 static bool last_pid_in = false;    // did the previous packet start an IN?
 static bool last_pid_setup = false; // a SETUP?
 
-// Walk one decoded packet at g_display_ptr, advance the cursor to the next
-// packet, apply the frame-folding display rules, and forward the interesting
-// traffic (the payload of an IN transaction) to the ESP. Each decoded packet
-// occupies: [header/flags word][time word][ceil(size/4) payload words].
-// Returns false only if buffer corruption is suspected (stops the walk).
+// Take the decoded packet at g_display_ptr and move the cursor to the next one. It applies
+// the folding rules, passes the control requests and the IN data to usb_hid.h, and queues
+// for the ESP the raw 8-byte reports usb_hid.h does not take. A decoded packet is its
+// flags word, its time word and ceil(size/4) payload words. Returns false only when the
+// buffer looks corrupt, which ends the walk.
 static bool print_packet(void)
 {
     int flags = last_dbuff->g_buffer[g_display_ptr];    // status flags | byte size
@@ -770,16 +713,14 @@ static bool print_packet(void)
     int size = flags & CAPTURE_SIZE_MASK;               // decoded length in bytes
     uint8_t *payload = (uint8_t *)&(last_dbuff->g_buffer[g_display_ptr + 2]);
     int pid = payload[1] & 0x0f;         // PID nibble (byte 0 is SYNC)
-    // FIX BY DREG: addr/ep belong to the IN token, not the DATA that follows it. The old code
-    // reassigned last_payload to the current packet every call, so the DATA packet's own bytes were
-    // printed as addr/ep. Capture them as values when the IN token is seen; the report bytes still
-    // come from the DATA packet below.
+    // The address and endpoint of the IN or SETUP token, kept as values when the token is seen;
+    // the report bytes come from the DATA after it.
     static int last_in_addr = 0;
     static int last_in_ep = 0;
     // Per endpoint: the address and the 8 bytes of the last report forwarded.
     static uint8_t last_report[16][9];
 
-    // A huge time gap almost always means the buffer indexing has slipped; bail.
+    // A huge time gap almost always means the buffer indexing has slipped: stop the walk.
     if (g_check_delta && delta > MAX_PACKET_DELTA)
     {
         printf("Time delta between packets is too large, possible buffer corruption.\r\n");
@@ -802,9 +743,8 @@ static bool print_packet(void)
         g_ref_time = time;
     }
 
-    // If we are inside a folded run of empty frames, swallow everything until a
-    // non-foldable frame arrives. Empty frames (SOF + only IN/NAK) are collapsed
-    // into a single "Folded N frames" summary instead of being printed one by one.
+    // Inside a folded run of empty frames (a SOF or keep-alive with only IN and NAK after it),
+    // skip everything up to the next frame marker that does not fold.
     if (g_folding)
     {
         if (pid != Pid_Sof)
@@ -818,6 +758,9 @@ static bool print_packet(void)
             return true;
         }
 
+        // Would print "Folded N frames" where each run ends. display_buffer() prints it only for
+        // a run still open when the walk ends, and the last frame marker of a buffer always closes
+        // the run, since handle_folding() flags a marker only when it sees the next one.
         // print_g_fold_count(g_fold_count);
         g_folding = false; // this SOF starts a real frame: end the folded run
     }
@@ -830,14 +773,10 @@ static bool print_packet(void)
         return true;
     }
 
-    // print_time(ftime);
-
-    // Bus reset: never folded. Optionally re-base the time origin, and suppress
+    // Bus reset or detach: never folded. Optionally re-base the time origin, and suppress
     // the delta check across the reset (time is discontinuous there).
     if (flags & CAPTURE_RESET)
     {
-        // print_reset();
-
         if (g_display_time == DisplayTime_Reset)
         {
             g_ref_time = time;
@@ -852,25 +791,23 @@ static bool print_packet(void)
         return true;
     }
 
-    // Low-Speed keep-alive frame marker: nothing to forward.
+    // Low speed keep-alive frame marker: nothing to forward.
     if (flags & CAPTURE_LS_SOF)
     {
-        // print_ls_sof();
         return true;
     }
 
-    // Errored packet: would be printed for diagnostics, but nothing is forwarded, and no DATA after
-    // it pairs with a token before it.
+    // A packet with an error: nothing is forwarded, and no DATA after it pairs with a token
+    // before it.
     if (flags & CAPTURE_ERROR_MASK)
     {
-        // print_errors(flags, payload, size);
         last_pid_in = false;
         last_pid_setup = false;
         return true;
     }
 
-    // Forwarding logic: we are interested in the device's response to an IN, and in the SETUPs
-    // with which the PC reads its descriptors.
+    // What is used from here on: the device's answer to an IN, and the SETUPs with which the PC
+    // reads its descriptors.
     bool data = pid == Pid_Data0 || pid == Pid_Data1 || pid == Pid_Data2;
 
     if (pid == Pid_In || pid == Pid_Setup)
@@ -878,7 +815,7 @@ static bool print_packet(void)
         int v = (payload[3] << 8) | payload[2]; // token: addr in the low 7 bits, endpoint above
         last_in_addr = v & 0x7f;
         last_in_ep = (v >> 7) & 0xf;
-        last_pid_in = pid == Pid_In; // remember that this packet was an IN token
+        last_pid_in = pid == Pid_In;
         last_pid_setup = pid == Pid_Setup;
     }
     else if (data && last_pid_setup && size - 4 == 8)
@@ -896,12 +833,11 @@ static bool print_packet(void)
     {
         last_pid_setup = false;
 
-        // An IN token to an interrupt endpoint immediately followed by an 8-byte DATA
-        // packet is the classic Low-Speed HID report (e.g. a boot-protocol keyboard).
-        // EP0 is excluded: it only carries the enumeration's descriptors and control
-        // replies, 24 of them per plug-in, never a keystroke. size-4 strips the
-        // SYNC+PID+CRC16 overhead, leaving the 8 report bytes. Format the report as
-        // a text line and ship it to the ESP over SPI.
+        // An IN token to an interrupt endpoint followed at once by an 8-byte DATA packet is
+        // read as a boot report, the format of a boot-protocol keyboard. EP0 is excluded: it
+        // only carries the enumeration's descriptors and control replies, 24 of them per
+        // plug-in, never a keystroke. size-4 strips SYNC, PID and CRC16, leaving the 8 report
+        // bytes. The report goes to the ESP as a text line.
         // A report equal to the last one on its endpoint holds no keystroke (a keyboard
         // repeating at its idle rate, a resend after a lost ACK, a second interface
         // mirroring an empty report): it is logged as "same" and not shipped, or such a
@@ -925,9 +861,7 @@ static bool print_packet(void)
 
             puts(pkts);
 
-            // FIX BY DREG
-            usb_report_dispatch(pkts); // queue the report; it is clocked to the ESP only once a poll confirms it alive
-            // END FIX
+            usb_report_dispatch(pkts); // kept in the ring until the ESP's sequence confirms it
         }
         // More than 8 bytes (an NKRO bitmap, a long key array, a report ID: only full speed carries
         // them) from a device whose descriptors were not seen cannot be read without them. Its keys
@@ -952,9 +886,9 @@ static bool print_packet(void)
     return true;
 }
 
-// Iterate every decoded packet in last_dbuff, printing/forwarding each via
-// print_packet(), then print a one-line summary (errors, resets, packets,
-// frames, empty frames). Runs on core 1 after process_buffer() has decoded.
+// Walk every decoded packet of last_dbuff through print_packet(), then print the Total:
+// line (errors, bus resets with the detaches, packets, frames, empty frames, and at full
+// speed what core 0 did not store). Runs on core 1 after process_buffer() has decoded.
 static void display_buffer(void)
 {
     if (last_dbuff->g_buffer_info.count == 0)
@@ -1018,7 +952,7 @@ static void display_buffer(void)
     printf("\r\n\r\n");
 }
 
-// Running CRC-16 over data. Seed is 0xFFFF (per USB spec). The callers run this
+// Running CRC16 over data. Seed is 0xFFFF (per USB spec). The callers run this
 // over payload + received CRC together: an intact DATA packet yields the fixed
 // residual 0xB001, which is how the CRC is validated without splitting it out.
 static uint16_t crc16_usb(uint8_t *data, int size)
@@ -1033,8 +967,11 @@ static uint16_t crc16_usb(uint8_t *data, int size)
     return crc;
 }
 
-// Running CRC-5 over data. Seed 0xFF (top bits unused for a 5-bit CRC). Run over
-// the token's 11-bit field + received CRC5, an intact token yields residual 0x09.
+// Running CRC5 over data, seeded with 0xFF where USB seeds five 1s: the three extra 1s
+// invert the top three bits of the first byte, so the residual depends on the length.
+// Over the 11-bit field and CRC5 of an intact IN, OUT, SETUP, SOF or PING it is 0x09. An
+// intact SPLIT (3 bytes) would leave 0x0E and be flagged, but SPLIT never travels on a
+// low or full speed cable.
 static uint8_t crc5_usb(uint8_t *data, int size)
 {
     uint8_t crc = 0xff;
@@ -1053,9 +990,9 @@ static void set_error(bool error)
     return;
 }
 
-// Marks "empty" frames so the display can collapse them. A frame runs from one
-// SOF (or LS keep-alive) to the next and is "empty" if it contains nothing but
-// IN/NAK polling and no errors. Called once per decoded packet with its PID.
+// Counts the packets with an error and marks "empty" frames so the display can fold
+// them. A frame runs from one SOF (or low speed keep-alive) to the next and is "empty"
+// if it holds nothing but IN/NAK polling and no errors. Called once per decoded packet.
 // g_sof_index remembers where the current frame's SOF header word lives so the
 // CAPTURE_MAY_FOLD flag can be set on it retroactively once the frame ends.
 static void handle_folding(int pid, uint32_t error)
@@ -1082,7 +1019,7 @@ static void handle_folding(int pid, uint32_t error)
     }
     else if (pid != Pid_In && pid != Pid_Nak)
     {
-        g_may_fold = false; // real traffic (anything but IN/NAK) -> not an empty frame
+        g_may_fold = false; // real traffic (anything but IN/NAK): not an empty frame
     }
 
     if (error)
@@ -1091,23 +1028,21 @@ static void handle_folding(int pid, uint32_t error)
     }
 }
 
-// Decode ONE captured packet: raw D+ samples (NRZI-encoded, bit-stuffed) in ->
-// clean packet bytes out, plus error flags. This is the software half of the
-// capture: the PIO only records line levels, everything below undoes the USB
-// line coding and validates the result.
+// Decode one captured packet: raw D+ samples (NRZI-encoded, bit-stuffed) in, packet
+// bytes and error flags out. The PIO only records line levels; this undoes the USB
+// line coding and checks the result.
 //
-//   'size'    = number of raw sampled bits for this packet.
+//   'size'    = the packet's line samples, its SE0 sample left out.
 //   out_data  = &g_buffer[g_wr_ptr]: decoded bytes are written back into the same
 //               buffer (in-place compaction; the decode cursor g_rd_ptr always
 //               stays ahead of the write cursor g_wr_ptr).
-//   'v'       = NRZI accumulator, seeded with a single top bit so the first
-//               decoded bit has a defined "previous sample" reference that stays
-//               continuous across 31-bit word boundaries.
+//   'v'       = NRZI accumulator. Its seed, a single top bit, stands for the sample
+//               before the first one (D+ high), and v carries the last sample of
+//               each 31-bit word into the next.
 static void process_packet(int size)
 {
-    // bit stuffing, NRZI....
     uint8_t *out_data = (uint8_t *)&(last_dbuff->g_buffer[g_wr_ptr]);
-    uint32_t v = 0x80000000; // NRZI "previous sample" accumulator (see below)
+    uint32_t v = 0x80000000; // NRZI "previous sample" accumulator
     uint32_t error = 0;      // accumulated CAPTURE_ERROR_* flags
     int out_size = 0;        // decoded bytes produced so far
     int out_bit = 0;         // bit position within the byte being assembled
@@ -1115,25 +1050,20 @@ static void process_packet(int size)
     int stuff_count = 0;     // consecutive 1s, for bit de-stuffing
     int pid, npid;
 
-    // FIX BY DREG
-    // The read cursor had no upper bound here. size comes from the PIO as a bit count and
-    // process_buffer only rejects it above 0xffff, so a corrupt or desynchronised count of
-    // 65535 asks this loop for 2115 words. Start it near the end of a 16000 word buffer and
-    // it reads straight off the end, into g_buffer_info and the other ping-pong buffer.
-    // Stop at the edge and flag the packet instead.
+    // The read cursor stops at the end of the buffer and flags the packet. process_buffer()
+    // rejects a bit count only above 0xffff, so a corrupt count of 65535 asks this loop for
+    // 2115 words, and started near the end of the 16000-word buffer it would read on into
+    // g_buffer_info and the other buffer.
     const int raw_words = (int)(sizeof(last_dbuff->g_buffer) / sizeof(last_dbuff->g_buffer[0]));
-    // END FIX
 
     // The raw samples arrive packed 31 bits per word (PIO autopush threshold).
     while (size)
     {
-        // FIX BY DREG
         if (g_rd_ptr >= raw_words)
         {
             error |= CAPTURE_ERROR_SIZE;
             break;
         }
-        // END FIX
 
         uint32_t w = last_dbuff->g_buffer[g_rd_ptr++];
         int bit_count;
@@ -1149,21 +1079,21 @@ static void process_packet(int size)
         }
 
         // NRZI transition map for the whole word in one step: (w ^ (w<<1)) sets a
-        // bit wherever two adjacent samples DIFFER (a transition = an NRZI 0).
+        // bit wherever two adjacent samples differ (a transition, an NRZI 0).
         // XOR-ing into v carries the phase across word boundaries.
         v ^= (w ^ (w << 1));
 
         for (int i = 0; i < bit_count; i++)
         {
-            // Top bit of v now says transition (1) vs no-transition (0) for this
-            // bit position. NRZI: transition => data 0, no transition => data 1.
+            // The top bit of v is 1 where the line changed at this bit: NRZI gives a 0
+            // there and a 1 where the line held.
             int bit = (v & 0x80000000) ? 0 : 1;
 
-            v <<= 1; // advance to the next bit position
+            v <<= 1;
 
-            // Bit de-stuffing: after six consecutive 1s the transmitter inserts a
-            // forced 0. Drop it here. If it is instead a 1, that is seven 1s in a
-            // row = a stuffing/line error.
+            // Bit de-stuffing: after six 1s in a row the sender inserts a 0, dropped
+            // here. A 1 there makes seven 1s in a row: a packet its sender aborted on
+            // purpose (USB 2.0 8.6.4, 11.3.3, 11.18.6.1), or a stuffing or line error.
             if (stuff_count == 6)
             {
                 if (bit)
@@ -1176,11 +1106,11 @@ static void process_packet(int size)
             }
             else if (bit)
             {
-                stuff_count++; // another 1
+                stuff_count++;
             }
             else
             {
-                stuff_count = 0; // a 0 resets the run
+                stuff_count = 0;
             }
 
             // Assemble surviving bits into bytes, LSB-first (USB bit order).
@@ -1198,10 +1128,11 @@ static void process_packet(int size)
         size -= bit_count;
     }
 
-    // The packet must end on a whole byte; leftover bits mean a framing error. One trailing 1 is the
-    // last bit stretched by hub switching skew (USB 2.0 7.1.9.1; up to 15 ns a hub, 7.1.14.1): every byte
-    // before it is still checked by its PID or CRC. In a model of the capture path the reports were
-    // exact with up to 40 ns of stretch and all lost at 50 ns; with this, exact to 130 ns.
+    // The packet must end on a whole byte; leftover bits mean a framing error. One trailing 1 is
+    // the last bit stretched by hub switching skew (USB 2.0 7.1.9.1; up to 15 ns a hub at full
+    // speed and 200 ns at a low speed port, 7.1.14.1): every byte before it is still checked by
+    // its PID or CRC. In a full speed model of the capture path the reports were exact with up
+    // to 40 ns of stretch and all lost at 50 ns; with this, exact to 130 ns.
     if (out_bit && !(out_bit == 1 && out_byte == 1))
     {
         error |= CAPTURE_ERROR_NBIT;
@@ -1209,30 +1140,27 @@ static void process_packet(int size)
 
     if (out_size < 1)
     {
-        // FIX BY DREG
-        // Bailing out here still has to leave a well formed record behind. The caller has
-        // already counted this packet and advanced past its header and time slots, so
-        // returning without writing the header word leaves whatever was in that memory
-        // being read back as "flags | byte count". A large stale count makes the reader
-        // skip over everything after it, silently losing the rest of the buffer, which on
-        // a keylogger means losing keystrokes to one runt packet from noise or a
-        // connect/disconnect.
+        // This exit too leaves a well formed record. The caller has counted this packet and
+        // moved past its header and time slots, so a header word left unwritten is read back
+        // as a stale "flags | byte count", and a large stale count skips the rest of the
+        // buffer, keystrokes included, for one runt packet from noise or a connect or
+        // disconnect.
         //
-        // handle_folding(-1, error) mirrors what the normal exit and the bus reset case
-        // already do: -1 is not a real PID (Sof 5, In 9, Nak 10), so it only counts the
-        // error and disqualifies this frame from being folded away as empty. Without it a
-        // buffer full of runts still reported "0 error".
+        // handle_folding(-1, error) does what the normal exit and the bus reset case do: -1
+        // is not a real PID (Sof 5, In 9, Nak 10), so it only counts the error and keeps this
+        // frame from being folded away as empty. A buffer of runts then does not report
+        // "0 error".
         error |= CAPTURE_ERROR_SIZE;
         handle_folding(-1, error);
         last_dbuff->g_buffer[g_wr_ptr - 2] = error | out_size;
         g_wr_ptr += (out_size + 3) / 4;
-        // END FIX
 
         return;
     }
 
-    // Byte 0 must be the SYNC field. The SYNC (KJKJKJKK) decodes to 0x80, but at
-    // Low Speed the inverted idle polarity shifts the reconstructed byte to 0x81.
+    // Byte 0 must be the SYNC field, which decodes to 0x80. At low speed D+ idles low, so
+    // against the D+ high that the seed of v stands for, the first bit decodes as 1 and the
+    // byte reads 0x81.
     if (out_data[0] != (last_dbuff->g_buffer_info.fs ? 0x80 : 0x81))
     {
         error |= CAPTURE_ERROR_SYNC;
@@ -1240,14 +1168,11 @@ static void process_packet(int size)
 
     if (out_size < 2)
     {
-        // FIX BY DREG
-        // Same reasoning as the out_size < 1 exit above: record what was decoded so the
-        // reader stays in step, rather than leaving a stale header word behind.
+        // As for out_size < 1 above: write the header word so the reader stays in step.
         error |= CAPTURE_ERROR_SIZE;
         handle_folding(-1, error);
         last_dbuff->g_buffer[g_wr_ptr - 2] = error | out_size;
         g_wr_ptr += (out_size + 3) / 4;
-        // END FIX
 
         return;
     }
@@ -1256,7 +1181,8 @@ static void process_packet(int size)
     pid = out_data[1] & 0x0f;
     npid = (~out_data[1] >> 4) & 0x0f;
 
-    // The two nibbles must be complementary, and PID 0 is reserved/illegal.
+    // The two nibbles must be complementary. PID 0 is flagged too: reserved in USB 2.0, it is
+    // the EXT token of the LPM ECN.
     if ((pid != npid) || (pid == Pid_Reserved))
     {
         error |= CAPTURE_ERROR_PID;
@@ -1264,7 +1190,8 @@ static void process_packet(int size)
 
     // Token / SOF / PING / SPLIT packets carry a 5-bit CRC. Check length first
     // (SPLIT is 5 bytes, the rest are 4: SYNC + PID + 2 payload/CRC bytes), then
-    // run CRC5 over payload+CRC; an intact token leaves the residual 0x09.
+    // run CRC5 over payload+CRC: an intact IN, OUT, SETUP, SOF or PING leaves 0x09, and
+    // an intact SPLIT would leave 0x0E and be flagged (crc5_usb()).
     if (pid == Pid_Sof || pid == Pid_In || pid == Pid_Out || pid == Pid_Setup || pid == Pid_Ping || pid == Pid_Split)
     {
         if (((pid == Pid_Split) && (out_size != 5)) || ((pid != Pid_Split) && (out_size != 4)))
@@ -1289,7 +1216,6 @@ static void process_packet(int size)
         }
     }
 
-    // Update frame-folding state for this PID/error.
     handle_folding(pid, error);
 
     // Write the packet header word back in place: error flags OR'ed with the byte
@@ -1298,26 +1224,26 @@ static void process_packet(int size)
     g_wr_ptr += (out_size + 3) / 4;
 }
 
-// Reconstruct a packet's START time from its END time and its length in bits.
-// A packet of N bits lasts N / (bit rate) microseconds: 12 bits/us at Full Speed,
-// 1.5 bits/us at Low Speed. The magic multipliers are fixed-point reciprocals
+// Reconstruct a packet's start time from its end time and its length in bits.
+// A packet of N bits lasts N / (bit rate) microseconds: 12 bits/us at full speed,
+// 1.5 bits/us at low speed. The magic multipliers are fixed-point reciprocals
 // (x * k >> 16): 5461/65536 ~= 1/12, 43691/65536 ~= 1/1.5, avoiding a divide.
 static uint32_t start_time(uint32_t end_time, uint32_t size)
 {
     if (last_dbuff->g_buffer_info.fs)
     {
-        return end_time - ((size * 5461) >> 16); // Divide by 12 (Full Speed)
+        return end_time - ((size * 5461) >> 16); // Divide by 12 (full speed)
     }
     else
     {
-        return end_time - ((size * 43691) >> 16); // Divide by 1.5 (Low Speed)
+        return end_time - ((size * 43691) >> 16); // Divide by 1.5 (low speed)
     }
 }
 
 // Decode a whole capture buffer in place. Reads each raw entry (a SIZE word = bit
 // count, plus a time word, plus the packed samples) and classifies it by its bit
-// count: 0 = bus reset, 1 = Low-Speed keep-alive (frame mark), otherwise a real
-// packet handed to process_packet(). Runs on core 1.
+// count: 0 = bus reset or detach, 1 = low speed keep-alive (frame mark), otherwise a
+// real packet handed to process_packet(). Runs on core 1.
 static void process_buffer(void)
 {
     // Time origin: the start time of the very first entry.
@@ -1342,8 +1268,8 @@ static void process_buffer(void)
 
         // A bit count above 16 bits cannot come from core 0, which stores no record over
         // CAPTURE_RESERVE_WORDS or with the wrong word count: core 1 lost its place in the
-        // buffer. Everything decoded so far is intact (it was compacted behind the read pointer), so keep it and
-        // lose only the rest of this buffer.
+        // buffer. Everything decoded so far is intact (it was compacted behind the read
+        // pointer), so keep it and lose only the rest of this buffer.
         if (size > 0xffff)
         {
             printf("Synchronization error after %d packets, the rest of this buffer is lost.\r\n", out_count);
@@ -1358,15 +1284,15 @@ static void process_buffer(void)
 
         if (size == 0)
         {
-            // Bit count 0 = sustained SE0 = bus reset. Never folded.
+            // Bit count 0: a sustained SE0, a bus reset or a detach. Never folded.
             last_dbuff->g_buffer[g_wr_ptr - 2] = CAPTURE_RESET;
             handle_folding(-1, 0); // Prevent folding of resets
             last_dbuff->g_buffer_info.resets++;
         }
         else if (size == 1)
         {
-            // A single captured bit is a keep-alive EOP. Full Speed has no such
-            // thing (discard it); Low Speed uses it as the frame delimiter.
+            // A single captured bit is a keep-alive EOP. Full speed has no such
+            // thing (discard it); low speed uses it as the frame delimiter.
             if (last_dbuff->g_buffer_info.fs)
             {
                 out_count--; // Discard the packet
@@ -1375,7 +1301,7 @@ static void process_buffer(void)
             else
             {
                 last_dbuff->g_buffer[g_wr_ptr - 2] = CAPTURE_LS_SOF;
-                handle_folding(Pid_Sof, 0); // Fold on LS SOFs
+                handle_folding(Pid_Sof, 0); // fold on low speed keep-alives
             }
 
             g_rd_ptr++; // skip the trailing (empty) sample word
@@ -1455,8 +1381,8 @@ static void init_esp_seq(void)
     esp_link_master_init();
 }
 
-// The boot blinks, two at power up and ten more after a watchdog reset, from core 1's loop so they
-// never hold up the decoding of the capture.
+// The boot blinks, two at every boot and ten more after a watchdog reset, from core 1's loop so
+// they never hold up the decoding of the capture.
 static int led_blinks;
 static uint32_t led_at;
 
@@ -1505,7 +1431,7 @@ static volatile uint32_t capture_started_ms;
 
 static void init_seq(void);
 
-// ---- the HID maps kept in flash (usb_hid.h, hid_store_save() and hid_store_load()) -------------
+// The HID maps kept in flash (usb_hid.h, hid_store_save() and hid_store_load()).
 // A ring of RP_STATE_SECTORS sectors: each write goes to the sector after the newest record, with
 // the next sequence number, and leaves the older ones whole, so a power cut during a write costs
 // only that write. A write happens once the maps have stayed the same for HID_STORE_QUIET_US, no
@@ -1585,9 +1511,10 @@ static void __attribute__((noinline)) hid_store_write(void)
     int devices = 0;
     int len = hid_store_save(buf, FLASH_SECTOR_SIZE, hid_store_seq + 1, &devices);
 
-    // The same maps as the newest record: the same length and the same device records. Not the
-    // header from `len` on: its crc covers seq, one more on every write, so no record ever matched
-    // and every change that set hid_store_dirty wrote a sector.
+    // No write when the maps equal the newest record: the same length and the same device records.
+    // The compare leaves out the header: its crc covers seq, one more on every write, so with the
+    // header no record would ever match and every change that sets hid_store_dirty would write a
+    // sector.
     if (hid_store_newest >= 0)
     {
         const uint8_t *cur = rp_state_read(hid_store_base + (uint32_t)hid_store_newest * FLASH_SECTOR_SIZE);
@@ -1623,17 +1550,16 @@ static void hid_store_flush(void)
     }
 }
 
-// CORE 1 ENTRY POINT: the decode/forward worker. It waits for core 0 to hand
-// over a full capture buffer through the inter-core FIFO, decodes it, and
-// forwards results to the ESP, while core 0 keeps capturing into the other
-// buffer. Between buffers it emits a periodic heartbeat/count over UART.
+// Core 1's entry point: it decodes each buffer core 0 hands over through the inter-core
+// FIFO and forwards the reports to the ESP, while core 0 keeps capturing into the other
+// buffer. Between buffers it polls the ESP, sends the queued reports and logs the counters.
 void core1_main()
 {
     volatile dbuff_t *readed_last = NULL;
 
     // The board comes up here while core 0 already captures: the boot blinks, the UART, the
-    // ESP's reset release, the SPI and the reports, in the order main() ran them before. The
-    // first buffer waits for this, about 1.2 s; it holds about 4 s of traffic.
+    // ESP's reset release, the SPI and the reports. The first buffer waits for this, about
+    // 1.2 s; a buffer holds about 4 s of traffic.
     led_blink(2);
     init_seq();
     hid_store_boot();
@@ -1661,7 +1587,7 @@ void core1_main()
     printf("capture start! at %u ms on the RP timer, %s speed\r\n", (unsigned)capture_started_ms,
            capture_fs ? "full" : "low");
 
-    // The ESP left reset in init_seq(): it gets the second it always had before the SPI handshake.
+    // The ESP left reset in init_seq(): it gets one second before the SPI handshake.
     for (uint32_t t0 = time_us_32(); time_us_32() - t0 < 1000000;)
     {
         led_poll();
@@ -1675,7 +1601,7 @@ void core1_main()
     {
         if (multicore_fifo_rvalid())
         {
-            // Core 0 pushed a full buffer and is already capturing into the other one. Decode and
+            // Core 0 pushed a buffer and is already capturing into the other one. Decode and
             // forward this one, then release it so core 0 may swap back into it.
             last_dbuff = (volatile dbuff_t *)(uintptr_t)multicore_fifo_pop_blocking();
             process_buffer();
@@ -1687,15 +1613,14 @@ void core1_main()
         {
             uint32_t polls = esp_poll_ok + esp_poll_failed;
             poll_esp_if_due();
-            // FIX BY DREG
             if (esp_poll_ok + esp_poll_failed != polls)
             {
                 wait_esp_consumed(SPI_CONSUMED_TIMEOUT_US); // pace the poll from the first report
             }
             usb_report_flush();
 
-            // Surface the recovery on the one channel the bench can read live, same as the PS/2
-            // build. Resends climbing while nothing is lost is the fix working, not a fault.
+            // The resends go to the UART log, as on the PS/2 build. Resends that climb while
+            // nothing is lost are the go-back-N delivery at work, not a fault.
             static unsigned int usb_spi_resends_reported = 0;
             if (usb_spi_resends != usb_spi_resends_reported)
             {
@@ -1710,10 +1635,11 @@ void core1_main()
                 capture_overruns_reported = capture_overruns;
                 printf("capture overrun: %u packets dropped, core 1 a whole buffer behind\r\n", capture_overruns);
             }
-            // END FIX
 
-            // Neither has shown on the bench since core 0 stopped waiting for core 1 (2026-10-11); logged
-            // so that it shows if it ever does.
+            // A record whose words did not fit its length, and below a full PIO RX FIFO: neither
+            // has shown in capture on the bench since core 0 stopped waiting for core 1
+            // (2026-10-11), and both are logged so that they show if they ever do. An SWD flash
+            // fills the FIFO: it runs on core 0, which then stops draining it.
             static unsigned int capture_desyncs_reported = 0;
             if (capture_desyncs != capture_desyncs_reported)
             {
@@ -1773,7 +1699,7 @@ static void init_seq(void)
 
     adc_init();
     adc_gpio_init(RP_ADC_GPIO);
-    adc_select_input(1); // ADC1
+    adc_select_input(1); // ADC1 is GPIO27
     // 12-bit conversion, assume max value == ADC_VREF == 3.3 V
     const float conversion_factor = 3.3f / (1 << 12);
     uint16_t result = adc_read();
@@ -1790,12 +1716,11 @@ int main(void)
     boot_watchdog = watchdog_caused_reboot();
 
     /*
-      Setting the RP clock to 120 MHz is crucial for USB sniffing.
-      This clock speed ensures that the PIO (Programmable Input/Output)
-      can accurately capture USB signals
-
-      Using the default clock settings (125 MHz) can cause capture errors because the clock divider
-      for the PIO is not an exact multiple for achieving the required 1.5 MHz USB low-speed clock.
+      120 MHz gives the PIO integer dividers at both speeds: 8 for the 15 MHz of low speed and 1
+      for the 120 MHz of full speed (usb_speed_set()). At the default 125 MHz they would be 8.333
+      and 1.042, and a fractional divider moves the sample point by up to one 8 ns system clock:
+      1.2% of a low speed bit, about a tenth of a full speed one (computed; no capture has run at
+      125 MHz).
     */
     boot_clock_ok = set_sys_clock_khz(120000, true);
 
@@ -1807,7 +1732,7 @@ int main(void)
     // are what usb_hid.h needs to read anything but the boot layout.
     pio_destroy();
 
-    // GPIO for PIO CONF, DP & DM input, START output low
+    // START is an output held low, D+ and D- are inputs.
     gpio_init(START_INDEX);
     gpio_set_dir(START_INDEX, GPIO_OUT);
     gpio_put(START_INDEX, false);
@@ -1826,25 +1751,21 @@ int main(void)
     gpio_set_dir(USOE_PIN, GPIO_OUT);
     gpio_put(USOE_PIN, false);
 
-    // USB LOW SPEED and FULL SPEED, a trimmed-down version of Alex Taradov's design.
-    //
-    // At low speed PIO0 and PIO1 run at 15 MHz. One PIO cycle = 1/15 MHz = 66.67 ns.
-    // One USB low-speed bit  = 1/1.5 MHz = 666.67 ns.
-    // So the PIO runs exactly 10x the USB low-speed bit rate = 10 PIO cycles per
-    // captured bit, which the cycle-counted sampling loops in okhi.pio rely on.
-    // With clk_sys = 120 MHz the divider is exactly 8.000 (integer, no jitter).
-    // At full speed (12 Mbit/s) they run at 120 MHz, divider 1.000, the same
-    // 10 cycles per bit. The state machines are set up here for low speed;
-    // usb_speed_set() applies the speed of whatever is attached.
+    // Low speed and full speed, a trimmed-down version of Alex Taradov's design. At low speed
+    // PIO0 and PIO1 run at 15 MHz: a PIO cycle is 66.67 ns and a low speed bit 666.67 ns, so
+    // 10 PIO cycles per captured bit, which the cycle-counted sampling loops in okhi.pio rely
+    // on. At full speed (12 Mbit/s) they run at 120 MHz, the same 10 cycles per bit. The state
+    // machines are set up here for low speed; usb_speed_set() applies the speed of whatever is
+    // attached.
 
     float target_frequency_hz = 15000000.0f;
     float sys_clk_hz = (float)clock_get_hz(clk_sys);
     float div = sys_clk_hz / target_frequency_hz;
 
-    // Both PIO programs are always loaded at the same offset/order on every run,
-    // to keep instruction addresses (e.g. the entry-point index 31) predictable.
+    // Both PIO programs load at the same offsets on every run (pio_destroy() cleared both
+    // instruction memories), so instruction addresses such as the entry point at 31 are known.
 
-    // ---- Configure PIO1: the SE0 START synchroniser (tar_pio1) --------------
+    // PIO1: the SE0 START synchroniser (tar_pio1).
     pio_gpio_init(pio1, START_INDEX);                     // hand the START pin to PIO
     pio_set_irq0_source_mask_enabled(pio1, 0x0F00, true); // enable PIO IRQ sources (debug)
     irq_set_exclusive_handler(PIO1_IRQ_0, pio1_irq);
@@ -1860,13 +1781,12 @@ int main(void)
     sm_config_set_in_pins(&c_pio1, DP_INDEX); // IN base = D+ (so D-, START follow)
     sm_config_set_clkdiv(&c_pio1, div);       // same 15 MHz as PIO0
     pio_sm_init(pio1, pio1_sm, offset_pio1, &c_pio1);
-    pio_sm_set_enabled(pio1, pio1_sm, false); // stay stopped until we start capture
+    pio_sm_set_enabled(pio1, pio1_sm, false); // stopped until usb_speed_start()
     pio_sm_clear_fifos(pio1, pio1_sm);
     pio_sm_restart(pio1, pio1_sm);
     pio_sm_clkdiv_restart(pio1, pio1_sm);
-    // pio_sm_exec(pio1, pio1_sm, pio_encode_jmp(offset_pio1)); // Start from the last PIO instruction
 
-    // ---- Configure PIO0: the bit sampler (tar_lowsp_pio0) -------------------
+    // PIO0: the bit sampler (tar_lowsp_pio0).
     pio_set_irq0_source_mask_enabled(pio0, 0x0F00, true);
     irq_set_exclusive_handler(PIO0_IRQ_0, pio0_irq);
     irq_set_enabled(PIO0_IRQ_0, true);
@@ -1875,17 +1795,16 @@ int main(void)
     pio_sm_set_consecutive_pindirs(pio0, pio0_sm, DP_INDEX, 3, false); // D+, D-, START = inputs
     pio_sm_config c_pio0 = tar_lowsp_pio0_program_get_default_config(offset_pio0);
     sm_config_set_in_pins(&c_pio0, DP_INDEX);           // IN base = D+ (PIN0=D+, PIN1=D-, PIN2=START)
-    sm_config_set_jmp_pin(&c_pio0, DP_INDEX);           // JMP PIN = D+ for LOW SPEED (D- at FS, usb_speed_set())
+    sm_config_set_jmp_pin(&c_pio0, DP_INDEX);           // JMP pin D+ (D- at full speed, usb_speed_set())
     sm_config_set_in_shift(&c_pio0, false, true, 31);   // ISR: shift left, autopush every 31 bits
     sm_config_set_out_shift(&c_pio0, false, false, 32); // OSR: shift left, no autopull (used for the ::PINS trick)
     sm_config_set_fifo_join(&c_pio0, PIO_FIFO_JOIN_RX); // give all FIFO depth to RX (capture only)
     sm_config_set_clkdiv(&c_pio0, div);                 // 15 MHz
     pio_sm_init(pio0, pio0_sm, offset_pio0, &c_pio0);
-    pio_sm_set_enabled(pio0, pio0_sm, false); // stay stopped until we start capture
+    pio_sm_set_enabled(pio0, pio0_sm, false); // stopped until usb_speed_start()
     pio_sm_clear_fifos(pio0, pio0_sm);
     pio_sm_restart(pio0, pio0_sm);
     pio_sm_clkdiv_restart(pio0, pio0_sm);
-    // pio_sm_exec(pio0, pio0_sm, pio_encode_jmp(31)); // Start from the last PIO instruction
 
     usb_speed_init(pio0_sm, offset_pio0, pio1_sm, offset_pio1);
 
@@ -1899,7 +1818,7 @@ int main(void)
     uint32_t report_at = 0;
     const int words = sizeof(dbuff1.g_buffer) / sizeof(dbuff1.g_buffer[0]);
 
-    // Initialise the ping-pong double buffer and start capturing into dbuff1.
+    // Initialise the double buffer and start capturing into dbuff1.
     last_dbuff = NULL;
     curr_dbuff = NULL;
     memset((void *)&dbuff1, 0, sizeof(dbuff1));
@@ -1935,12 +1854,9 @@ int main(void)
     usb_speed_start();
     capture_started_ms = to_ms_since_boot(get_absolute_time());
 
-    // ------------------------------------------------------------------------
-    // CORE 0 CAPTURE LOOP
-    // Drain PIO0's RX FIFO forever. Each word is either a DATA word (bit 31 = 0,
-    // packed line samples) or a SIZE word (bit 31 = 1, the packet's bit count).
+    // Core 0's capture loop: drain PIO0's RX FIFO forever. Each word is either a DATA word
+    // (bit 31 = 0, packed line samples) or a SIZE word (bit 31 = 1, the packet's bit count).
     // DATA words accumulate at 'index'; a SIZE word closes the current packet.
-    // ------------------------------------------------------------------------
     while (1)
     {
         if (pio_sm_is_rx_fifo_empty(pio0, pio0_sm))
@@ -1948,8 +1864,8 @@ int main(void)
             capture_note_idle();
 
             // A report waits while the bus went quiet (a suspend, an unplug): hand it over all the
-            // same, between two packets, or it waits for the next traffic. In a model of the
-            // capture path a key pressed before a 3 s suspend reached the ESP 3 s late.
+            // same, between two packets, or it waits for the next traffic. Without this, in a model
+            // of the capture path, a key pressed before a 3 s suspend reached the ESP 3 s late.
             if (report_waiting && !overrun && !dropping && index == packet + 2 &&
                 time_us_32() - report_at >= CAPTURE_HANDOFF_US && capture_swap())
             {
@@ -1969,11 +1885,12 @@ int main(void)
                 usb_speed_stop();
                 index = packet + 2;
 
-                // A buffer with no packet long enough to be a report and no bus reset holds nothing
-                // core 1 needs (SOFs, keep-alives, polls): it is dropped, not waited for. A resume
-                // switches twice in about 25 ms (the PC drives K, the other speed's idle level, for
-                // 20 ms). Core 1 takes about 30 ms to decode a full buffer of 3984 SOFs (computed),
-                // and waiting for it at the second switch would keep the PIO stopped into the polls
+                // A buffer with no packet long enough to be a report and no reset marker holds
+                // nothing core 1 needs (SOFs, keep-alives, polls): it is dropped, not waited for.
+                // A resume switches twice in about 25 ms (the PC drives K, the other speed's idle
+                // level, for 20 ms). Core 1 takes up to 45 ms to decode and forward a full buffer
+                // of 3984 SOFs (measured on the bench as the delay it adds to an ESP poll), and
+                // waiting for it at the second switch would keep the PIO stopped into the polls
                 // after it.
                 if (report_waiting || curr_dbuff->g_buffer_info.markers)
                 {
@@ -2035,13 +1952,13 @@ int main(void)
             }
 
             // A record whose word count does not fit its sample count gained or lost a FIFO word
-            // (the PIO loses one only on a full FIFO, not seen since core 0 stopped waiting for core 1): stored, it
-            // would cost core 1 the rest of the buffer at a "Synchronization error". A packet of N
-            // samples comes in N / 31 + 1 words, a reset marker in none. Its place keeps a 2-sample
-            // record that core 1 decodes as a packet with an error, so a DATA after a lost IN never
-            // pairs with the token before it, which a hub repeats from another device: in the twin,
-            // dropping the record alone sent 16 of 16 such reports to that device's address, at
-            // both speeds.
+            // (the PIO loses one only on a full FIFO, not seen since core 0 stopped waiting for
+            // core 1): stored, it would cost core 1 the rest of the buffer at a "Synchronization
+            // error". A packet of N samples comes in N / 31 + 1 words, a reset marker in none. Its
+            // place keeps a 2-sample record that core 1 decodes as a packet with an error, so a
+            // DATA after a lost IN never pairs with the token before it, a host token to another
+            // device that a hub repeated to this port. In a model of the capture path, dropping
+            // the record alone sent 16 of 16 such reports to that device's address, at both speeds.
             uint32_t stored = (uint32_t)(index - (packet + 2));
 
             if (stored != (samples ? samples / 31u + 1u : 0u))
@@ -2066,8 +1983,8 @@ int main(void)
                 report_at = time_us_32();
             }
 
-            // SIZE word: end of a packet. Recover the bit count (0xFFFFFFFF - v)
-            // into this packet's header, timestamp it, and open the next packet.
+            // SIZE word: end of a packet. Store the bit count (0xFFFFFFFF - v) in this
+            // packet's header and open the next packet.
             curr_dbuff->g_buffer[packet + 0] = samples;
             curr_dbuff->g_buffer[packet + 1] = 0; // TIMER slot (hardware timer not wired up in this build)
             curr_dbuff->g_buffer_info.count++;
@@ -2076,10 +1993,10 @@ int main(void)
             index += 2;     // reserve its SIZE + TIME header slots
 
             // Buffer full (packet limit reached, or less room left than the largest possible
-            // packet): hand it to core 1 and ping-pong, always between two packets. Heavy
-            // traffic fills the words before the 5000 packets; handing off mid-packet split
-            // a packet across both buffers and desynchronised the next one, which then lost
-            // every report it held.
+            // packet): hand it to core 1 and swap, always between two packets. Heavy traffic
+            // fills the words before the 5000 packets; a handoff mid-packet splits a packet
+            // across both buffers and puts the next one out of step, which then loses every
+            // report it holds.
             if (curr_dbuff->g_buffer_info.count == curr_dbuff->g_buffer_info.limit ||
                 index > words - CAPTURE_RESERVE_WORDS)
             {
@@ -2096,8 +2013,8 @@ int main(void)
                     overrun = true;
                 }
             }
-            // A report waits in a buffer that is not full: hand it over early if core 1 is free,
-            // otherwise keep filling, exactly as before.
+            // A report waits in a buffer that is not full: hand it over early if core 1 has
+            // released the other buffer, otherwise keep filling.
             else if (report_waiting && time_us_32() - report_at >= CAPTURE_HANDOFF_US && capture_swap())
             {
                 report_waiting = false;
@@ -2109,9 +2026,10 @@ int main(void)
         else if (!overrun && !dropping && index < words - 4 && index - packet < CAPTURE_RESERVE_WORDS)
         {
             // DATA word: append the packed samples. A record longer than CAPTURE_RESERVE_WORDS, or
-            // one with no room left, is dropped whole instead of split: no key comes in one (a full
-            // speed report is 23 words at most), only line noise, isochronous data and the K of a
-            // resume read at the old speed until core 0 switches, 2 ms of it (774 words).
+            // one with no room left, is dropped whole instead of split: no key comes in one (each
+            // packet of a full speed report is 23 words at most, 21 DATA words plus its 2 header
+            // words), only line noise, isochronous data and the K of a resume read at the old
+            // speed until core 0 switches, 2 ms of it (774 words).
             curr_dbuff->g_buffer[index++] = v;
         }
         else if (!overrun)

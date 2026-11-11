@@ -35,10 +35,11 @@ WARNING: BULLSHIT CODE X-)
 // Tells what is attached to the capture port from the idle level of D+/D-, read straight from the
 // pads while the PIO keeps capturing. USB 2.0 7.1.5: a low speed device pulls D- up, a full speed
 // one D+; with nothing attached, or a high speed device past its chirp handshake (400 mV, under
-// the logic threshold), both read low. Traffic and keep-alives leave the idle level well over 90%
-// of the time, so a majority over a window is immune to them, and a verdict is published only once
-// two windows in a row agree, so plug-in bounces and bus resets never flicker it. Core 0 picks the
-// capture speed on its own, from the same pads in 2 ms (usb_speed.h).
+// the logic threshold), both read low. With traffic and keep-alives the lines still sit at the
+// idle level well over 90% of the time, so a majority over a window is immune to them, and a
+// verdict is published only once two windows in a row agree, so plug-in bounces and bus resets
+// never flicker it. Core 0 picks the capture speed on its own, from the same pads in 2 ms
+// (usb_speed.h).
 
 #define USB_BUS_SAMPLE_US 1000
 #define USB_BUS_WINDOW 256
@@ -47,8 +48,9 @@ WARNING: BULLSHIT CODE X-)
 // A report longer than 8 bytes on an interrupt endpoint (an NKRO bitmap, a long array, a report
 // ID: only full speed carries them) from a device whose descriptors were not seen holds keys that
 // are not forwarded: without the descriptors only the 8-byte boot layout can be read (usb_hid.h).
-// print_packet() sets this on core 1 and clears it on every bus reset, so the keyboard plugged in
-// again, its descriptors then read, clears it; a full speed bus is then published as WIDE.
+// print_packet() sets this on core 1, and while it is set a full speed bus is published as
+// USB_BUS_WIDE. Every bus reset or detach clears it, so plugging the keyboard in again, which lets
+// the RP read its descriptors, clears it.
 static volatile bool usb_wide_seen;
 
 static const char *usb_bus_name(uint8_t state)

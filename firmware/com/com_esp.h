@@ -84,9 +84,9 @@ SOFTWARE.
 #define HTTP_BODY_MAX 1536
 #define HTTP_RESP_MAX 2048
 
-// The browser asks for one block at a time and loops until its own stopwatch runs out, so
-// these only bound a single request. Small enough that a slow link still answers promptly,
-// large enough that the per request overhead does not dominate a fast one.
+// /wifidown block sizes. The browser asks for one block at a time and loops until its own
+// stopwatch runs out, so these bound one request. The default (no bytes=) is small enough that a
+// slow link answers promptly and large enough that the per request overhead does not dominate.
 #define WIFI_SPEED_CHUNK_DEFAULT 65536
 #define WIFI_SPEED_CHUNK_MAX 1048576
 #define WIFI_SPEED_FLOOR_KBIT 500
@@ -95,25 +95,23 @@ SOFTWARE.
 #define HTTP_SEND_TIMEOUT_MS 5000
 #define HTTP_SELECT_TIMEOUT_MS 200
 
-// deadline_ms is an INACTIVITY timer: every chunk that arrives pushes it forward, so a
-// client dribbling one byte every few seconds renews it forever, and while it does that it
-// owns upload_owner and no one else can reach /ota or /wifiup. This is the absolute cap on
-// one body, generous enough for a ~900 KB package over bad WiFi and finite either way.
+// deadline_ms is an inactivity timer: every chunk that arrives pushes it forward, so a client
+// that sends one byte every few seconds renews it for ever, and meanwhile it owns upload_owner
+// and nobody else can reach /ota, /rpimage or /wifiup. This caps one body in total: enough for
+// a ~900 KB package over bad WiFi, and finite.
 #define HTTP_BODY_TOTAL_TIMEOUT_MS 180000
-// FIX BY DREG: /wifiup stores nothing and the browser posts it in 64 KB blocks, so it never needs
-// the full package window. A tight size cap plus a short body deadline stop a slow drip from
-// parking upload_owner for minutes and starving /ota and /rpimage.
+// /wifiup stores nothing and the browser posts it in 64 KB blocks, so it does not need the
+// package window. The size cap and the short body deadline stop a slow drip from holding
+// upload_owner for minutes while /ota and /rpimage wait.
 #define HTTP_WIFIUP_MAX_BYTES (2u * 1024u * 1024u)
 #define HTTP_WIFIUP_TIMEOUT_MS 30000
-// The WiFi credentials travel percent-encoded inside the query string of /wifi?save=1, and
-// the fixed part of that target already eats 31 characters. At 128 only 96 encoded
-// characters were left for an SSID and password the firmware itself declares as up to
-// 32 + 64 raw, so two escaped characters (a space, an accent, a symbol off a router label)
-// were enough to overrun it. 256 leaves 224, covering the declared maximum with room for
-// 64 escapes.
+// The WiFi credentials travel percent-encoded in the query string of /wifi?save=1, whose fixed
+// part takes 31 characters. 256 leaves 224 for an SSID and a password of up to 32 + 64 raw
+// characters, with room for 64 escapes (a space, an accent, a symbol off a router label). At
+// 128 only 96 were left, and two escaped characters overran it.
 #define HTTP_PATH_MAX 256
 
-// Derived from the buffer size so the scan width cannot drift away from it.
+// HTTP_PATH_MAX - 1, written as a number because the scan format needs one: change both together.
 #define HTTP_PATH_SCAN_MAX 255
 #define HTTP_PATH_SCAN_FMT "%7s %" TOSTRING(HTTP_PATH_SCAN_MAX) "s"
 
@@ -236,17 +234,17 @@ typedef struct
     uint32_t spi_queue_errors;
     uint32_t spi_polls;
     uint32_t spi_proto_mismatch;
-    // FIX BY DREG: spi_dups counts records the RP re-sent that we already had, so it measures how
-    // often the hand-off went wrong AND was recovered. spi_gaps counts sequence numbers that
-    // simply never arrived, which is the first true loss counter this firmware has ever had: every
-    // other counter stays flat when a record vanishes.
+    // spi_dups counts records the RP sent again that the ESP already had: hand-offs that went wrong
+    // and were recovered. spi_gaps counts the sequence numbers skipped when the ESP gives up on a
+    // hole (SPI_SEQ_RESYNC_AFTER), records that never arrived. It is the only loss counter of the
+    // link: every other counter stays flat when a record vanishes.
     uint32_t spi_dups;
     uint32_t spi_gaps;
-    // Forward jumps refused while holding position for the RP to rewind. Healthy traffic shows
-    // this climbing a little and spi_gaps staying at zero: that is recovery working. spi_gaps
-    // moving at all means a hole was never filled.
+    // Forward jumps refused while the ESP holds its position for the RP to rewind. On a healthy
+    // link this climbs a little and spi_gaps stays at 0. Any spi_gaps is a hole never filled.
     uint32_t spi_refused;
-    // Record frames without SPI_RECORD_MARKER, dropped: two frames run together or one shifted.
+    // Record frames dropped for a missing SPI_RECORD_MARKER or CRLF end: two frames run together
+    // or one shifted.
     uint32_t spi_garbled;
     uint32_t ring_dropped;
     uint32_t http_requests;
@@ -348,7 +346,7 @@ static uint32_t ota_rp_got;
 static uint32_t ota_rp_running;
 static bool ota_esp_validated;
 static bool ota_rp_validated;
-static uint64_t ota_esp_sha; // first 8 bytes of the app_elf_sha256 of the esp image being uploaded
+static uint64_t ota_esp_sha; // first 8 bytes of the app_elf_sha256 of the ESP image being uploaded
 static bool rp_commit_pending;
 
 // The first 8 bytes of an app_elf_sha256, the esp_image of /versions.
@@ -366,16 +364,13 @@ static uint64_t ota_sha8(const uint8_t *sha)
 static volatile bool rp_commit_completed;
 static volatile bool rp_image_in_use;
 
-// The web reset button asks the RP (the SPI master and the only chip that can
-// pull the ESP's CHIP_PU) to reboot, which reboots this ESP too. reset_times is
-// a boot counter in NVS: it survives a reboot but not a firmware change, so a
-// rising count is proof the board actually restarted after the button.
-// Held for a WINDOW OF TIME rather than latched forever or counted in frames. Latching is
-// wrong because the flag is never taken back, so the RP reads the request again next time it
-// comes up and reboots or drops into the bootloader a second time. Counting frames is wrong
-// too: while the RP is fetching an OTA image it sits inside its own block loop and never
-// reaches poll_esp(), yet the ESP is answering ~170 block frames a second, so a frame budget
-// is spent without the RP ever looking at it and the request vanishes. A deadline survives a
+// The page's reset button asks the RP (the SPI master, and the only chip that can pull the ESP's
+// CHIP_PU) to reboot, which reboots this ESP too. reset_times is a boot counter in NVS: it
+// survives a reboot but not a firmware change, so a rising count proves the board restarted.
+// An RP request is held for a window of time. A latched flag is never taken back, so the RP
+// would read it again when it comes up and reboot or enter the bootloader a second time. A budget
+// in frames runs out unseen: while the RP fetches an OTA image it stays in its block loop and
+// never reaches poll_esp(), and the ESP answers ~170 block frames a second. The window outlasts a
 // whole image transfer (measured at ~2.7 s) and still expires on its own.
 #define RP_REQUEST_WINDOW_MS 10000
 
@@ -425,9 +420,9 @@ static volatile uint32_t spi_bench_last_bad_len;
 static uint8_t spi_bench_bad_head[12];
 static uint32_t spi_bench_soak_ms;
 
-// Non-zero while a re-armed run is resuming after a reset: the kHz the RP should
-// drop below and confirm downward from, skipping the sweep. Persisted so it
-// survives the brownout that a marginal soak can cause. See SPI_BENCH_STATUS_RESUME_OFF.
+// Non-zero while a re-armed run resumes after a reset: the kHz the RP confirms downward from,
+// skipping the sweep. Kept in NVS (rbench) so it survives the brownout a marginal soak can
+// cause. See SPI_BENCH_STATUS_RESUME_OFF.
 static uint16_t rbench_resume_khz;
 
 static void rbench_save_probing(uint32_t khz);
@@ -461,13 +456,11 @@ static uint8_t st_opts;
 static volatile uint8_t st_blink;
 static volatile uint32_t st_blink_frames_left;
 
-// Which sniff line the web wants probed with a ground wire, cleared as soon as the RP
-// answers. See the interactive switch probe in the RP self test.
+// The sniff line the page wants probed with a ground wire (SPI_SELFTEST_STATUS_PROBE_OFF),
+// cleared once the RP answers.
 static volatile uint8_t st_probe;
 static int64_t st_probe_deadline_ms;
 
-// Defined further down, but the probe housekeeping above the definition has to mark a row
-// in progress and time one out.
 static void st_add(uint8_t id, uint8_t status, uint32_t a, uint32_t b, const char *text);
 static volatile int64_t st_deadline_ms;
 static uint8_t spi_bench_stepdowns;
@@ -489,7 +482,7 @@ static uint8_t spi_bench_overclock;
 // The self test measures the UART link by running one real benchmark step, so the UART
 // bench machinery has to answer outside a benchmark run too. This flag marks that
 // borrowed window: it opens when a UART setup arrives while a self test is running and
-// closes on the teardown setup, so normal SPI replies resume before the next result row.
+// closes on the teardown setup (baud 0), so normal SPI replies resume before the next row.
 static volatile bool uart_link_selftest;
 
 static bool uart_stats_mode(void)
@@ -504,43 +497,39 @@ static volatile uint32_t rp_image_size;
 static volatile uint32_t rp_image_crc;
 static volatile bool rp_image_ready;
 // The CRC32 of the app the RP last reported running (0 when it has no OTA record), and whether a
-// report came since this boot. An RP commit is not asked for before either is known.
+// report came since this boot. No RP commit is asked for before the first report, nor for the
+// image the RP already runs.
 static volatile uint32_t rp_reported_app_crc;
 static volatile bool rp_report_seen;
-// Set by every POST before it confirms an esp image on trial: no RP commit for RP_COMMIT_HOLD_MS,
-// until the upload it starts owns upload_owner.
+// Set by every POST before it confirms an ESP image on trial. It blocks an RP commit for
+// RP_COMMIT_HOLD_MS, until the upload the POST starts owns upload_owner.
 #define RP_COMMIT_HOLD_MS 2000u
 static volatile bool rp_commit_hold;
 static volatile uint32_t rp_commit_hold_at;
-// When SPI_FLAG_RP_COMMIT first went out for the image on offer (its CRC). An RP that cannot apply
-// it never completes (a golden restore after the image failed its boots, a flash map that does not
-// fit, six failed transfers), and the image stayed offered, the ESP refusing what busy_reason()
-// refuses, until the next upload. A commit that works completes in seconds.
+// When SPI_FLAG_RP_COMMIT first went out for the image on offer, and that image's CRC. An RP that
+// cannot apply it never completes (a golden restore after the image failed its boots, a flash map
+// that does not fit, six failed transfers). Without this limit the image stays offered, and the
+// ESP refuses what busy_reason() refuses, until the next upload. A working commit takes seconds.
 #define RP_COMMIT_GIVE_UP_MS (5u * 60u * 1000u)
 static volatile bool rp_commit_asked;
 static volatile uint32_t rp_commit_asked_at;
 static volatile uint32_t rp_commit_asked_crc;
-// Why the RP image staged before the last reboot was or was not picked up again. A package
-// that updates both chips reboots the ESP between staging the RP image and serving it, so
-// when the RP silently stays on its old firmware this is the only thing that says why. The
-// ESP debug UART is not exposed on the production PCB, so it is published over HTTP.
+// Why the RP image staged before the last reboot was or was not picked up again (rp_restore in
+// /stats). A package that updates both chips reboots the ESP between staging the RP image and
+// serving it, so when the RP silently stays on its old firmware this is the only thing that says
+// why. The production PCB does not expose the ESP debug UART, so it goes out over HTTP.
 static char rp_restore_note[80] = "not run yet";
 static volatile int rp_image_fd = -1;
 static uint8_t rp_window[RP_WINDOW_SIZE];
 static uint32_t rp_window_offset = SPI_NO_BLOCK;
 static volatile uint32_t spi_requested_block = SPI_NO_BLOCK;
-// FIX BY DREG: a manual /rpcommit used to be budgeted in FRAMES (SPI_BENCH_ARM_FRAMES, 64) rather
-// than in time, and that budget is spent by spi_fill_frame(), which runs for EVERY transaction.
-// Capture records are transactions, and the RP discards what comes back on a record write: it only
-// reads the status frame during a poll. So every keystroke burned one of the 64 frames without the
-// RP ever getting a chance to see the flag, and a commit issued while the bus was busy expired
-// unseen. Observed on 2026-08-27: /rpcommit answered "commit requested", the image stayed staged
-// with rp_image_ready=1, the RP never fetched it, and an identical second request moments later
-// went through because the traffic had stopped. Sending each record twice, added the same night,
-// halved the window again.
-//
-// /rpreset and /rpbootsel were already time-budgeted. This is now the same, which also makes the
-// three RP requests behave alike instead of one being subtly different.
+// A manual /rpcommit is held for RP_REQUEST_WINDOW_MS, like /rpreset and /rpbootsel. A budget in
+// frames (SPI_BENCH_ARM_FRAMES, 64) is spent by spi_fill_frame(), which runs for every
+// transaction, and capture records are transactions whose reply the RP discards: it reads the
+// status frame only during a poll. Every keystroke then burns a frame the RP never sees, and a
+// commit issued while the bus is busy expires unseen. Seen with a frame budget on 2026-08-27:
+// /rpcommit answered "commit requested", the image stayed staged with rp_image_ready=1 and the RP
+// never fetched it; the same request moments later went through because the traffic had stopped.
 static volatile int64_t esp_rp_commit_until_ms;
 static uint32_t spi_blocks_served;
 
@@ -558,13 +547,13 @@ static char wifi_ap_ssid[WIFI_SSID_MAX];
 static int64_t wifi_reboot_at_ms;
 static bool wifi_want_sta;
 static bool wifi_forced_ap;
-// Set once STA has ever joined successfully, mirroring the persistent NVS "staok" flag that
-// is loaded at boot. A network that has proven it works is never abandoned for the AP over a
-// passing router outage: once this is set the board retries STA forever and never forces AP.
+// Set once STA has ever joined, mirroring the NVS "staok" flag loaded at boot. A network that has
+// worked is never abandoned for the AP over a passing router outage: once this is set the board
+// retries STA for ever and never forces the AP.
 static volatile bool wifi_sta_ever_joined;
 static volatile uint32_t wifi_ip;
 static volatile uint8_t wifi_link;
-// Written by the WiFi event handler task and read by wifi_service() on another, so it must
+// Written by the WiFi event handler task and read by wifi_service() on led_task, so it must
 // not be cached in a register across the check.
 static volatile int64_t wifi_sta_deadline_ms;
 static esp_netif_t *wifi_netif;
@@ -696,9 +685,9 @@ static uint32_t hid_ring_clamp(uint32_t cursor, uint32_t head, uint32_t *skipped
 // observed on a healthy board.
 static volatile uint8_t eboot_sticky;
 
-// FIX BY DREG: the sequence of the last capture record accepted, 0 until the first one arrives,
-// and how many forward jumps have been refused in a row while waiting for the RP to rewind and
-// fill the hole. Only ever touched from the SPI task, so no synchronisation is needed.
+// The sequence of the last capture record accepted, 0 until the first one arrives, and how many
+// forward jumps have been refused in a row while waiting for the RP to rewind and fill the hole.
+// Only the SPI task writes them (/stats reads the sequence), so they need no synchronisation.
 static uint8_t spi_last_record_seq;
 static uint16_t spi_seq_refusals;
 
@@ -815,9 +804,8 @@ static void st_service(void)
         st_blink_frames_left = 0;
     }
 
-    // A probe the RP never answered must not wedge the next one, so it expires on its own.
-    // Its row is sitting in the table marked in progress, so say what happened rather than
-    // leaving the page waiting on a reply that is never coming.
+    // A probe the RP never answers expires on its own, so it cannot block the next one. Its row
+    // sits in the table marked in progress, so it gets a failure text and the page stops waiting.
     if (st_probe != 0 && bench_now_ms() > st_probe_deadline_ms)
     {
         st_add(st_probe == 1 ? ST_RP_SW_DP : ST_RP_SW_DM, SELFTEST_FAIL, 0, (uint32_t)st_probe,
@@ -826,9 +814,9 @@ static void st_service(void)
         st_probe = 0;
     }
 
-    // The borrowed UART window belongs to a running self test and nothing else. Closing
-    // it here as well means a run that ends early, times out or is aborted mid step can
-    // never leave the SPI replies stuck in stats mode.
+    // The borrowed UART window belongs to a running self test only. Closing it here too means
+    // a run that ends early, times out or is aborted mid step cannot leave the SPI replies stuck
+    // in stats mode.
     if (st_state != ST_RUNNING && uart_link_selftest)
     {
         uart_link_selftest = false;
@@ -895,10 +883,9 @@ static void bench_account_mosi(const uint8_t *frame, size_t trans_bits)
 
     // The slave's trans_len is not reliable on this platform in full duplex: it
     // reports fewer bits than SPI_FRAME_SIZE * 8 (and sometimes zero) even when
-    // all 256 bytes arrive, which the CRC below confirms. Integrity is decided by
-    // the CRC and the sequence number, exactly the way the RP validates MISO with
-    // spi_find_frame instead of trusting a length. The length mismatch is only
-    // counted, never fatal.
+    // all 256 bytes arrive, which the CRC below confirms. The CRC and the sequence
+    // number decide, the way the RP checks MISO with spi_find_frame() instead of
+    // trusting a length. A length mismatch is only counted.
     if (trans_bits != SPI_FRAME_SIZE * 8)
     {
         spi_bench_bad_len++;
@@ -960,12 +947,11 @@ static void bench_account_garbage(void)
     spi_bench_last_frame_ms = bench_now_ms();
 }
 
-// st_add() is reached from BOTH the SPI task (results arriving from the RP) and the HTTP
-// task (rows the ESP fills in itself, and the interactive answers). It reads st_count,
-// writes st_rows[count] and only then publishes count + 1, which is a read-modify-write
-// with a preemption point in the middle: two callers that interleave pick the SAME row,
-// one silently overwrites the other and the table ends up one row short. The body is a
-// bounded scan of 48 entries plus a 36 byte copy, so a spinlock costs microseconds and
+// st_add() runs on the SPI task (results from the RP) and on the HTTP task (rows the ESP
+// fills in itself, and the interactive answers). It reads st_count, writes st_rows[count]
+// and then publishes count + 1, a read-modify-write: two callers that interleave pick the
+// same row, one overwrites the other and the table ends up one row short. The body scans
+// at most 48 entries and copies 36 bytes, so the spinlock is held for microseconds and
 // nothing inside it can block.
 static portMUX_TYPE st_rows_mux = portMUX_INITIALIZER_UNLOCKED;
 
@@ -989,9 +975,8 @@ static void st_add(uint8_t id, uint8_t status, uint32_t a, uint32_t b, const cha
     {
         if (count >= SPI_SELFTEST_MAX_RESULTS)
         {
-            // Losing the result is unavoidable, the table is full. Losing it SILENTLY is not:
-            // the page would render a run that looks complete while steps went missing, which
-            // is the worst way for a self test to fail. Count it so the reply can say so.
+            // The table is full, so the result is lost. Count it so the reply can say so:
+            // otherwise the page shows a run that looks complete with steps missing.
             if (st_dropped < 0xffff)
             {
                 st_dropped++;
@@ -1127,11 +1112,11 @@ static void bench_accept_uart_setup(const uint8_t *frame)
         uart_link_selftest = baud != 0;
     }
 
-    // A baud of 0 is a probe, not a step: the RP uses it to confirm the link is
-    // up before the first step and to tell us to stop between steps. uart_bench_run()
-    // only runs for a real baud (uart_rx_task gates on want_baud != 0), so nothing
-    // would ever echo the probe's token back and the RP's setup handshake would
-    // time out, aborting the whole UART benchmark before a single step. Ack it here.
+    // A baud of 0 is a probe, not a step: the RP sends it to confirm the link is up
+    // before the first step and to make the ESP stop between steps. uart_bench_run()
+    // runs only for a real baud (uart_rx_task checks want_baud != 0), so nothing else
+    // echoes the probe's token, and the RP's setup handshake would time out and abort
+    // the UART benchmark before its first step. Ack it here.
     if (baud == 0)
     {
         uart_bench_acked = uart_bench_token;
@@ -1180,8 +1165,6 @@ static void bench_accept_result(const uint8_t *frame)
         spi_bench_soak_step = step;
         spi_bench_cur_step = step;
 
-        // Record the clock about to be hammered, before it can brown the board
-        // out, so a reset that never returns still leaves a breadcrumb.
         rbench_save_probing(spi_get_u32(frame + SPI_BENCH_RESULT_TARGET_OFF) / 1000u);
 
         ESP_LOGI(SPI_TAG, "bench run %u: confirming step %u for %u ms", (unsigned)spi_bench_run_id, (unsigned)step,
@@ -1273,10 +1256,10 @@ static bool bench_step_passed(const bench_step_t *slot)
 
     if (slot->kind == SPI_BENCH_KIND_UART)
     {
-        // Same asynchronous edge slack the RP applies (see uart_rp_clean): a clean
+        // The same asynchronous edge slack the RP applies (uart_rp_clean()): a clean
         // UART link may lose a frame or two at the window edges without being corrupt.
-        // Corruption and resyncs are already rejected above, so this only forgives the
-        // start/stop misalignment, keeping the ESP's verdict consistent with the RP's.
+        // Corruption and resyncs (xfer_fail on a UART step) are rejected above, so this
+        // only forgives the start and stop misalignment, as the RP does.
         uint32_t mosi_lost = slot->frames > slot->mosi_ok ? slot->frames - slot->mosi_ok : 0;
         uint32_t miso_lost = miso_sent > slot->miso_ok ? miso_sent - slot->miso_ok : 0;
         uint32_t mosi_slack = slot->frames / 1000u;
@@ -1320,10 +1303,8 @@ static uint8_t bench_mosi_verdict(uint8_t step)
 
     if (slot->kind == SPI_BENCH_KIND_UART)
     {
-        // A UART step is asynchronous, so a frame or two lost at the edges of the
-        // window is an artifact of when each side starts and stops, not corruption
-        // (corruption is caught by mosi_bad above). Allow the same small absolute
-        // edge slack the RP uses so a clean link is judged clean on both sides.
+        // The edge slack of bench_step_passed() (corruption is caught by mosi_bad
+        // above), so a clean link is judged clean on both sides.
         uint32_t lost = slot->frames > slot->mosi_ok ? slot->frames - slot->mosi_ok : 0;
         uint32_t slack = slot->frames / 1000u;
 
@@ -1480,10 +1461,9 @@ static void spi_fill_frame(uint8_t *frame, int index)
         flags |= SPI_FLAG_SELFTEST_ARMED;
     }
 
-    // Published whether or not a run is in flight. Hiding the run id outside a run is
-    // what broke the switch probe: it identifies its result with this id, and the RP can
-    // only know it from here, so between runs it was sending zero and every row was
-    // rejected. Starting a run is gated by the flag above, not by this number.
+    // Published between runs too: the switch probe tags its result with this id and the RP
+    // learns it only here, so with 0 between runs every probe row would be rejected. A run
+    // starts on the flag above, not on this number.
     head[SPI_SELFTEST_STATUS_RUN_OFF] = st_run_id;
     head[SPI_SELFTEST_STATUS_OPTS_OFF] = st_opts;
 
@@ -1503,8 +1483,8 @@ static void spi_fill_frame(uint8_t *frame, int index)
     head[SPI_SELFTEST_STATUS_EBOOT_OFF] =
         (uint8_t)gpio_get_level(EBOOT_MASTERDATAREADY_GPIO) | eboot_sticky;
 
-    // FIX BY DREG: tell the RP which capture record we last accepted, so it can re-send anything
-    // it sent that never arrived instead of trusting the SLAVEREADY handshake, which lies.
+    // The last capture record the ESP accepted: the RP resends what never arrived from here
+    // instead of trusting the SLAVEREADY handshake, whose fall can come from an older transaction.
     head[SPI_STATUS_RECORD_SEQ_OFF] = spi_last_record_seq;
 
     clock_status_fill(head);
@@ -1542,8 +1522,8 @@ static void spi_fill_frame(uint8_t *frame, int index)
         head[SPI_BENCH_STATUS_RESUME_OFF + 1] = (uint8_t)(rbench_resume_khz >> 8);
     }
 
-    // Not offered while this esp image is on trial: the RP would stage the package's RP half, and
-    // if the esp half then rolls back, an RP firmware that commits whatever is staged applies it
+    // Not offered while this ESP image is on trial: the RP would stage the package's RP half, and
+    // if the ESP half then rolls back, an RP firmware that commits whatever is staged applies it
     // on the next commit asked for any reason.
     if (rp_image_ready && !ota_reboot_pending && !app_awaiting_validation)
     {
@@ -1554,7 +1534,7 @@ static void spi_fill_frame(uint8_t *frame, int index)
 
     int64_t req_now_ms = bench_now_ms();
 
-    // No commit while an upload is starting or running: the upload's own request confirms an esp
+    // No commit while an upload is starting or running: the upload's own request confirms an ESP
     // image on trial, and an RP commit reboots the RP, which resets the ESP in the middle of the
     // upload. None before the RP has said what it runs, nor for an image it runs already: an RP
     // firmware without the offer check in ota_commit_staged_image() would apply a stale staged
@@ -1563,8 +1543,8 @@ static void spi_fill_frame(uint8_t *frame, int index)
                      !(rp_commit_hold && (uint32_t)((uint32_t)req_now_ms - rp_commit_hold_at) < RP_COMMIT_HOLD_MS) &&
                      rp_report_seen && !(rp_reported_app_crc != 0 && rp_reported_app_crc == rp_image_crc);
 
-    // FIX BY DREG: time-budgeted, like the reset and bootsel requests below it. See the
-    // declaration of esp_rp_commit_until_ms for what the old frame budget did.
+    // A time window, like the bootsel and reset requests below: the declaration of
+    // esp_rp_commit_until_ms says why not a frame budget.
     if (commit_ok && (rp_commit_pending || req_now_ms < esp_rp_commit_until_ms))
     {
         flags |= SPI_FLAG_RP_COMMIT;
@@ -1631,7 +1611,7 @@ static void spi_fill_frame(uint8_t *frame, int index)
 
     memcpy(frame + SPI_PAYLOAD_OFFSET, rp_window + (offset - window), len);
 
-    // FIX BY DREG: stamp the block payload crc so the RP can retry only a corrupt block.
+    // The CRC of the block payload lets the RP retry only a corrupt block.
     spi_put_u32(head + SPI_BLOCK_CRC_OFF, crc32_buffer(frame + SPI_PAYLOAD_OFFSET, len));
 
     rp_image_in_use = false;
@@ -1648,9 +1628,9 @@ static void spi_handle_control_frame(const uint8_t *frame)
         if (spi_bench_kind == SPI_BENCH_KIND_UART)
         {
             // The UART benchmark polls over SPI to read the peer's stats while the
-            // measured traffic flows over the UART, so a POLL here is expected and
-            // must KEEP the run alive. Only a SPI bench treats a POLL as the RP
-            // returning to normal operation and aborts.
+            // measured traffic flows over the UART, so a POLL here keeps the run
+            // alive. Only an SPI bench takes a POLL as the RP back in normal
+            // operation, and aborts.
             bench_saw_rp_frame();
         }
         else
@@ -1694,7 +1674,7 @@ static void spi_handle_control_frame(const uint8_t *frame)
     rp_reported_app_crc = reported_app_crc;
     rp_report_seen = true;
 
-    // The RP runs the image on offer: committed, or it was its running build all along (an
+    // The RP runs the image on offer: committed, or its running build all along (a package or an
     // /rpimage of that build), which would otherwise stay offered and keep the ESP busy.
     if (rp_image_ready && reported_app_crc != 0 && reported_app_crc == rp_image_crc)
     {
@@ -1708,20 +1688,18 @@ static void spi_handle_control_frame(const uint8_t *frame)
 }
 
 /*
- * FIX BY DREG: publish the accepted sequence into EVERY queued transmit buffer, not just the one
- * being refilled.
+ * Writes the accepted sequence into every queued transmit buffer, not only the one being refilled.
  *
- * SPI_QUEUE_DEPTH transactions are armed at once, each carrying a buffer that was filled when that
- * transaction last completed. So the frame the RP actually receives can be up to eight
- * transactions old, and its sequence with it. That is not a small skew, it is the whole reason a
- * first attempt at reconciliation was impossible: the RP read a sequence up to eight records
- * behind, concluded there was a hole every single time, rewound and re-sent, for ever. Measured,
- * that turned 3062 real records into 73791 frames.
+ * SPI_QUEUE_DEPTH (8) transactions are armed at once, each with a buffer filled when that
+ * transaction last completed, so the frame the RP receives can be up to eight transactions old,
+ * and its sequence with it. With only the refilled buffer stamped, the RP read a sequence up to
+ * eight records behind, saw a hole every time, and rewound and resent for ever: measured, 3062
+ * real records became 73791 frames.
  *
- * One byte, written straight into the queued buffers. The DMA may be reading one of them at that
- * instant, but a single byte write cannot tear, and the worst case is the RP seeing a value one
- * record old instead of eight, which is strictly better than before. Only STATUS frames are
- * touched: in a DATA or BENCH frame that offset means something else.
+ * The DMA may be reading one of the buffers at that moment, but a one byte write cannot tear, and
+ * at worst the RP sees a value one record old. Only STATUS frames get it: in a BENCH frame that
+ * offset is pattern data under the CRC. A queued DATA frame keeps the sequence it was filled with,
+ * though the RP reads it there too.
  */
 static void spi_stamp_record_seq(void)
 {
@@ -1872,8 +1850,8 @@ static void spi_task(void *arg)
 
             if (len > 0)
             {
-                // FIX BY DREG: honour the record sequence (com.h) so a retry from the RP cannot
-                // duplicate a keystroke, and so a genuine gap finally becomes visible.
+                // The record sequence (com.h): a resend from the RP cannot duplicate a
+                // keystroke, and a real gap is counted.
                 const uint8_t *payload = received;
                 size_t payload_len = len;
                 bool duplicate = false;
@@ -1905,25 +1883,24 @@ static void spi_task(void *arg)
                         }
                         else if (delta == 0 || delta > SPI_SEQ_FORWARD_MAX)
                         {
-                            // Already have it: either the same record clocked twice, or a whole
-                            // run the RP rewound over and re-sent. Recognising the RUN, not just
-                            // the single last record, is what makes reconciliation safe.
+                            // Already accepted: the same record clocked twice, or part of a run the
+                            // RP rewound over and resent. Dropping the whole run (any delta past
+                            // SPI_SEQ_FORWARD_MAX), not just its last record, keeps rewinds safe.
                             duplicate = true;
                             stats.spi_dups++;
                         }
                         else
                         {
-                            // A jump forward: records between us went missing. HOLD POSITION so
-                            // the RP's next poll sees where we really are, rewinds and refills the
-                            // hole. Accepting here would strand those records: a later re-send
-                            // would read as "already passed" and be dropped as a duplicate.
+                            // A jump forward: records in between went missing. Hold position, so
+                            // the RP's next poll sees the ESP's real sequence, rewinds and refills
+                            // the hole. Accepting here would strand those records: a later resend
+                            // would read as already passed and be dropped as a duplicate.
                             //
-                            // This is only safe paired with an RP that rewinds. On its own it
-                            // loses the record anyway AND keeps refusing everything after it until
-                            // the escape hatch fires, turning one lost keystroke into dozens.
-                            // SPI_SEQ_RESYNC_AFTER bounds exactly that: against an RP too old to
-                            // reconcile, or a wedged one, it gives up and resynchronises instead
-                            // of dropping capture for ever.
+                            // Holding works only with an RP that rewinds. Alone it loses the
+                            // record anyway and refuses everything after it, one lost keystroke
+                            // turned into dozens. SPI_SEQ_RESYNC_AFTER bounds that: against an RP
+                            // too old to rewind, or a wedged one, the ESP gives up after that many
+                            // refusals, counts the skipped records in spi_gaps and resynchronises.
                             spi_seq_refusals++;
 
                             if (spi_seq_refusals >= SPI_SEQ_RESYNC_AFTER)
@@ -1945,12 +1922,12 @@ static void spi_task(void *arg)
                 {
                     // Both RP variants mark every record and end it with CRLF, so a frame without
                     // both is two frames run together or one shifted (2026-10-10: the tail of a
-                    // poll's RP identity glued to a report). Stored, it was a line the page cannot
-                    // parse in the ring and the keylog, a keystroke gone. Dropped, the RP sends the
-                    // report again because the published sequence never confirms it. The CRLF test
+                    // poll's RP identity glued to a report). Stored, it would be a line the page
+                    // cannot parse, in the ring and the keylog, and a lost keystroke. Dropped, it
+                    // comes again: the published sequence never confirms it. The CRLF test
                     // (2026-10-12): 7 bytes after a marker, clocked in during one of a day of RP
                     // reboots, were the first record after an ESP boot, which skips the sequence
-                    // test; with no line end, the next real report was glued onto them on flash.
+                    // test, and with no line end the next real report was glued onto them on flash.
                     duplicate = true;
                     stats.spi_garbled++;
                     spi_last_garbled_len = (uint32_t)len;
@@ -2032,9 +2009,9 @@ static void wifi_cfg_store_fail_count(uint8_t fails)
     nvs_close(handle);
 }
 
-// Persistently record that the configured STA network has joined at least once, so a later
-// router outage is treated as temporary and never sends the board to the AP. Written only on
-// the first join (the caller guards it with the RAM flag) so it costs no NVS wear afterwards.
+// Stores in NVS that the configured STA network has joined at least once, so a later router
+// outage never sends the board to the AP. Written only on the first join (the caller checks
+// the RAM flag), so it costs no NVS wear afterwards.
 static void wifi_cfg_set_sta_ok(void)
 {
     nvs_handle_t handle;
@@ -2073,12 +2050,12 @@ static bool ota_nvs_get_rp_pending(uint32_t *size, uint32_t *crc, uint64_t *esp_
 static void ota_nvs_set_rp_pending(uint32_t size, uint32_t crc, uint64_t esp_sha, bool legacy);
 static void ota_nvs_clear_rp_pending(void);
 
-// Set when this boot found NVS from another esp build and wiped it (wifi_cfg_load()).
+// Set when this boot found NVS from another ESP build and wiped it (wifi_cfg_load()).
 static bool ota_new_build_boot;
 
-// Bump the persistent boot counter. Call AFTER wifi_cfg_load so it runs on the
-// clean NVS a firmware change leaves behind, which is why the count resets to 1
-// on a new build and only climbs across plain reboots.
+// The boot counter in NVS. Call it after wifi_cfg_load(), on the clean NVS a firmware
+// change leaves, so the count restarts at 1 on a new build and climbs only across plain
+// reboots.
 static void reset_count_bump(void)
 {
     nvs_handle_t handle;
@@ -2184,10 +2161,9 @@ static void wifi_cfg_load(void)
     nvs_get_u8(handle, "staok", &staok);
     wifi_sta_ever_joined = (staok != 0);
 
-    // Only fall back to the AP when the configured network has NEVER worked (wrong SSID or
-    // password): that is the misconfiguration the AP recovery exists for. A network that has
-    // joined at least once keeps retrying STA forever, so a router reboot can never strand the
-    // board in AP mode off the LAN.
+    // Fall back to the AP only when the configured network has never worked (a wrong SSID or
+    // password), the mistake the AP recovery is for. A network that has joined once is retried
+    // for ever, so a router reboot cannot strand the board in AP mode, off the LAN.
     if (!wifi_sta_ever_joined && nvs_get_u8(handle, "stafail", &fails) == ESP_OK && fails >= WIFI_STA_MAX_FAILS)
     {
         wifi_forced_ap = true;
@@ -2207,16 +2183,13 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
         wifi_ip = event->ip_info.ip.addr;
         wifi_link = WIFI_LINK_STA;
 
-        // Disarm the join deadline now that we are on. Leaving it at the value wifi_start()
-        // set meant it stayed in the past for the rest of the session, so the FIRST momentary
-        // drop after the first 25 seconds went straight into wifi_service() with an expired
-        // deadline and rebooted the board on the spot, counting a join failure as it went.
+        // The join deadline bounds only the first join of this boot. Left armed, it would be
+        // past at the first drop after 25 s, and only wifi_sta_ever_joined would keep
+        // wifi_service() from rebooting the board and counting a join failure.
         wifi_sta_deadline_ms = 0;
 
         wifi_cfg_store_fail_count(0);
 
-        // These creds work: remember it persistently so a future drop is treated as a passing
-        // outage, never a reason to fall back to the AP. Written once (the RAM flag guards it).
         if (!wifi_sta_ever_joined)
         {
             wifi_sta_ever_joined = true;
@@ -2244,7 +2217,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
             // this event too (no AP by that name, a wrong password), so moving the deadline here
             // would keep a network that never worked from ever counting as a failure, and the
             // board would never come back as an access point. A network that has joined is never
-            // given up on (wifi_service()), so a roam or a router blip needs no fresh window.
+            // given up on (wifi_service()), so a roam or a router blip needs no new window.
         }
 
         esp_wifi_connect();
@@ -2282,10 +2255,10 @@ static void wifi_service(void)
         return;
     }
 
-    // A network that has joined before is never given up on. The driver already reconnects on
-    // every disconnect, so just keep waiting and do NOT reboot: staying up preserves the
-    // captured buffer and rejoins the instant the router returns, instead of a reboot storm
-    // that clears the buffer every cycle and would still never reach the (now disabled) AP.
+    // A network that has joined before is never given up on. wifi_event_handler() reconnects on
+    // every disconnect, so keep waiting instead of rebooting: the RAM buffer survives and the
+    // board rejoins as soon as the router is back. A reboot loop would clear the buffer every
+    // time and still never reach the AP, which this network has turned off.
     if (wifi_sta_ever_joined)
     {
         wifi_sta_deadline_ms = 0;
@@ -2384,7 +2357,7 @@ static void wifi_start(void)
     int n = snprintf(ssid, sizeof(ssid), "%s_%02X%02X%02X%02X%02X%02X", WIFI_PREFIX, mac[0], mac[1], mac[2], mac[3],
                      mac[4], mac[5]);
 
-    // FIX BY DREG: snprintf returns the length it would have written, so clamp before the copy.
+    // snprintf returns the length it would have written: clamp it before the copy.
     if (n < 0 || n > (int)sizeof(ssid))
     {
         n = (int)sizeof(ssid);
@@ -2595,11 +2568,10 @@ static void uart_bench_run(void)
 
         int wrote = 0;
 
-        // Only transmit while the RP is actively sending: start after we have heard
-        // its first bytes (so it is already in its read loop and won't flush our
-        // opening frames) and stop once it has gone quiet (so we don't keep sending
-        // past the end of its measurement window, which the RP would otherwise score
-        // as lost MISO frames). This keeps both directions of the step aligned.
+        // Transmit only while the RP is sending: start after its first bytes arrive
+        // (it is then in its read loop and does not flush the ESP's first frames) and
+        // stop once it has been quiet for UART_BENCH_QUIET_MS (frames sent past the end
+        // of its measurement window would count as lost MISO frames on the RP).
         bool rp_active = peer_heard && (bench_now_ms() - last_rx_ms) <= UART_BENCH_QUIET_MS;
 
         if (send && rp_active && uart_bench_tx < UINT32_MAX)
@@ -2611,12 +2583,12 @@ static void uart_bench_run(void)
                 tx_left = UART_BENCH_FRAME_LEN;
             }
 
-            // Non-blocking: fill only whatever room the TX FIFO has right now and
-            // move on, carrying the rest of the frame to the next pass. The old
-            // uart_write_bytes() blocked as soon as the 128-byte FIFO was full (two
-            // 60-byte frames), so the task stopped calling uart_read_bytes() and the
-            // RP->ESP direction read zero bytes forever. Reading must never starve
-            // behind a full TX FIFO.
+            // Non-blocking: fill only the room the TX FIFO has now and carry the rest
+            // of the frame to the next pass. With no TX buffer installed,
+            // uart_write_bytes() blocks once the 128-byte FIFO is full (two 60-byte
+            // frames), the task stops calling uart_read_bytes() and the RP to ESP
+            // direction reads zero bytes for ever. Reading must never wait behind a
+            // full TX FIFO.
             wrote = uart_tx_chars(UART_PORT, (const char *)tx_cursor, (uint32_t)tx_left);
 
             if (wrote > 0)
@@ -2640,12 +2612,11 @@ static void uart_bench_run(void)
 
     uart_bench_ready = false;
 
-    // The loop above also exits on its own step deadline and on the stats window closing,
-    // and in those two cases the request was still standing. uart_rx_task only checks that
-    // this is non zero, so it called straight back in and the UART sat rebaudrating in a
-    // loop forever, never returning to the RP log. Only clear the request this run was
-    // actually serving: a different baud or token means a newer one arrived meanwhile and
-    // clearing it here would throw that away.
+    // The loop also exits on its step deadline and when the stats window closes, with the
+    // request still standing. uart_rx_task only checks that it is non zero, so without this
+    // it would call straight back in and the UART would change baud in a loop for ever,
+    // never back to the RP log. Clear only the request this run served: a different baud or
+    // token is a newer request that arrived meanwhile.
     if (uart_bench_want_baud == baud && uart_bench_token == token)
     {
         uart_bench_want_baud = 0;
@@ -2672,11 +2643,10 @@ static void uart_rx_task(void *arg)
             continue;
         }
 
-        // Short block so a UART bench step the RP just requested is picked up
-        // within ~10 ms instead of up to 100 ms. The RP's setup handshake only
-        // waits so long, and a slow pickup here was making every step fail to
-        // arm. In normal operation this only carries the RP's occasional status
-        // line, so polling a little more often costs nothing.
+        // A 10 ms block, so a UART bench step the RP just requested starts within
+        // about 10 ms: the RP's setup handshake waits only so long, and with 100 ms
+        // every step failed to arm. In normal operation this carries only the RP's
+        // occasional status line, so the shorter block costs nothing.
         int len = uart_read_bytes(UART_PORT, chunk, sizeof(chunk), pdMS_TO_TICKS(10));
         if (len <= 1)
         {
@@ -2760,13 +2730,12 @@ static void rp_image_drop(const char *why)
     ESP_LOGW(TAG, "pending RP image dropped: %s", why);
 }
 
-// Deliberately NOT rp_window. That buffer belongs to the SPI task, which guards every
-// access to it with rp_image_in_use and which rp_image_invalidate() waits on for exactly
-// this reason. This runs on the HTTP task while a previously staged image may still be
-// rp_image_ready and being served block by block, so borrowing rp_window here raced the
-// SPI task both ways: it fed the RP bytes from a different image, and the SPI task's own
-// window reloads corrupted the CRC being computed over a perfectly good candidate. Its
-// own buffer costs an eighth of what rp_window does and removes the whole class of bug.
+// The verify reads into its own buffer, not rp_window. rp_window belongs to the SPI task,
+// which guards every access with rp_image_in_use (rp_image_invalidate() waits on it). This
+// runs on the HTTP task while an image staged earlier may still be rp_image_ready and served
+// block by block, so sharing rp_window would race the SPI task both ways: the RP would get
+// bytes of another image, and the SPI task's window reloads would corrupt the CRC of a good
+// candidate. 512 bytes is an eighth of rp_window.
 #define RP_VERIFY_CHUNK 512
 
 static bool rp_image_verify_on_disk(int fd, uint32_t expected_size, uint32_t expected_crc)
@@ -2837,7 +2806,7 @@ static void app_validation_confirm(void)
     }
 
     // Cleared only once otadata says so: confirmed in RAM alone, the RP commit would go out while
-    // the bootloader still rolls the esp image back on its next reset. A failed write is retried on
+    // the bootloader still rolls the ESP image back on its next reset. A failed write is retried on
     // the next request, and the timeout rolls back cleanly.
     if (esp_ota_mark_app_valid_cancel_rollback() == ESP_OK)
     {
@@ -2857,7 +2826,7 @@ static void app_validation_check_timeout(int64_t now)
         return;
     }
 
-    // The RP image of the same package goes with it: the esp firmware rolled back to must not
+    // The RP image of the same package goes with it: the ESP firmware rolled back to must not
     // commit it.
     rp_image_drop("esp image not confirmed in time");
 
@@ -3103,26 +3072,25 @@ static bool http_query_str(const char *path, const char *key, char *out, size_t 
     return false;
 }
 
-// Persistent keystroke log. The captured log otherwise lives only in RAM (hid_ring here plus
-// the RP ring), so a power cut or a reboot lost everything, and with the web closed only the
-// last few hundred keystrokes survived. This mirrors hid_ring to a file on the ESP's SPIFFS so
-// the log persists across reboots and days of nobody looking. Two files rotate (keylog then
-// keylog.1) capped so the pair fits the ~1.1 MB partition and still leaves room for the RP OTA
-// staging file (rp.new). A background task appends in batches every few seconds, so a
-// keystroke is one buffered write, not a flash write per key. keylog_mutex serialises the task
-// against the download and the clear.
+// Persistent keystroke log. hid_ring (and the RP's ring) is RAM only: a power cut or a reboot
+// empties it, and with the page closed it keeps only the last few hundred keystrokes.
+// keylog_task mirrors hid_ring to files on the ESP's SPIFFS, so the log survives reboots and
+// days of nobody looking. Two files rotate (keylog, then keylog.1), capped so the pair fits the
+// ~1.1 MB partition and leaves room for the RP OTA staging file (rp.new). The task appends in
+// batches every 5 s or sooner, so a keystroke is one buffered write, not a flash write per key.
+// keylog_mutex serialises the task against the download and the clear.
 #define KEYLOG_PATH "/spiffs/keylog"
 #define KEYLOG_OLD_PATH "/spiffs/keylog.1"
 #define KEYLOG_PARTITION "storage"
-// 340 KB, not the 450 it was: SPIFFS slows to ~2 KB/s once the pair fills ~85% of the partition, and a
-// fast typist on a two interface keyboard outran it and lost records near the cap. At ~63% the same
-// stress lost nothing (measured 2026-10-10, ~78 records/s).
+// SPIFFS slows to ~2 KB/s once the two files fill ~85% of the partition: with a 450 KB cap a fast
+// typist on a two interface keyboard outran it and lost records near the cap. At 340 KB (~63%)
+// the same stress lost nothing (measured 2026-10-10, ~78 records/s).
 #define KEYLOG_FILE_CAP (340u * 1024u)
 #define KEYLOG_FLUSH_MS 5000
 #define KEYLOG_CHUNK 1400
-// The task wakes on this short tick but only writes after KEYLOG_FLUSH_MS of quiet; when the RAM
-// ring fills past the watermark it flushes immediately instead, so a burst of keystrokes reaches
-// flash long before the ring could lap and drop. Normal typing still writes at the slow cadence.
+// The task wakes every KEYLOG_TICK_MS and flushes KEYLOG_FLUSH_MS after its last flush, typing or
+// not, or at the first tick that finds KEYLOG_WATERMARK records waiting in the RAM ring, so a burst
+// reaches flash long before the ring can lap and drop. Normal typing stays on the 5 s cadence.
 #define KEYLOG_TICK_MS 250
 #define KEYLOG_WATERMARK (RING_ENTRIES / 2)
 // Free flash the log never takes: the room an RP image is staged in (rp.new, about 83 KB) and
@@ -3131,13 +3099,14 @@ static bool http_query_str(const char *path, const char *key, char *out, size_t 
 // A host model of this partition (ESP-IDF's SPIFFS driven as this file drives it, 12 runs of 30 MB
 // of keystrokes and about 120 RP uploads each, 2026-11-05) failed 125 of 1445 uploads that way and
 // rotated the log for 75 refused batches; at 400 KB (65% full at most) with spiffs_collect(), 0 of
-// 1453 and 1.
+// 1453 uploads failed and the log rotated for 1 refused batch.
 #define KEYLOG_SPIFFS_RESERVE (400u * 1024u)
-// While a download is in flight the file boundaries must not move under the client, so rotation is
-// deferred this long past the last chunk request. Refreshed on every chunk, so a live download holds
-// the freeze and an abandoned one thaws on its own.
+// While a download is in flight the file boundaries must not move under the client, so the cap
+// rotation waits this long past the last chunk request (the reserve and a refused write rotate at
+// once). Refreshed on every chunk: a live download holds the freeze and an abandoned one thaws.
 #define KEYLOG_DL_FREEZE_MS 15000
-// One write() per batch of whole records, see keylog_flush. 2 KB is ~40 USB records.
+// One write() per batch of whole records (keylog_flush()): at most 2 KB, about 40 USB IN: records,
+// and at most KEYLOG_BATCH_RECORDS, which comes first for KB: (14 to 19 B) and PS/2 (27 B) records.
 #define KEYLOG_BATCH 2048
 #define KEYLOG_BATCH_RECORDS 64
 // Collection calls a refused keylog batch may run before the log rotates: each erases up to
@@ -3145,10 +3114,10 @@ static bool http_query_str(const char *path, const char *key, char *out, size_t 
 #define KEYLOG_GC_CALLS 6
 
 // esp_spiffs_gc() until `need` bytes are free pages, at most `calls` calls with a yield after each
-// (the task watchdog). A write reclaims deleted pages only through the few blocks its own collection
-// may clean, part of them picked for wear levelling with nothing to reclaim, so near full it was
-// refused with room to spare: "write to SPIFFS failed" on RP uploads (2026-11-05), and a keylog
-// rotation, the older half of the log gone, on keylog batches.
+// (the task watchdog). A write reclaims deleted pages only through the few blocks its own
+// collection may clean, some picked for wear levelling with nothing to reclaim, so near full a
+// write is refused with room to spare: "write to SPIFFS failed" on RP uploads (2026-11-05), and on
+// keylog batches a rotation that drops the older half of the log.
 static bool spiffs_collect(size_t need, int calls)
 {
     esp_log_level_t level = esp_log_level_get("SPIFFS");
@@ -3172,8 +3141,8 @@ static char keylog_batch[KEYLOG_BATCH];
 static volatile uint32_t keylog_flushed;
 static volatile uint32_t keylog_size;
 static volatile uint32_t keylog_dropped;
-// Bumped on every rotation and clear. The download echoes it as X-Keylog-Gen so the client can spot a
-// mid-download boundary change and restart from the top instead of stitching two files together.
+// Bumped on every rotation and clear. The download echoes it as X-Keylog-Gen so the client can spot
+// a boundary change mid-download and restart from the top instead of stitching two files together.
 static volatile uint32_t keylog_gen;
 static volatile int64_t keylog_dl_deadline_ms;
 static SemaphoreHandle_t keylog_mutex;
@@ -3186,10 +3155,10 @@ static void keylog_rotate(void)
 
     if (keylog_size > 0)
     {
-        // Only zero the size if the rename really moved the file. If it failed (SPIFFS full or
-        // fragmented) the data is still in KEYLOG_PATH, so keep keylog_size accounting for it,
-        // otherwise those bytes would go invisible to the download until the next write. The next
-        // flush retries the rotation and ftell keeps the size authoritative meanwhile.
+        // Zero the size only if the rename moved the file. If it failed (SPIFFS full or
+        // fragmented) the data is still in KEYLOG_PATH, and keylog_size must keep counting it or
+        // the download cannot see those bytes until the next write. A later flush rotates again
+        // when its reason still holds, and takes keylog_size from the file (lseek) meanwhile.
         if (rename(KEYLOG_PATH, KEYLOG_OLD_PATH) == 0)
         {
             keylog_size = 0;
@@ -3223,11 +3192,11 @@ static void keylog_flush(void)
 
         if (low)
         {
-            // Into the reserve: the only way to make room is to drop the oldest half. That moves the
-            // download's byte offsets, but a download restarts on the new X-Keylog-Gen, while holding
-            // off let the RAM ring lap and drop live keystrokes (measured 2026-10-10: thousands, with
-            // a client polling /keylog). So rotate even under a download. rp.new keeps its room
-            // regardless because nothing is appended below the reserve.
+            // Into the reserve: dropping the older half is the only way to make room. It moves the
+            // download's byte offsets, but a download restarts on the new X-Keylog-Gen, and holding
+            // off lets the RAM ring lap and drop live keystrokes (measured 2026-10-10: thousands,
+            // with a client polling /keylog). So this rotates even under a download. rp.new keeps
+            // its room because nothing is appended below the reserve.
             keylog_rotate();
         }
         else
@@ -3239,12 +3208,12 @@ static void keylog_flush(void)
                 bool refused = false;
                 off_t end = lseek(fd, 0, SEEK_END);
 
-                // Whole records go out in batches of up to KEYLOG_BATCH bytes, one write() each. SPIFFS
-                // pays its page lookup and index update per call, and through stdio that was one call per
-                // few dozen bytes: near full the flash managed ~2 KB/s, less than a fast typist on a two
-                // interface keyboard produces, and the RAM ring lapped and dropped thousands of records
-                // with no rotation in sight (measured 2026-10-10). The accounting is exact as well: a
-                // short write keeps only the whole records that landed and cuts the rest off the file, so
+                // Whole records go out in batches (KEYLOG_BATCH), one write() each. SPIFFS pays
+                // its page lookup and index update per call: through stdio, at one call per few
+                // dozen bytes, the flash managed ~2 KB/s near full, less than a fast typist on a
+                // two interface keyboard produces, and the RAM ring lapped and dropped thousands
+                // of records with no rotation in sight (measured 2026-10-10). A short write keeps
+                // only the whole records that landed and cuts the rest off the file, so
                 // keylog_flushed never passes a record that is not on flash.
                 while (!refused && end >= 0 && keylog_flushed != head)
                 {
@@ -3314,9 +3283,9 @@ static void keylog_flush(void)
                     end += (off_t)used;
                 }
 
-                // Take the on-flash size as the single source of truth instead of accumulating bytes
-                // we hoped were written: a partial write must never desync keylog_size from the file,
-                // because the /keylog download derives every chunk offset from it.
+                // keylog_size comes from the file, never from adding up what should have landed: a
+                // partial write must never desync it, because the /keylog download takes every
+                // chunk offset from it.
                 off_t written = lseek(fd, 0, SEEK_END);
                 close(fd);
 
@@ -3325,12 +3294,12 @@ static void keylog_flush(void)
                     keylog_size = (uint32_t)written;
                 }
 
-                // The cap is soft: deferred while a download holds the boundaries steady, it rotates on
-                // the next quiet flush, so the file can briefly run past the cap but never past the
-                // reserve. A write the flash refused is hard and rotates at once, download or not:
-                // SPIFFS can fill before the cap or the reserve trip (its free count includes pages it
-                // cannot reuse yet), and retrying without making room wedged the log for good, dropping
-                // every record after it (seen at 398 KB).
+                // The cap is soft: deferred while a download holds the boundaries steady, it
+                // rotates at the first write after the freeze, so the file can run past the cap
+                // but never past the reserve. A write the flash refused is hard and rotates at
+                // once, download or not: SPIFFS can fill before the cap or the reserve trips (its
+                // free count includes pages it cannot reuse yet), and retrying without making
+                // room wedged the log for good and dropped every record after it (seen at 398 KB).
                 if (refused || (keylog_size >= KEYLOG_FILE_CAP && !frozen))
                 {
                     keylog_rotate();
@@ -3374,9 +3343,8 @@ static void keylog_task(void *arg)
     {
         vTaskDelay(pdMS_TO_TICKS(KEYLOG_TICK_MS));
 
-        // Flush on the slow cadence, or early the moment the RAM ring has filled past the
-        // watermark, so a burst is persisted well before the ring could lap. Both reads are
-        // monotonic counters, so the unlocked subtraction is safe and at worst a tick stale.
+        // Both counters only grow, so the subtraction without the mutex is safe and at worst
+        // a tick stale.
         uint32_t flushed = keylog_flushed;
         uint32_t pending = hid_ring_head() - flushed;
         int64_t now = bench_now_ms();
@@ -3422,8 +3390,8 @@ static void route_keylog(http_conn_t *conn, const char *path)
 
     xSemaphoreTake(keylog_mutex, portMAX_DELAY);
 
-    // A download is in flight: hold off rotation so the byte offsets stay put under the client. The
-    // window is pushed forward on every chunk, so it lasts exactly as long as the client keeps asking.
+    // A download is in flight: hold off the cap rotation (KEYLOG_DL_FREEZE_MS) so the byte offsets
+    // stay put under the client while it keeps asking.
     keylog_dl_deadline_ms = bench_now_ms() + KEYLOG_DL_FREEZE_MS;
 
     long old_size = 0;
@@ -3586,9 +3554,8 @@ static void hw_version_refresh(void)
     hw_version_known = end != 0;
 }
 
-// Signal strength as the station sees it, or 0 when we are the access point and there is
-// no single number to give. Without it a slow speed test cannot be told apart from a weak
-// one, which is most of what you want to know when the board is a room away.
+// Signal strength as the station sees it, or 0 when the ESP is the access point and there is
+// no single number to give. It tells a slow link from a weak one when the board is a room away.
 static int wifi_sta_rssi(void)
 {
     wifi_ap_record_t ap;
@@ -3643,10 +3610,10 @@ static const char *usb_bus_token(void)
     return tokens[state];
 }
 
-// Crystal calibration (com_rp_clock.h on the RP): the web asks for a mode here, the RP reboots into
-// it and streams its console lines back, kept in a small ring for /clock. A request is a fresh random
-// token, so the RP never acts on one twice; the RP reboots the ESP on its way in and out, which drops
-// the request, and the RP's own report of its mode is what the page shows.
+// Crystal calibration (com_rp_clock.h on the RP): the page asks for a mode here, the RP reboots
+// into it and streams its console lines back, kept in a ring of CLOCK_RING lines for /clock. A
+// request is a fresh random token, so the RP never acts on one twice; the RP reboots the ESP on its
+// way in and out, which drops the request, and the page shows the mode the RP itself reports.
 
 #define CLOCK_RING 16
 #define CLOCK_GATE_MIN 100u
@@ -3691,7 +3658,7 @@ static void clock_control_accept(const uint8_t *frame)
     clock_lines_total++;
     clock_line_acked = seq;
 
-    // Same reason as spi_stamp_record_seq: the queued frames were filled before this line arrived.
+    // As in spi_stamp_record_seq(): the queued frames were filled before this line arrived.
     for (int i = 0; i < SPI_QUEUE_DEPTH; ++i)
     {
         uint8_t *head = spi_tx_buffers[i] + SPI_FRAME_LEAD;
@@ -4111,12 +4078,12 @@ static void ota_reset_stream(void)
     ota_esp_sha = 0;
 }
 
-// The pending RP image has two flags. "rp_held" is the one this firmware reads, with "rp_esp", the
-// esp image the RP image came with in one package (ota_sha8 of its app_elf_sha256; 0 for an RP
-// image that came alone). "rp_pending" is the one an esp firmware without the binding (v7, prev9)
-// reads and commits under any esp image: it is set (legacy) only for a package with an esp image,
-// so that an older esp image in it still applies the RP half, and cleared while a new esp image is
-// on trial, so that an older one rolled back to does not.
+// The pending RP image has two flags, and this firmware takes either as a marker. "rp_held" is its
+// own, with "rp_esp", the ESP image the RP image came with in one package (ota_sha8 of its
+// app_elf_sha256; 0 for an RP image that came alone). "rp_pending" is the one an ESP firmware
+// without the binding (v7, prev9) reads and commits under any ESP image: it is set (legacy) only
+// for a package with an ESP image, so that an older ESP image in it still applies the RP half, and
+// cleared while a new ESP image is on trial, so that an older one rolled back to does not.
 static void ota_nvs_set_rp_pending(uint32_t size, uint32_t crc, uint64_t esp_sha, bool legacy)
 {
     nvs_handle_t handle;
@@ -4150,11 +4117,11 @@ static void ota_nvs_clear_rp_pending(void)
     nvs_close(handle);
 }
 
-// While an esp image is on trial, as early as NVS is up: the flag an older esp firmware commits
+// While an ESP image is on trial, as early as NVS is up: the flag an older ESP firmware commits
 // the RP image by goes, since a crash or a power cut from here on rolls back to that firmware.
 // An unbound marker came with this image from such a firmware, so it is bound to this image too:
 // left unbound by a crash before the wipe in wifi_cfg_load(), the older firmware would keep it
-// (it never clears rp_held), and the next esp image would bind it to itself and commit it.
+// (it never clears rp_held), and the next ESP image would bind it to itself and commit it.
 static void ota_nvs_hide_legacy_rp_pending(void)
 {
     uint32_t size = 0;
@@ -4206,7 +4173,7 @@ static bool ota_nvs_get_rp_pending(uint32_t *size, uint32_t *crc, uint64_t *esp_
             pending = held = 0;
         }
 
-        // A marker from an esp firmware without the binding has none.
+        // A marker from an ESP firmware without the binding has none.
         if (nvs_get_u64(handle, "rp_esp", esp_sha) != ESP_OK)
         {
             *esp_sha = 0;
@@ -4231,7 +4198,7 @@ static void rp_image_restore_after_boot(void)
     if (!ota_nvs_get_rp_pending(&size, &crc, &esp_sha, &legacy))
     {
         // No marker: an /rpimage upload, which sets none and is offered only until the ESP restarts
-        // (every RP boot resets it). Nothing offers this file again, and left behind it took the
+        // (every RP boot resets it). Nothing offers this file again, and left behind it takes the
         // room of the next upload: "write to SPIFFS failed" next to a 128 KiB one (2026-11-05).
         bool on_disk = (stat(RP_IMAGE_PATH, &info) == 0);
         if (on_disk)
@@ -4243,14 +4210,14 @@ static void rp_image_restore_after_boot(void)
         return;
     }
 
-    // An RP image that came in a package with an esp image is committed only under that esp
-    // image, or a rolled back esp would leave the two chips on different releases.
+    // An RP image that came in a package with an ESP image is committed only under that ESP
+    // image, or a rolled back ESP would leave the two chips on different releases.
     uint64_t running_sha = ota_sha8(esp_app_get_description()->app_elf_sha256);
     char why[64];
 
     if (app_awaiting_validation)
     {
-        // This esp image is on trial. A marker with no binding came with it from an esp firmware
+        // This ESP image is on trial. A marker with no binding came with it from an ESP firmware
         // without the binding, so it is bound here. The legacy flag is cleared: such a firmware
         // would commit the RP half under itself if the bootloader rolled back to it.
         if (esp_sha == 0)
@@ -4269,8 +4236,8 @@ static void rp_image_restore_after_boot(void)
     }
     else if (esp_sha != 0 ? esp_sha != running_sha : ota_new_build_boot)
     {
-        // Bound to another esp image, which was not confirmed, so the bootloader came back here;
-        // or not bound on the first boot of this build after another one ran, where an older esp
+        // Bound to another ESP image, which was not confirmed, so the bootloader came back here;
+        // or not bound on the first boot of this build after another one ran, where an older ESP
         // image of a package wiped the binding.
         if (esp_sha != 0)
         {
@@ -4336,10 +4303,10 @@ static void rp_image_restore_after_boot(void)
 }
 
 // Room for an RP image, made before its first byte goes into rp.new: a collection for the whole
-// image (spiffs_collect()) and a margin for the keylog batches that may land meanwhile. A staged image
-// that leaves no room goes first, as its replacement drops it anyway. The host model of the partition
-// (see KEYLOG_SPIFFS_RESERVE), with the log rotating at its cap and the old 160 KB reserve, failed
-// 63 of 1202 uploads without this and the retry of rp_stage_write(), and 0 of 1209 with them.
+// image (spiffs_collect()) and a margin for the keylog batches that may land meanwhile. A staged
+// image that leaves no room goes first, as its replacement drops it anyway. The host model of the
+// partition (KEYLOG_SPIFFS_RESERVE), with the log rotating at its cap and the old 160 KB reserve,
+// failed 63 of 1202 uploads without this and the retry in rp_stage_write(), 0 of 1209 with them.
 #define RP_STAGE_SLACK (8u * 1024u)
 #define RP_STAGE_GC_CALLS 30
 #define RP_STAGE_NO_ROOM_REASON "no room in SPIFFS for the rp image: download and clear the keylog, then upload again"
@@ -4375,9 +4342,9 @@ static bool rp_stage_make_room(size_t length)
     return false;
 }
 
-// One piece of an RP image into rp.new at offset `at`, with `left` bytes of the image still to come
-// (this piece included). A refused write is cut back and tried again after a collection for the rest
-// of the image: a keylog writing meanwhile can use up the room collected at the start.
+// One piece of an RP image into rp.new at offset `at`, with `left` bytes of the image still to
+// come (this piece included). A refused write is cut back and tried again after a collection for
+// the rest of the image: a keylog writing meanwhile can use up the room collected at the start.
 static bool rp_stage_write(int fd, const uint8_t *data, size_t len, uint32_t at, uint32_t left)
 {
     for (int attempt = 0; attempt < 3; attempt++)
@@ -4517,7 +4484,7 @@ static bool ota_parse_package_header(http_conn_t *conn)
         return false;
     }
 
-    // Here, before the esp half is written, so a full filesystem fails the package in a second.
+    // Here, before the ESP half is written, so a full filesystem fails the package in a second.
     if (ota_rp_len > 0 && !rp_stage_make_room(ota_rp_len))
     {
         ota_fail(conn, RP_STAGE_NO_ROOM_REASON);
@@ -4659,15 +4626,13 @@ static bool ota_publish_staged_rp_image(uint32_t size, uint32_t crc)
 
 static bool ota_commit_upload(http_conn_t *conn)
 {
-    // FIX BY DREG: marked BEFORE the rp image is published, not after. The flag gates
-    // SPI_FLAG_RP_IMAGE_READY, and setting it last left a window covering the two flash writes
-    // below (the boot partition and the nvs marker), which is long enough for the RP to see the
-    // offer and start pulling. The reboot then cut that transfer off: it aborted around block 50
-    // on every single package upload and only went through on the retry once the ESP was back,
-    // wasting a couple of seconds, a few KB of RP flash writes and a suspended capture window.
-    // With the flag up first the RP is not told about the image until
-    // rp_image_restore_after_boot() offers it on the other side of the reboot, where the
-    // transfer can actually finish.
+    // Set before the RP image is published. The flag holds back SPI_FLAG_RP_IMAGE_READY, and the
+    // flash writes below (the NVS marker and the boot partition) give the RP time to see an offer
+    // and start a fetch that the reboot then cuts off. With the flag set last, the fetch aborted
+    // around block 50 on every package upload and went through only on the retry after the reboot,
+    // costing a couple of seconds, a few KB of RP flash writes and a pause in the capture. With it
+    // set first, rp_image_restore_after_boot() offers the image after the reboot, where the fetch
+    // can finish.
     ota_reboot_pending = ota_esp_validated;
 
     if (ota_rp_validated && !ota_publish_staged_rp_image(ota_rp_len, ota_rp_crc))
@@ -4678,7 +4643,7 @@ static bool ota_commit_upload(http_conn_t *conn)
     }
 
     // The marker before the boot partition, bound and without the flag v7 and prev9 commit by: a
-    // reset in between boots this esp image again, which drops a marker bound to another one.
+    // reset in between boots this ESP image again, which drops a marker bound to another one.
     if (ota_rp_validated)
     {
         rp_commit_pending = true;
@@ -4687,7 +4652,7 @@ static bool ota_commit_upload(http_conn_t *conn)
 
     if (ota_esp_validated && esp_ota_set_boot_partition(ota_partition) != ESP_OK)
     {
-        // Its RP half was published above: without its esp half it must not be offered, so it
+        // Its RP half was published above: without its ESP half it must not be offered, so it
         // goes while ota_reboot_pending still holds the offer back.
         if (ota_rp_validated)
         {
@@ -4698,7 +4663,7 @@ static bool ota_commit_upload(http_conn_t *conn)
         return false;
     }
 
-    // The flag an older esp firmware reads, once the new esp image is set to boot: a package that
+    // The flag an older ESP firmware reads, once the new ESP image is set to boot: a package that
     // goes back to v7 or prev9 still applies its RP half, and a newer image clears the flag as soon
     // as it boots on trial (ota_nvs_hide_legacy_rp_pending()).
     if (ota_rp_validated && ota_esp_validated)
@@ -5093,11 +5058,10 @@ static void bench_render(http_conn_t *conn)
     bench_render_from(conn, 0);
 }
 
-// --- resilient benchmark: survive a reset that a marginal soak can trigger ----
-// The whole run state lives in NVS so a brownout does not lose it. On boot, if a
-// run was active, the ESP re-arms it; the RP then resumes the descending
-// confirmation just below the clock that reset the board, and it converges to
-// the highest clock that survives a full soak.
+// Benchmark runs that survive the reset a marginal soak can trigger. The run's parameters
+// and the clock under soak live in NVS, so a brownout does not lose them. On boot the ESP
+// re-arms an active run, and the RP resumes the descending confirmation just below the
+// clock that reset the board, converging on the highest clock that survives a full soak.
 #define RBENCH_NS "rbench"
 
 static void rbench_save_params(uint32_t ms, uint32_t min_khz, uint32_t max_khz, uint32_t steps, uint32_t soak,
@@ -5124,9 +5088,9 @@ static void rbench_save_params(uint32_t ms, uint32_t min_khz, uint32_t max_khz, 
     nvs_close(h);
 }
 
-// The RP is about to hammer this clock for the soak, the one operation that can
-// brown the board out. Record it BEFORE it runs, so a reset that never returns a
-// result still tells the next boot which clock to drop below.
+// The RP is about to soak this clock, the one step that can brown the board out.
+// It is stored before the soak runs, so a reset that never returns a result still
+// tells the next boot which clock to drop below.
 static void rbench_save_probing(uint32_t khz)
 {
     nvs_handle_t h;
@@ -5202,8 +5166,8 @@ static void bench_arm(uint32_t duration, uint32_t min_khz, uint32_t max_khz, uin
     spi_bench_state = BENCH_ARMED;
 }
 
-// Called once at boot: if a resilient run was cut short by a reset, re-arm it so
-// the RP resumes just below the clock it was confirming when the board died.
+// Called once at boot: re-arms a run that a reset cut short, so the RP resumes
+// SPI_BENCH_REFINE_KHZ below the clock it was confirming when the board died.
 static void rbench_resume_after_boot(void)
 {
     nvs_handle_t h;
@@ -5231,7 +5195,7 @@ static void rbench_resume_after_boot(void)
     if (active == 0 || kind == SPI_BENCH_KIND_UART || probing <= SPI_BENCH_REFINE_KHZ || soak == 0)
     {
         // Only SPI soaks brown out, and only a run that got as far as a soak has a
-        // clock to drop below. Anything else was not mid-confirmation; drop it.
+        // clock to drop below. Anything else was not mid-confirmation, so it goes.
         rbench_clear();
         return;
     }
@@ -5367,9 +5331,9 @@ static void route_spibench(http_conn_t *conn, const char *path)
 
     bench_arm(duration, min_khz, max_khz, steps, soak, down, kind, 0);
 
-    // A fresh SPI soak run is the only kind worth resuming across a reset, so
-    // persist those and let the boot path re-arm them. Screening-only, UART and
-    // no-soak runs cannot brown out, so nothing needs to survive for them.
+    // Only an SPI run with a soak is worth resuming across a reset, so only those go
+    // to NVS for the boot path to re-arm. UART runs and runs without a soak cannot
+    // brown the board out.
     if (kind == SPI_BENCH_KIND_SPI && soak != 0)
     {
         rbench_save_params(duration, min_khz, max_khz, steps, soak, down, spi_bench_overclock, kind);
@@ -5672,11 +5636,12 @@ static void route_selftest(http_conn_t *conn, const char *path)
         }
         else
         {
-            // Armed for a bounded number of frames, not latched. The RP acts on the LEVEL
-            // of this flag and st_blink_led() blocks its poll for three seconds, so a value
-            // that stays at 1 makes the RP blink forever and starve the capture. The only
-            // paths that used to clear it all require st_state == ST_RUNNING, so a blink
-            // asked for after a run had finished was never taken back.
+            // Armed for SPI_BENCH_ARM_FRAMES frames, not latched. The RP blinks on the
+            // flag's rising edge, so it must fall before the next blink, and an older RP
+            // that acts on the level (st_blink_led() blocks its poll for three seconds)
+            // would blink for ever and starve the capture. Besides a new run, the paths
+            // that clear it need st_state == ST_RUNNING, so a blink asked for after a run
+            // would stay.
             st_blink_frames_left = SPI_BENCH_ARM_FRAMES;
         }
 
@@ -5738,11 +5703,10 @@ static void route_selftest(http_conn_t *conn, const char *path)
             return;
         }
 
-        // Overwrite whatever this line said last time, before the RP has answered.
-        // The answer is most of a second away, and until it lands the previous
-        // verdict sits in the table looking exactly like a fresh one, so the page
-        // reads back the result for where the wire USED to be. Marking the row
-        // in progress is what lets the page tell the two apart.
+        // Overwrite this line's last result before the RP answers. The answer is most
+        // of a second away, and until it lands the old verdict looks like a fresh one,
+        // so the page would read the result for where the wire was before. The row
+        // marked in progress lets the page tell the two apart.
         st_add(swprobe == 1 ? ST_RP_SW_DP : ST_RP_SW_DM, SELFTEST_INFO, 0, (uint32_t)swprobe,
                "measuring, keep the wire where it is");
 
@@ -5924,12 +5888,11 @@ static void rp_upload_fail(http_conn_t *conn, const char *reason)
 {
     char body[176];
 
-    // Only the temporary file, deliberately NOT rp_image_invalidate(). Every caller but
-    // one fails before touching the published image: a rejected upload, an unwritable
-    // temp file, a bad CRC on the candidate. Throwing away a perfectly good staged image
-    // because its intended REPLACEMENT arrived broken is exactly the wrong direction, and
-    // it also killed the RP's in-flight fetch of that good image. The one caller that does
-    // touch it, ota_publish_staged_rp_image(), already invalidates on its own first line.
+    // Only the temporary file, not rp_image_invalidate(). Every failure but one comes before
+    // the published image is touched (a rejected upload, an unwritable temp file, a bad CRC on
+    // the candidate), and a good staged image must not go because its replacement arrived
+    // broken: that would also kill the RP's fetch of it. The exception, a failed
+    // ota_publish_staged_rp_image(), has already invalidated it on that function's first line.
     rp_upload_cleanup();
 
     ESP_LOGE(TAG, "RP image upload failed: %s", reason);
@@ -6163,11 +6126,10 @@ static void http_dispatch(http_conn_t *conn, const char *body, size_t body_len)
     }
 
     // sscanf stops at its width and still reports a successful conversion, so an overlong
-    // target used to be truncated with nobody the wiser. That mattered because /wifi?save=1
-    // carries the SSID and the password: a cut password was stored as if it were correct,
-    // the board answered 200 "saved", rebooted, could not associate, and after two failures
-    // fell back to its own access point leaving no clue why. Measure what actually arrived
-    // and refuse it rather than mangle it.
+    // target would be cut without a word. /wifi?save=1 carries the SSID and the password: a
+    // cut password would be stored as if it were right, the board would answer 200 "saved",
+    // reboot, fail to join, and after two failures fall back to its own access point with no
+    // clue why. So the length of what arrived is measured and an overlong target refused.
     const char *target = strchr(conn->req, ' ');
 
     if (target != NULL && strcspn(target + 1, " \r\n") >= sizeof(path))
@@ -6187,8 +6149,9 @@ static void http_dispatch(http_conn_t *conn, const char *body, size_t body_len)
         if (http_path_is(path, "/wifiup"))
         {
             // Nothing is stored: the bytes are hashed as they arrive and thrown away, so
-            // this measures the radio and nothing else. It still takes the upload slot,
-            // because two of these at once would just be measuring each other.
+            // this measures the network and the TCP and HTTP stack, not the flash. 802.11
+            // and TCP resend what the radio loses, so radio errors show as a lower rate. It
+            // still takes the upload slot: two of these at once would measure each other.
             if (!http_content_length(conn->req, &length))
             {
                 http_reply_text(conn, "411 Length Required", "Content-Length is required");
@@ -6238,7 +6201,7 @@ static void http_dispatch(http_conn_t *conn, const char *body, size_t body_len)
             return;
         }
 
-        // This request could not confirm the running esp image (app_validation_confirm()): an
+        // This request could not confirm the running ESP image (app_validation_confirm()): an
         // upload on top of an image still on trial could leave no bootable image confirmed.
         if (app_awaiting_validation)
         {
@@ -6264,11 +6227,10 @@ static void http_dispatch(http_conn_t *conn, const char *body, size_t body_len)
             return;
         }
 
-        // Saving WiFi settings arms a reboot a second or so out, and nothing used to stop a
-        // long upload being accepted inside that window. It would be cut off mid flight by a
-        // restart the user had already asked for and forgotten about, leaving a half written
-        // image and no explanation. Refuse it while the restart is pending; a second is not
-        // worth the confusion.
+        // Saving WiFi settings arms a reboot 1.2 s out (route_wifi()). An upload accepted in
+        // that window would be cut off mid flight by a restart the user asked for and forgot,
+        // leaving a half written image and no explanation, so it is refused while the restart
+        // is pending.
         if (wifi_reboot_at_ms != 0)
         {
             http_reply_text(conn, "409 Conflict", "the device is about to reboot to apply new WiFi settings\n");
@@ -6491,19 +6453,19 @@ static void http_handle_body(http_conn_t *conn)
     conn->deadline_ms = http_now_ms() + HTTP_SEND_TIMEOUT_MS;
     http_body_consume(conn, (const uint8_t *)conn->req, (size_t)n);
 
-    // Again after it: a collection for an RP image (rp_stage_make_room(), rp_stage_write()) can hold
-    // the consume for seconds, and the idle deadline must not count them.
+    // Again after it: a collection for an RP image (rp_stage_make_room(), rp_stage_write())
+    // can hold the consume for seconds, and the idle deadline must not count them.
     if (conn->state == HTTP_CONN_BODY)
     {
         conn->deadline_ms = http_now_ms() + HTTP_SEND_TIMEOUT_MS;
     }
 }
 
-// Payload for the WiFi speed test, made up on the fly rather than stored: a plain linear
-// congruential sequence, so the numbers are spread out and incompressible enough that no
-// layer along the way can cheat by squeezing them. The running CRC32 of everything sent is
-// appended as eight hex digits at the very end, which is what lets the browser prove the
-// bytes it timed are the bytes that were sent, not a truncated or mangled stream.
+// Payload for the WiFi speed test, made up on the fly, not stored: a linear congruential
+// sequence, spread out and incompressible enough that no layer on the way can cheat by
+// squeezing it. The running CRC32 of everything sent goes at the very end as eight hex
+// digits, so the browser can check that the bytes it timed are the bytes that were sent, not
+// a truncated or mangled stream.
 static void http_fill_generated(http_conn_t *conn)
 {
     size_t room = sizeof(conn->resp);
@@ -6904,9 +6866,6 @@ void app_main(void)
     xTaskCreate(http_server_task, "http_server_task", 4096 + 1024, NULL, tskIDLE_PRIORITY + 4, NULL);
     xTaskCreate(uart_rx_task, "uart_rx_task", 2560, NULL, tskIDLE_PRIORITY + 1, NULL);
 
-    // If a resilient benchmark was cut short by a reset, re-arm it now that the
-    // SPI task is up, so the RP resumes the confirmation below the clock that
-    // browned the board out and converges to the highest stable one on its own.
     rbench_resume_after_boot();
 
     ESP_LOGI(TAG, "okhi main done");

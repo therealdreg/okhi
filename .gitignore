@@ -1,19 +1,17 @@
-# okhi build output. NOTHING under build/ is versioned.
+# okhi build output. No output of the five release targets is versioned, but git
+# tracks firmware/leonardo_uart2keyboard/build and several build folders in stuff/.
 #
-# The remote used to carry the flashable images so a fresh clone could cut a
-# release without compiling. That convenience is gone on purpose: those binaries
-# are built from firmware/<variant>/esp/src/wifi_secret.h when it is present, and
-# a development build therefore has a real SSID and password sitting in clear
-# text inside okhi.bin and okhi.elf. Keeping them out of the index means it
-# cannot happen by accident, ever, regardless of what any build script does.
-#
-# The trade is deliberate: to produce a release you now clone, build all five
-# targets, and then run make_release.py. See "Generating a New Release" in README.md.
+# The ESP images are built with firmware/<variant>/esp/src/wifi_secret.h when it is
+# present, so a development build carries a real SSID and password inside okhi.bin
+# and okhi.elf. Keeping the images out of the index means the credentials cannot be
+# committed by accident, whatever a build script does. So a release starts from
+# source: make_release.py builds the five targets and packages them. See
+# "Generating a New Release" in README.md.
 
-# ESP-IDF generated config. Rebuilt from sdkconfig.defaults on every build and
-# verified byte-identical, so versioning it only adds noise. sdkconfig.defaults,
-# sdkconfig.ci* and partitions.csv stay in: those are the source of truth.
-# sdkconfig.old is just idf.py's backup copy of the same generated file.
+# The ESP-IDF config. idf.py regenerates it from sdkconfig.defaults when it is
+# missing, byte-identical (verified), so versioning it only adds noise.
+# sdkconfig.defaults and partitions.csv are the source of truth and stay in, as do
+# the sdkconfig.ci* files. sdkconfig.old is idf.py's backup copy of sdkconfig.
 firmware/*/esp/sdkconfig
 firmware/*/esp/sdkconfig.old
 
@@ -22,33 +20,32 @@ firmware/*/esp/build*/
 firmware/*/rp/build*/
 firmware/uart_bridge/build*/
 
-# Developer WiFi credentials. Never commit these. wifi_client.h is the tracked
-# mechanism and stays empty; wifi_secret.h is the file that actually holds a
-# SSID and a password, and it is deliberately a different name so that it has
-# never been in the index and cannot be committed by accident.
+# Developer WiFi credentials: never commit them. The tracked wifi_client.h holds
+# none and includes wifi_secret.h when it exists. wifi_secret.h holds the SSID and
+# password under a separate name, which has never been in the index, so it cannot
+# be committed by accident.
 firmware/*/esp/src/wifi_secret.h
 
-# Release output. make_release.py drops release/<yyyyMMddHHmmss>/ holding the
-# built images plus a copy of stuff/last_esptool, which is hundreds of megabytes.
-# None of it belongs in the history: it is all reproducible from the tree, and a
-# release built for testing carries whatever was in wifi_secret.h at the time.
-# Ignoring the whole directory means no release can be committed by accident,
-# whatever it is named.
+# Release output. make_release.py writes release/<yyyyMMddHHmmss>/ with the built
+# images and a copy of stuff/last_esptool, which is hundreds of megabytes. None of
+# it belongs in the history: it can all be rebuilt from the tree, and a release
+# built for testing carries whatever was in wifi_secret.h at the time. Ignoring the
+# whole directory means no release can be committed by accident, whatever its name.
 /release/
 
-# Older releases used to land in a bare timestamp folder at the repo root. Kept
-# so an existing working copy does not suddenly show them as untracked.
+# Older releases sit in a bare timestamp folder at the repo root. Ignored so an
+# existing working copy does not show them as untracked.
 /20????????????/
 
-# Python bytecode cache. Written by the interpreter next to any script it runs
-# (make_release.py at the root, firmware/leonardo_uart2keyboard/build.py), so it
-# turns up as untracked noise and could be committed by accident. Nothing in it is
-# useful: it is regenerated from the .py on the next run.
+# Python bytecode cache. The interpreter writes it next to each module a script
+# imports (make_release.py or firmware/leonardo_uart2keyboard/build.py when another
+# script imports them), so it turns up as untracked noise and could be committed by
+# accident. Nothing in it is useful: the next import rebuilds it from the .py.
 __pycache__/
 *.pyc
 
-# okhi-kbd's chip readback. build.py --flash writes it on every flash to verify the
-# write: a dump of one particular chip, not a build output anyone needs.
+# okhi-kbd's chip readback: build.py --flash writes it on every flash to verify the
+# write. It is a dump of one chip, not a build output anyone needs.
 firmware/leonardo_uart2keyboard/build/readback.hex
 
 # Side outputs of webgen.js: the page as C arrays (webuff*.txt) and a copy of the gzip

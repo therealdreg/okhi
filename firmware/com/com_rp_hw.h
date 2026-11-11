@@ -71,12 +71,10 @@ WARNING: BULLSHIT CODE X-)
 #define SPI_ID spi1
 
 /*
-Attempting to achieve the minimum necessary delay for the ESP Slave SPI CS signal
--
-90 NOP at 125 MHz = 0.72 us. Our SPI runs at ~5 MHz, so 0.72 us is a delay of approximately 3.6 SPI clock cycles.
-Overclocking CPU frequency to 250 MHz reduces NOP execution time to 0.36 us,
-corresponding to approximately 1.8 SPI clock cycles.
--
+The CS delay, meant to be the shortest the ESP's SPI slave needs. delay_cs() is 90 NOPs: 0.72 us at
+125 MHz, about 3.6 clocks of the ~5 MHz SPI. At 250 MHz it halves to 0.36 us, about 1.8 SPI clocks.
+
+The hold after the last bit is the one the master of ESP-IDF's spi_slave example keeps:
 https://github.com/espressif/esp-idf/blob/v5.2.2/examples/peripherals/spi_slave/sender/main/app_main.c
 spi_device_interface_config_t devcfg = {
 ...
@@ -414,7 +412,7 @@ static int my_spi_write_blocking(const uint8_t *src, size_t len)
 static int my_spi_read_blocking(uint8_t *dst, size_t len)
 {
     CS_LOW();
-    // repeated_tx_data is output repeatedly on TX as data is read in from RX. Generally this can be 0
+    // Sends 0 on MOSI for every byte it reads.
     int retf = spi_read_blocking(SPI_ID, 0, dst, len);
     CS_HIGH();
 
@@ -517,8 +515,8 @@ static void boot_press(void)
         }
     }
 
-    // FIX BY DREG: 90 of 500 (18%) let a floating or noisy pin drop the board into the bootloader
-    // at power up instead of running. Require a strong majority, a genuinely held button.
+    // More than 450 of 500, a button held down: at 90 of 500 (18%), a floating or noisy pin dropped
+    // the board into the bootloader at power up instead of running.
     if (x > 450)
     {
         reset_usb_boot(0, 0);
@@ -528,25 +526,25 @@ static void boot_press(void)
 // CHIP_PU has to stay low this long before the RP takes it for an external reset of the ESP: esptool
 // held it low about 105 ms each time, on Linux and on Windows, through the DevKit's auto-reset
 // circuit. Plugging or unplugging a keyboard in the dev board's sniff port made the RP count falls
-// whose logged durations were 1 us at most (4 in 11 replugs of a K63 on Linux, 10 in 3 of a
-// Unifying receiver on Windows, 2026-11-09). A restart on such a fall would leave the RP decoding
+// whose logged durations were 1 us at most (4 in 11 replugs of a K63 on Linux, 10 in 3 replugs of
+// a Unifying receiver on Windows, 2026-11-09). A restart on such a fall would leave the RP decoding
 // nothing for 50 s, and a keyboard enumerating in that time is not captured until its next one.
 #define ESP_RESET_HOLD_US 10000
-// The ESP latches its straps up to 3 ms after CHIP_PU rises (ESP8684 datasheet v2.3, table 11), so
-// EBOOT stays released this long after a shorter pulse, which may still have reset it.
+// The straps must hold for 3 ms after CHIP_PU rises (ESP8684 datasheet v2.3, table 11), so EBOOT
+// stays released this long after a shorter pulse, which may still have reset the ESP.
 #define ESP_STRAP_HOLD_US 5000
 
 // Falls of CHIP_PU that came back up within ESP_RESET_HOLD_US, and how long the last one stayed low
-// as the RP saw it. Core 1's idle loop logs them.
+// as the RP saw it. Core 1 logs them from its loop.
 static volatile uint32_t esp_reset_glitches;
 static volatile uint32_t esp_reset_glitch_us;
 
 void gpio_callback(uint gpio, uint32_t events)
 {
-    // For devboard :D
+    // The dev board's case: esptool resets the ESP through the DevKit's auto-reset circuit.
     if (gpio == ESP_RESET_GPIO)
     {
-        // EBOOT lets go at once: an ESP in reset reads its boot strap there as it leaves reset.
+        // Release EBOOT at once: an ESP in reset reads its boot strap there as it leaves reset.
         bool eboot_driven = gpio_is_dir_out(EBOOT_MASTERDATAREADY_GPIO);
         gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_IN);
 
@@ -600,7 +598,7 @@ static void delay_boot_if_esp_reset_detected(void)
     }
 }
 
-// Set by a variant that has already turned the USB switch on and is capturing through it when this
+// Set by a variant that has already turned the USB switch on and captures through it when this
 // runs (the USB build starts its capture before the rest of the board): the switch is left alone.
 static bool rp_switch_on_early;
 
@@ -614,9 +612,9 @@ static void rp_board_boot_init(void)
     // (ELOG) sets the ROM log. An RP2040 pad leaves reset with its pull-down on (50 to 80k) and
     // gpio_init() keeps it (EBOOT's pad read 0x56 by SWD). The implant has no other pull on either
     // line, so with that pull-down EBOOT would sit between it and the ESP's 45k pull-up, about 1.7
-    // to 2.1 V against an input high of 0.75 x VDD, and ELOG would read 0. EBOOT gets no pull, so
-    // the ESP's own pull-up decides. ELOG gets here the pull-up that esp_link_uart_init() sets
-    // again later.
+    // to 2.1 V (computed) against an input high of 0.75 x VDD, and ELOG would read 0. EBOOT gets no
+    // pull, so the ESP's own pull-up decides. ELOG gets its pull-up now, and esp_link_uart_init()
+    // sets it again later.
     gpio_init(EBOOT_MASTERDATAREADY_GPIO);
     gpio_set_dir(EBOOT_MASTERDATAREADY_GPIO, GPIO_IN);
     gpio_disable_pulls(EBOOT_MASTERDATAREADY_GPIO);
@@ -637,7 +635,7 @@ static void rp_board_boot_init(void)
 
     init_ver();
 
-    // uart init must be called after init_ver(), because on devboard the same pins are used for UART
+    // After init_ver(): its pins GPIO_A and GPIO_B (GPIO4, GPIO5) are the debug UART's.
     stdio_init_all();
 
     if (!rp_switch_on_early)
@@ -654,11 +652,11 @@ static uint32_t rp_spi_master_init(void)
     gpio_set_function(SPI_SCK_PIN, GPIO_FUNC_SPI);
     gpio_set_function(SPI_MOSI_PIN, GPIO_FUNC_SPI);
     gpio_set_function(SPI_MISO_PIN, GPIO_FUNC_SPI);
-    // The CS pin is controlled manually
+    // CS is a plain GPIO, driven by CS_LOW() and CS_HIGH().
     gpio_init(SPI_CS_PIN);
     gpio_set_dir(SPI_CS_PIN, GPIO_OUT);
     gpio_put(SPI_CS_PIN, true);
-    // SPI mode 0: 8 data bits, MSB first, CPOL=0, CPHA=0
+    // Mode 0, the mode of the ESP's SPI slave (slvcfg in com_esp.h).
     spi_set_format(SPI_ID, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
     printf("Firmware version: v%s\r\n", FIRMV_STR);
 
@@ -675,7 +673,7 @@ static void esp_link_uart_init(void)
     uart_init(ESP_UART_ID, RP_UART_BAUD);
     gpio_set_function(ESP_UART_TX_PIN, GPIO_FUNC_UART);
     gpio_set_function(ESP_UART_RX_PIN, GPIO_FUNC_UART);
-    // UART 8N1: 1 start bit, 8 data bits, no parity bit, 1 stop bit
+    // 8N1 at RP_UART_BAUD with no flow control, as the ESP's uart_init() (com_esp.h) sets its end.
     uart_set_hw_flow(ESP_UART_ID, false, false);
     uart_set_format(ESP_UART_ID, DATA_BITS, STOP_BITS, PARITY);
     uart_set_fifo_enabled(ESP_UART_ID, false);
@@ -695,9 +693,9 @@ static void esp_link_master_init(void)
 
 static void report_packets_sent(unsigned int total_packets_sended)
 {
-    // FIX BY DREG: line[32] overflowed once the hex counter reached 8 digits (22 fixed + 2 hwver +
-    // 8 + NUL), corrupting the statics below it. Wider buffer, bounded snprintf, and no trailing
-    // NUL on the wire (the ESP splits frames by content, a NUL only desynced its parser).
+    // With an 8-digit counter the line takes 33 bytes (22 fixed + 2 of hwver_name + 8 + NUL), so
+    // line[] has 64: at 32 it overflowed into the statics below it. The NUL stays off the wire; the
+    // ESP skips NUL bytes anyway (rp_status_publish() in com_esp.h).
     static unsigned char line[64] = {0};
     static unsigned int last_sended = 0;
     static unsigned int g = 0;

@@ -1,3 +1,3 @@
-# The release's flashing scripts for Linux and macOS keep LF in every checkout, a Windows one
-# with core.autocrlf=true too: with CRLF line ends bash stops at once ($'\r': command not found).
+# The release's flashing scripts for Linux and macOS keep LF in every checkout, even on Windows
+# with core.autocrlf=true: with CRLF line ends bash stops at once ($'\r': command not found).
 firmware/*/esp/upload_firmware.sh text eol=lf

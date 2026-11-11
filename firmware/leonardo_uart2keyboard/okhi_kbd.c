@@ -48,9 +48,9 @@ WARNING: BULLSHIT CODE X-)
 #define BOARD_LEONARDO 0
 #endif
 
-/* A Pro Micro does not break out PC7, so the Leonardo's pin-13 "L" LED simply does not exist on it
-   and every visual diagnostic was dead. Its own RX LED is on PB0, wired to VCC through a resistor,
-   so it lights when the pin is driven LOW, the opposite of PC7. LED_ACTIVE_LOW carries that.
+/* A Pro Micro does not break out PC7, so the Leonardo's pin-13 "L" LED does not exist on it and
+   the LED diagnostics use its RX LED on PB0. That LED is wired to VCC through a resistor, so it
+   lights when the pin is driven low, the opposite of PC7. LED_ACTIVE_LOW carries that.
    Build for a Leonardo with -DBOARD_LEONARDO=1. */
 #if BOARD_LEONARDO
 #define BOARD_NAME  "leonardo"
@@ -70,17 +70,17 @@ WARNING: BULLSHIT CODE X-)
 #define BUSY_NAME   "PD6/nc"
 #endif
 
-/* PD6 is not broken out on a Pro Micro, so BUSY is driven but unreachable there. Left in place so
-   the two boards run the same code path. */
+/* PD6 is not broken out on a Pro Micro, so BUSY is driven but unreachable there. It stays so the
+   two boards run the same code path. */
 #define BUSY_DDR    DDRD
 #define BUSY_PORT   PORTD
 #define BUSY_BIT    PD6
 
 #define USB_VID     0x2341
 #define USB_PID     0x8036
-/* The Leonardo VID:PID makes Windows bind interface 0 of a COMPOSITE device to the Arduino CDC
-   serial INF (hijacking it as a broken COM port). The two-interface formats present a different
-   PID so Windows falls back to the generic HID class driver and both interfaces are keyboards. */
+/* With the Leonardo VID:PID, Windows binds interface 0 of a composite device to the Arduino CDC
+   serial INF, which turns it into a broken COM port. The two-interface formats present another
+   PID, so Windows loads its generic HID class driver on both interfaces. */
 #define USB_PID_COMPOSITE 0xFEED
 
 #ifndef USB_LOW_SPEED
@@ -94,11 +94,11 @@ WARNING: BULLSHIT CODE X-)
 #define LAYOUT_US 1
 #define LAYOUT_MAX 1
 
-/* Everything persisted lives in one EEPROM image at address 0, never in loose cells: magic and
-   version identify it, a checksum over the rest rejects a half-written or corrupt one, and any
-   of those failing falls the whole board back to the compiled defaults.
-   It is a plain mirror: every command that changes a setting edits this struct and writes the
-   whole of it back, and the board reads the whole of it once at boot. No offsets anywhere. */
+/* Every saved setting lives in this one EEPROM image at address 0, with no loose cells and no
+   offsets. Magic and version identify it, a checksum over the other bytes rejects a half-written
+   or corrupt one, and a failed check or a field out of range brings back the compiled defaults
+   for all of it. Every command that changes a setting edits this struct and writes the whole of
+   it back, and the board reads it once at boot. */
 #define EE_SETTINGS_ADDR  0
 #define SETTINGS_MAGIC    0x4B48
 #define SETTINGS_VERSION  1
@@ -121,8 +121,8 @@ struct Settings {
   uint8_t crc;
 };
 
-/* Report formats this device can present, to exercise every driver code path.
-   (Format 7, sub-ms polling at high speed, is impossible on a full-speed-only AVR.) */
+/* Report formats this device can present, to exercise a host's driver with formats 1 to 6.
+   (Format 7, sub-ms polling at high speed, is impossible on this AVR, which has no high speed.) */
 #define KRO_BOOT     0   /* formats 1/2: 8-byte boot layout, 6-key array, no report ID   */
 #define KRO_NKRO     1   /* format 5:    modifier + key bitmap, full N-key rollover      */
 #define KRO_ARRAY    2   /* format 3:    extended array, up to ARRAY_KEYS slots          */
@@ -131,7 +131,7 @@ struct Settings {
 #define KRO_HYBRID2  5   /* format 6:    two interfaces (boot IF0 + NKRO IF1)            */
 #define KRO_CONSUMER 6   /* boot keyboard + Consumer Page control report (media keys)    */
 #define KRO_LSMULTI  7   /* format 4 low speed: two 6-key interfaces, no IDs (8 B each)  */
-#define KRO_LSCONS   8   /* K120 low speed: boot IF0 + consumer IF1, no IDs (8 B each)   */
+#define KRO_LSCONS   8   /* K120 low speed: boot IF0 + consumer IF1, no IDs, EP1/EP2 8 B */
 #define KRO_MAX      8
 
 /* NKRO input report: 1 modifier byte + a key bitmap covering usages 0x00..NKRO_USAGE_MAX.
@@ -143,15 +143,14 @@ struct Settings {
 #define EP1_SIZE_NKRO  16
 
 #define ARRAY_KEYS 16                   /* format 3 extended array slot count */
-#define REPORT_MAX (2 + ARRAY_KEYS)     /* largest interrupt-IN report we build (18 bytes) */
+#define REPORT_MAX (2 + ARRAY_KEYS)     /* largest interrupt-IN report built (18 bytes) */
 #define MULTI_IDS  2                    /* format 4: number of 6-key reports (IDs 1..N) */
-#define KID_KBD    1                    /* report ID of the 6-key report (formats 4/6) */
-#define KID_NKRO   6                    /* report ID of the NKRO report (format 6)     */
-#define KID_CONS   2                    /* report ID of the consumer report            */
+#define KID_KBD    1                    /* report ID of the 6-key report (formats 4/6, consumer) */
+#define KID_NKRO   6                    /* report ID of the NKRO report (format 6)               */
+#define KID_CONS   2                    /* report ID of the consumer report                      */
 
-/* EEPROM byte 2: persisted interrupt-IN bInterval (ms). Full speed: 1 = 1000 Hz, 2 = 500,
-   4 = 250, 8 = 125. Low speed is clamped to >= 10 (spec floor). Stored value 1..64 is used,
-   anything else (fresh 0xFF) falls back to the default. */
+/* Default interrupt-IN bInterval in ms, saved in g_cfg.poll (POLL, 1..64). Full speed:
+   1 = 1000 Hz, 2 = 500, 4 = 250, 8 = 125. Low speed is clamped to >= 10 (spec floor). */
 #define DEF_POLL 10
 
 #ifndef EP0_SIZE
@@ -514,7 +513,8 @@ static const uint8_t PROGMEM config_descriptor2[CONFIG2_LEN] = {
   7, 5, 0x82, 0x03, EP1_SIZE_NKRO, 0, 1
 };
 
-/* KRO_LSMULTI (format 4, low speed): two 6-key boot interfaces, EP1/EP2 8 B, no report IDs. */
+/* KRO_LSMULTI (format 4, low speed): two 6-key interfaces with the boot report layout, EP1/EP2
+   8 B, no report IDs. Only IF0 is a boot interface. */
 static const uint8_t PROGMEM config_descriptor_lsmulti[CONFIG2_LEN] = {
   9, 2, CONFIG2_LEN, 0, 2, 1, 0, 0xA0, (USB_POWER_MA / 2),
   9, 4, 0, 0, 1, 0x03, 0x01, 0x01, 0,
@@ -525,7 +525,8 @@ static const uint8_t PROGMEM config_descriptor_lsmulti[CONFIG2_LEN] = {
   7, 5, 0x82, 0x03, 8, 0, EP1_INTERVAL
 };
 
-/* KRO_LSCONS (K120, low speed): IF0 boot keyboard, IF1 consumer control, EP1/EP2 8 B, no IDs. */
+/* KRO_LSCONS (Logitech K120 shape, low speed): IF0 boot keyboard, IF1 consumer control,
+   EP1/EP2 8 B, no IDs. */
 static const uint8_t PROGMEM config_descriptor_lscons[CONFIG2_LEN] = {
   9, 2, CONFIG2_LEN, 0, 2, 1, 0, 0xA0, (USB_POWER_MA / 2),
   9, 4, 0, 0, 1, 0x03, 0x01, 0x01, 0,
@@ -577,13 +578,14 @@ static uint16_t g_idleMs = IDLE_HOST;
 static uint32_t g_reportAt = 0;
 
 /* The one live value that is deliberately not the configured one: a wide report format cannot
-   fit a low-speed packet, so it forces full speed while g_cfg.lowSpeed keeps what was asked for. */
+   fit a low-speed packet, so it forces full speed while g_cfg.lowSpeed keeps what was asked for.
+   HUNT switches it too. */
 static volatile uint8_t g_lowSpeed = USB_LOW_SPEED;
 static uint8_t nkro_map[NKRO_BYTES];
 static uint16_t g_consumer = 0;
 
-/* The live configuration. Nothing shadows it: every command reads and writes these fields and
-   then calls settings_store(), so RAM and EEPROM never disagree. */
+/* The live configuration, with no shadow copy: commands read these fields, and every command
+   that changes one calls settings_store() right after, so the EEPROM image follows it. */
 static struct Settings g_cfg;
 
 static uint8_t settings_crc(const struct Settings *s) {
@@ -628,8 +630,8 @@ static void settings_load(void) {
   if (!settings_valid(&g_cfg)) settings_defaults(&g_cfg);
 }
 
-/* eeprom_update_block only burns the cells that actually differ, so writing the whole image on
-   every SPEED or KRO change costs the endurance of the bytes that moved and nothing more. */
+/* eeprom_update_block burns only the cells that differ, so writing the whole image on every
+   SPEED or KRO change wears only the bytes that changed. */
 static void settings_store(void) {
   g_cfg.crc = settings_crc(&g_cfg);
   eeprom_update_block(&g_cfg, (void *)EE_SETTINGS_ADDR, sizeof(g_cfg));
@@ -644,8 +646,8 @@ static void settings_erase(void) {
   settings_defaults(&g_cfg);
 }
 
-/* Effective bInterval for the endpoint descriptor: a low-speed interrupt endpoint must be
-   at least 10 ms per spec, so clamp there; full speed honours 1..255 verbatim. */
+/* Effective bInterval for the endpoint descriptors: a low-speed interrupt endpoint must be
+   at least 10 ms per spec, so clamp there; full speed takes the POLL value (1..64) as is. */
 static uint8_t poll_bInterval(void) {
   if (g_lowSpeed && g_cfg.poll < 10) return 10;
   return g_cfg.poll;
@@ -653,13 +655,13 @@ static uint8_t poll_bInterval(void) {
 
 /* How long a two-interface report waits for its endpoint's bank, in ep_write() steps of 50 us:
    one polling interval and 20 ms more (600 at POLL 10). A host may poll at the declared
-   bInterval: Linux 7.0 polled 64 every 64 ms on the test PC (Windows 11 every 32), longer than
-   a fixed 30 ms. */
+   bInterval: on the test PC, Linux 7.0 polled a bInterval of 64 every 64 ms (Windows 11 every
+   32 ms), longer than a fixed 30 ms wait. */
 static uint16_t ep_wait_steps(void) {
   return (uint16_t)(poll_bInterval() * 20u + 400u);
 }
 
-/* Report descriptor for the active format (interface 0 for the two-interface variant). */
+/* Report descriptor for the active format (interface 0 for the two-interface formats). */
 static const uint8_t *fmt_rdesc(uint16_t *len) {
   switch (g_cfg.kro) {
     case KRO_NKRO:     *len = sizeof(hid_report_descriptor_nkro);     return hid_report_descriptor_nkro;
@@ -693,7 +695,7 @@ static uint8_t fmt_epsize_bits(void) {
 
 static uint8_t fmt_full_speed(void) { return (uint8_t)(g_cfg.kro == KRO_HYBRID2 || fmt_ep1_size() > 8); }
 
-/* Two-interface formats (HYBRID2 full speed, LSMULTI/LSCONS low-speed capable, all 2 interfaces). */
+/* Two-interface formats: HYBRID2 (full speed), LSMULTI and LSCONS (low speed capable). */
 static uint8_t fmt_two_if(void) {
   return (uint8_t)(g_cfg.kro == KRO_HYBRID2 || g_cfg.kro == KRO_LSMULTI || g_cfg.kro == KRO_LSCONS);
 }
@@ -712,7 +714,7 @@ static uint8_t twoif_ep2_epsize_bits(void) {
   return (g_cfg.kro == KRO_HYBRID2) ? (1 << EPSIZE0) : (0 << EPSIZE0);
 }
 
-/* Fill up to `slots` held key usages (from the bitmap) into buf, return the count. */
+/* Copy up to `slots` held usages from the bitmap into buf, lowest first; return the count. */
 static uint8_t fill_array(uint8_t *buf, uint8_t slots) {
   uint8_t n = 0;
   for (uint16_t u = 0; u <= NKRO_USAGE_MAX && n < slots; u++) {
@@ -1289,12 +1291,11 @@ static void usb_detach(void) { UDCON |= (1 << DETACH); }
 
 static uint8_t usb_ready(void) { return usb_configuration && !usb_suspended; }
 
-/* Build the current interrupt-IN report into buf, return its length. Report protocol
-   with NKRO selected emits the 16-byte bitmap report; boot protocol and 6KRO emit the
-   8-byte boot layout. A boot-capable interface must always send the boot layout while
-   boot protocol is selected, whatever the report-protocol format is. */
-/* Build interrupt-IN report `which` (0, or 0/1 for the two 6-key reports of format 4).
-   Boot protocol always uses the fixed 8-byte layout with no report ID. */
+/* Build interrupt-IN report `which` into buf and return its length. `which` is 0, or 0/1 for
+   format 4's report IDs 1 and 2, which carry the held usages in ascending order, six each, so a
+   key can move from one to the other and a 13th is left out. A boot-capable interface must send
+   the fixed 8-byte boot layout, with no report ID, while the host selects boot protocol,
+   whatever the format. */
 static uint8_t build_input_report(uint8_t *buf, uint8_t which) {
   if (hid_protocol == 0) {
     for (uint8_t i = 0; i < KB_REPORT_LEN; i++) buf[i] = kb_report[i];
@@ -1336,9 +1337,9 @@ static uint8_t build_input_report(uint8_t *buf, uint8_t which) {
   }
 }
 
-/* Write one report to interrupt IN endpoint `ep`, waiting at most `maxiter` * 50us for the
-   bank to free. Returns 0 on timeout (report dropped). A large maxiter blocks until the host
-   polls (reliable single-endpoint path); a small one is best-effort (secondary endpoint). */
+/* Write one report to interrupt IN endpoint `ep`, waiting at most `maxiter` * 50 us for the
+   bank to free; 8000 (400 ms) outlasts any bInterval POLL can set. Returns 0 (report dropped)
+   on a timeout or when the device is not configured. */
 static uint8_t ep_write(uint8_t ep, const uint8_t *buf, uint8_t n, uint16_t maxiter) {
   uint8_t sreg = SREG;
   cli();
@@ -1362,8 +1363,8 @@ static uint8_t ep_write(uint8_t ep, const uint8_t *buf, uint8_t n, uint16_t maxi
   return 1;
 }
 
-/* Send a Consumer Control report (report ID KID_CONS, one 16-bit usage). Only meaningful in
-   the consumer format under report protocol. usage 0 releases. */
+/* Send a Consumer Control report, one 16-bit usage (usage 0 releases). Only the consumer and
+   lsconsumer formats have one, and only USB report protocol sends it. */
 static void consumer_send(uint16_t usage) {
   if (g_mode != MODE_USB || !usb_configuration || hid_protocol == 0) return;
   uint8_t b[3];
@@ -1401,8 +1402,9 @@ static uint8_t kb_flush(void) {
         ok = ep_write(2, buf, NKRO_REPORT_LEN, ep_wait_steps());
       }
     } else if (g_cfg.kro == KRO_LSMULTI) {
-      /* Two 6-key boot interfaces: keys 0..5 on IF0 (EP1), 6..11 on IF1 (EP2), no report IDs.
-         The modifier byte rides both so a shifted key on either interface stays shifted. */
+      /* Two 6-key interfaces, no report IDs: the held usages in ascending order, 0..5 on IF0
+         (EP1) and 6..11 on IF1 (EP2), so a key can move from one to the other and a 13th is left
+         out. The modifier byte rides both so a shifted key on either interface stays shifted. */
       uint8_t all[ARRAY_KEYS];
       uint8_t total = fill_array(all, ARRAY_KEYS);
       buf[0] = kb_report[0]; buf[1] = 0;
@@ -1437,8 +1439,10 @@ static uint8_t kb_press(uint8_t usage) {
   if (usage <= NKRO_USAGE_MAX) nkro_map[usage >> 3] |= (uint8_t)(1u << (usage & 7));
   for (uint8_t i = 2; i < 2 + KB_ROLLOVER; i++) if (kb_report[i] == usage) { kb_flush(); return 1; }
   for (uint8_t i = 2; i < 2 + KB_ROLLOVER; i++) if (kb_report[i] == 0) { kb_report[i] = usage; kb_flush(); return 1; }
-  /* Boot 6-slot array full. Every format except the pure 6-key ones (boot, consumer, lsconsumer)
-     still carries the key in the bitmap / second interface, so the press succeeded there. */
+  /* Boot 6-slot array full: the 6-key formats (boot, consumer, lsconsumer) fail the press. The
+     others succeed when the usage fits the bitmap, and their USB report-protocol reports send
+     all of the bitmap (nkro, hybrid, hybrid2), the 16 lowest usages held (array) or the 12
+     lowest (multi, lsmulti). */
   kb_flush();
   if (g_cfg.kro == KRO_BOOT || g_cfg.kro == KRO_CONSUMER || g_cfg.kro == KRO_LSCONS) return 0;
   return (uint8_t)(usage <= NKRO_USAGE_MAX);
@@ -1578,7 +1582,7 @@ ISR(USB_COM_vect) {
       if (type == 1) {
         uint8_t dd[18];
         memcpy_P(dd, device_descriptor, 18);
-        dd[10] = (uint8_t)(USB_PID_COMPOSITE & 0xFF);   /* non-Arduino PID -> generic HID binding */
+        dd[10] = (uint8_t)(USB_PID_COMPOSITE & 0xFF);   /* non-Arduino PID: generic HID driver */
         dd[11] = (uint8_t)(USB_PID_COMPOSITE >> 8);
         uint16_t l = 18;
         if (l > wLength) l = wLength;
@@ -1605,8 +1609,9 @@ ISR(USB_COM_vect) {
     uint16_t rdlen;
     const uint8_t *rd = fmt_rdesc(&rdlen);
 
-    /* Config and HID descriptors carry the report-descriptor length and the EP1 packet
-       size, both of which depend on the current mode. Patch a RAM copy and send that. */
+    /* The config descriptor carries the report-descriptor length (in its HID descriptor), the
+       EP1 packet size and bInterval, which depend on the format, POLL and the bus speed. Patch a
+       RAM copy and send it, or its HID descriptor alone. */
     if (type == 2 || type == 0x21) {
       uint8_t cfg[CONFIG_DESC_LEN];
       memcpy_P(cfg, config_descriptor, CONFIG_DESC_LEN);
@@ -1803,8 +1808,8 @@ static const struct CharMap CHARMAP_ES[] PROGMEM = {
 };
 #define CHARMAP_ES_LEN (sizeof(CHARMAP_ES) / sizeof(CHARMAP_ES[0]))
 
-/* US ANSI has no dead keys and no accented characters, so anything outside this table is
-   dropped and counted in OK SKIP <n>. */
+/* US ANSI has no dead keys and no accented characters. A character that send_char() does not
+   compute and this table lacks is skipped and counted in OK SKIP <n>. */
 static const struct CharMap CHARMAP_US[] PROGMEM = {
   {0x0020, 0,0, 0x2C, MOD_NONE},
   {0x0021, 0,0, 0x1E, MOD_SHIFT},
@@ -1879,7 +1884,7 @@ static const struct NamedKey NAMED_KEYS[] PROGMEM = {
 #define NAMED_KEYS_LEN (sizeof(NAMED_KEYS) / sizeof(NAMED_KEYS[0]))
 
 
-/* Put only the typing knobs back to the compiled defaults, which is what RESET does. */
+/* Put only the eight SET knobs back to the compiled defaults, which is what RESET does. */
 static void set_defaults(void) {
   g_cfg.pressMs = DEF_PRESS_MS;
   g_cfg.gapMs = DEF_GAP_MS;
